@@ -5,11 +5,75 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { validateLoginForm, sanitizeInput } from "@/utils/validators";
 
 export default function SignInForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login, isLoading, error, clearAuthError, isAuthenticated } = useAuth();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirectTo = searchParams.get('redirect') || '/';
+      router.push(redirectTo);
+    }
+  }, [isAuthenticated, router, searchParams]);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearAuthError();
+  }, [clearAuthError]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: sanitizeInput(value)
+    }));
+    
+    // Clear validation errors when user starts typing
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    const validation = validateLoginForm(formData.email, formData.password);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+
+    try {
+      const result = await login({
+        email: formData.email,
+        password: formData.password,
+        rememberMe: isChecked,
+      });
+
+      if (result.type.endsWith('/fulfilled')) {
+        const redirectTo = searchParams.get('redirect') || '/';
+        router.push(redirectTo);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+    }
+  };
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
@@ -84,13 +148,36 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleSubmit}>
+              {/* Error Messages */}
+              {(error || validationErrors.length > 0) && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                  {error && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                  )}
+                  {validationErrors.map((err, index) => (
+                    <p key={index} className="text-sm text-red-600 dark:text-red-400">
+                      {err}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Input 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="info@gmail.com" 
+                    type="email" 
+                    required
+                    disabled={isLoading}
+                    data-testid="email-input"
+                  />
                 </div>
                 <div>
                   <Label>
@@ -98,8 +185,14 @@ export default function SignInForm() {
                   </Label>
                   <div className="relative">
                     <Input
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      required
+                      disabled={isLoading}
+                      data-testid="password-input"
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -128,8 +221,14 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
+                  <Button 
+                    className="w-full" 
+                    size="sm" 
+                    type="submit"
+                    disabled={isLoading}
+                    data-testid="signin-submit-button"
+                  >
+                    {isLoading ? 'Signing in...' : 'Sign in'}
                   </Button>
                 </div>
               </div>
