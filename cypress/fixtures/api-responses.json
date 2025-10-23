@@ -1,0 +1,36 @@
+{
+  "successfulSignup": {
+    "user": {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "email": "testuser@example.com",
+      "firstName": "Test",
+      "lastName": "User",
+      "role": "user",
+      "isEmailVerified": false,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn": 3600
+  },
+  "emailAlreadyExists": {
+    "message": "Email already exists",
+    "statusCode": 409,
+    "error": "Conflict"
+  },
+  "validationError": {
+    "message": "Validation failed",
+    "statusCode": 400,
+    "error": "Bad Request",
+    "details": {
+      "email": "Invalid email format",
+      "password": "Password must be at least 8 characters long"
+    }
+  },
+  "serverError": {
+    "message": "Internal server error",
+    "statusCode": 500,
+    "error": "Internal Server Error"
+  }
+}
