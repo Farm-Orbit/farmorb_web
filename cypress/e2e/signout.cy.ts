@@ -28,7 +28,10 @@ describe('Signout Test', () => {
 
     it('should successfully sign out a user', () => {
         // Click on user dropdown
-        cy.get('button').contains('User').click();
+        cy.get('[data-testid="user-dropdown-button"]').click();
+
+        // Wait for dropdown to open and verify signout button is visible
+        cy.get('[data-testid="signout-button"]').should('be.visible');
 
         // Click sign out button
         cy.get('[data-testid="signout-button"]').click();
