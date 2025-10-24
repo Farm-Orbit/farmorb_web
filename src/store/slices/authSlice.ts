@@ -29,7 +29,8 @@ export const loginUser = createAsyncThunk(
 
             return response;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Login failed');
+            console.error('Login error:', error);
+            return rejectWithValue(error.error || error.message || 'Login failed');
         }
     }
 );
@@ -48,7 +49,7 @@ export const registerUser = createAsyncThunk(
 
             return response;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Registration failed');
+            return rejectWithValue(error.error || error.message || 'Registration failed');
         }
     }
 );
@@ -84,7 +85,7 @@ export const refreshToken = createAsyncThunk(
         } catch (error: any) {
             // If refresh fails, clear tokens
             TokenManager.clearTokens();
-            return rejectWithValue(error.message || 'Token refresh failed');
+            return rejectWithValue(error.error || error.message || 'Token refresh failed');
         }
     }
 );
@@ -96,7 +97,7 @@ export const getCurrentUser = createAsyncThunk(
             const user = await AuthService.getCurrentUser();
             return user;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch user');
+            return rejectWithValue(error.error || error.message || 'Failed to fetch user');
         }
     }
 );
@@ -108,7 +109,7 @@ export const updateProfile = createAsyncThunk(
             const updatedUser = await AuthService.updateProfile(userData);
             return updatedUser;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Profile update failed');
+            return rejectWithValue(error.error || error.message || 'Profile update failed');
         }
     }
 );
