@@ -22,14 +22,16 @@ export const loginUser = createAsyncThunk(
             const response = await AuthService.login(credentials);
 
             // Store tokens
-            TokenManager.setAccessToken(response.accessToken, response.expiresIn);
+            if (response.accessToken) {
+                TokenManager.setAccessToken(response.accessToken, response.expiresIn);
+            }
+
             if (response.refreshToken) {
                 TokenManager.setRefreshToken(response.refreshToken);
             }
 
             return response;
         } catch (error: any) {
-            console.error('Login error:', error);
             return rejectWithValue(error.error || error.message || 'Login failed');
         }
     }
@@ -42,7 +44,10 @@ export const registerUser = createAsyncThunk(
             const response = await AuthService.register(userData);
 
             // Store tokens
-            TokenManager.setAccessToken(response.accessToken, response.expiresIn);
+            if (response.accessToken) {
+                TokenManager.setAccessToken(response.accessToken, response.expiresIn);
+            }
+
             if (response.refreshToken) {
                 TokenManager.setRefreshToken(response.refreshToken);
             }

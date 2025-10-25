@@ -27,7 +27,11 @@ export class TokenManager {
      */
     static setAccessToken(token: string, expiresIn?: number): void {
         // Store in cookie for persistence
-        Cookies.set(ACCESS_TOKEN_KEY, token, ACCESS_TOKEN_COOKIE_OPTIONS);
+        if (token) {
+            Cookies.set(ACCESS_TOKEN_KEY, token, ACCESS_TOKEN_COOKIE_OPTIONS);
+        } else {
+            return;
+        }
 
         // Store expiry time if provided
         if (expiresIn) {

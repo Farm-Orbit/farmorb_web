@@ -48,6 +48,18 @@ declare global {
              * @example cy.waitForApi('POST', '/auth/login')
              */
             waitForApi(method: string, url: string): Chainable<void>;
+
+            /**
+             * Custom command to sign up a new user
+             * @example cy.signup('test@example.com', 'password123')
+             */
+            signup(email: string, password: string): Chainable<void>;
+
+            /**
+             * Custom command to sign in with credentials
+             * @example cy.signin('test@example.com', 'password123')
+             */
+            signin(email: string, password: string): Chainable<void>;
         }
     }
 }
@@ -98,6 +110,48 @@ Cypress.Commands.add('setAuthCookies', (accessToken: string, refreshToken?: stri
 Cypress.Commands.add('waitForApi', (method: string, url: string) => {
     cy.intercept(method, url).as('apiCall');
     cy.wait('@apiCall');
+});
+
+// Custom command to sign up a new user
+Cypress.Commands.add('signup', (email: string, password: string) => {
+    cy.visit('/signup');
+    cy.get('h1').should('contain', 'Sign Up');
+
+    cy.get('[data-testid="email-input"]').type(email);
+    cy.get('[data-testid="password-input"]').type(password);
+    cy.get('[data-testid="confirm-password-input"]').type(password);
+    cy.get('input[type="checkbox"]').check();
+
+    cy.get('[data-testid="signup-submit-button"]').click();
+
+    // Wait for signup to complete and redirect to home
+    cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
+    cy.get('[data-testid="home-page"]').should('be.visible');
+});
+
+// Custom command to sign in with credentials
+Cypress.Commands.add('signin', (email: string, password: string) => {
+    cy.visit('/signin');
+
+    // Check if we're already on the home page (already authenticated)
+    cy.url().then((url) => {
+        if (url === Cypress.config().baseUrl + '/') {
+            cy.log('Already authenticated, skipping signin');
+            cy.get('[data-testid="home-page"]').should('be.visible');
+        } else {
+            // Not authenticated, proceed with signin
+            cy.get('h1').should('contain', 'Sign In');
+
+            cy.get('[data-testid="email-input"]').type(email);
+            cy.get('[data-testid="password-input"]').type(password);
+
+            cy.get('[data-testid="signin-submit-button"]').click();
+
+            // Wait for signin to complete and redirect to home
+            cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
+            cy.get('[data-testid="home-page"]').should('be.visible');
+        }
+    });
 });
 
 export { };

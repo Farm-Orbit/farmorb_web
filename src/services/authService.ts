@@ -27,8 +27,43 @@ export class AuthService {
             password: credentials.password,
         };
 
-        const response = await api.post<AuthResponse>('/auth/login', loginData);
-        return response.data;
+        const response = await api.post<any>('/auth/login', loginData);
+
+        // Handle different possible response structures
+        const data = response.data;
+        let authResponse: AuthResponse;
+
+        if (data.accessToken || data.access_token || data.token) {
+            // Standard structure or alternative field names
+            authResponse = {
+                user: data.user || data.userData || data.profile || {
+                    id: data.userId || data.id,
+                    email: credentials.email,
+                    firstName: data.firstName,
+                    lastName: data.lastName
+                },
+                accessToken: data.accessToken || data.access_token || data.token,
+                refreshToken: data.refreshToken || data.refresh_token,
+                expiresIn: data.expiresIn || data.expires_in || data.expires
+            };
+        } else if (data.data && (data.data.accessToken || data.data.access_token || data.data.token)) {
+            // Nested data structure
+            authResponse = {
+                user: data.data.user || data.data.userData || data.data.profile || {
+                    id: data.data.userId || data.data.id,
+                    email: credentials.email,
+                    firstName: data.data.firstName,
+                    lastName: data.data.lastName
+                },
+                accessToken: data.data.accessToken || data.data.access_token || data.data.token,
+                refreshToken: data.data.refreshToken || data.data.refresh_token,
+                expiresIn: data.data.expiresIn || data.data.expires_in || data.data.expires
+            };
+        } else {
+            throw new Error('Invalid login response structure');
+        }
+
+        return authResponse;
     }
 
     /**
@@ -42,8 +77,43 @@ export class AuthService {
             lastName: userData.lastName,
         };
 
-        const response = await api.post<AuthResponse>('/auth/register', registerData);
-        return response.data;
+        const response = await api.post<any>('/auth/register', registerData);
+
+        // Handle different possible response structures
+        const data = response.data;
+        let authResponse: AuthResponse;
+
+        if (data.accessToken || data.access_token || data.token) {
+            // Standard structure or alternative field names
+            authResponse = {
+                user: data.user || data.userData || data.profile || {
+                    id: data.userId || data.id,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName
+                },
+                accessToken: data.accessToken || data.access_token || data.token,
+                refreshToken: data.refreshToken || data.refresh_token,
+                expiresIn: data.expiresIn || data.expires_in || data.expires
+            };
+        } else if (data.data && (data.data.accessToken || data.data.access_token || data.data.token)) {
+            // Nested data structure
+            authResponse = {
+                user: data.data.user || data.data.userData || data.data.profile || {
+                    id: data.data.userId || data.data.id,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName
+                },
+                accessToken: data.data.accessToken || data.data.access_token || data.data.token,
+                refreshToken: data.data.refreshToken || data.data.refresh_token,
+                expiresIn: data.data.expiresIn || data.data.expires_in || data.data.expires
+            };
+        } else {
+            throw new Error('Invalid registration response structure');
+        }
+
+        return authResponse;
     }
 
     /**

@@ -16,6 +16,7 @@ const createApiInstance = (): AxiosInstance => {
     instance.interceptors.request.use(
         (config) => {
             const token = TokenManager.getAccessToken();
+
             if (token && !TokenManager.isTokenExpired()) {
                 config.headers.Authorization = `Bearer ${token}`;
             }

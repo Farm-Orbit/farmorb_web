@@ -1,0 +1,161 @@
+---
+alwaysApply: true
+---
+
+# FarmOrbit Project Rules
+
+## Code Style & Architecture
+
+### TypeScript Configuration
+- Allow `any` type in some cases by setting `noImplicitAny` and `strictNullChecks` to `false`
+- Use `strictPropertyInitialization: false` for flexibility
+- Exclude test files from TypeScript compilation
+
+### Component Architecture
+- Use layer-based architecture (components, services, store, types)
+- Prefer functional components with hooks
+- Use `"use client"` directive for client-side components
+- Wrap components that use `useSearchParams` in Suspense boundaries for Next.js 15 compatibility
+
+### State Management
+- Use Redux Toolkit for global state management
+- Create custom hooks (useAuth, useFarms) for convenient state access
+- Use async thunks for API calls
+- Prioritize `error.error` over `error.message` in error handling
+
+## API Integration
+
+### Error Handling
+- Always prioritize `error.error` over `error.message` from API responses
+- Use `handleApiError` utility function for consistent error handling
+- Show actual API errors to users instead of masking them
+- Log API responses for debugging
+
+### Token Management
+- Use `js-cookie` for JWT token storage
+- Store tokens in secure cookies with proper expiration
+- Implement token refresh logic in API interceptors
+- Clear tokens on logout and authentication failures
+
+### API Client
+- Use Axios with request/response interceptors
+- Add Authorization header automatically for authenticated requests
+- Handle 401 errors with automatic token refresh
+- Log API requests and responses for debugging
+
+## Testing
+
+### Cypress Testing
+- Use `data-testid` attributes for all element selection
+- Create reusable commands for common actions (signup, signin)
+- Test actual functionality, not just form submission
+- Show errors when APIs fail instead of hiding them
+- Use UI navigation instead of direct URL navigation
+- Log API responses and errors for debugging
+- **DRY Principle**: Extract reusable test code into custom commands or helper functions
+- Create reusable commands for repeated test patterns (form filling, API intercepts, assertions)
+- Use `cypress/support/commands.ts` for custom commands that can be shared across test files
+- Avoid duplicating test setup, form interactions, or assertion patterns
+
+### Test Structure
+- Use `before` hooks for user setup
+- Use `beforeEach` hooks for test isolation
+- Clear authentication state between tests
+- Test error handling and user feedback
+
+## UI/UX
+
+### Data Attributes
+- Use `data-testid` for all interactive elements
+- Follow naming convention: `component-action-element` (e.g., `farm-submit-button`)
+- Add data-testid to all form inputs, buttons, and navigation elements
+
+### Error Display
+- Show validation errors in red text
+- Display API errors prominently to users
+- Use consistent error styling across components
+- Clear errors when user starts typing
+
+### Navigation
+- Use sidebar navigation instead of direct URL navigation
+- Implement proper route protection with AuthGuard
+- Use Next.js router for programmatic navigation
+
+## File Organization
+
+### Component Structure
+- Place components in appropriate directories (auth, farms, ui, form)
+- Use index files for clean imports
+- Separate concerns: components, services, types, hooks
+
+### Naming Conventions
+- Use PascalCase for components and types
+- Use camelCase for functions and variables
+- Use kebab-case for file names
+- Use descriptive names that indicate purpose
+
+## Security
+
+### Authentication
+- Implement JWT-based authentication
+- Use secure cookie storage for tokens
+- Implement proper logout functionality
+- Protect routes with middleware and AuthGuard
+
+### Input Validation
+- Validate all form inputs on client side
+- Sanitize user inputs before sending to API
+- Show clear validation error messages
+- Prevent form submission with invalid data
+
+## Performance
+
+### Code Splitting
+- Use dynamic imports for large components
+- Implement proper loading states
+- Use Suspense boundaries for async components
+
+### State Management
+- Use Redux Toolkit for efficient state updates
+- Implement proper loading and error states
+- Avoid unnecessary re-renders with proper selectors
+
+## Development Workflow
+
+### Package Management
+- **ALWAYS use Yarn** for all package management operations
+- Use `yarn add`, `yarn remove`, `yarn install` instead of npm commands
+- Use `yarn test`, `yarn build`, `yarn dev` for scripts
+- Never use npm commands in this project
+
+### Debugging
+- Add comprehensive logging for API calls
+- Log token storage and retrieval
+- Show detailed error information
+- Use console.log with emojis for easy identification
+
+### Error Handling
+- Never hide API errors from users
+- Provide actionable error messages
+- Implement graceful degradation
+- Log errors for debugging purposes
+
+## Specific Project Rules
+
+### Farm Management
+- Focus on core CRUD operations (Create, Read, Update, Delete)
+- Remove unnecessary features like search, filters, and pagination for simplicity
+- Use simple grid layout for farm listing
+- Implement proper form validation for farm creation
+
+### Authentication Flow
+- Use reusable signup/signin commands in tests
+- Handle authentication state properly
+- Implement proper redirects after login/logout
+- Clear authentication state when needed
+
+### API Integration
+- Match frontend response handling to backend API structure
+- Use proper field names from API responses
+- Handle different response structures gracefully
+- Implement proper error handling for all API calls

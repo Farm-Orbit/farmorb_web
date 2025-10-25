@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
+import farmReducer from './slices/farmSlice';
 
 // Configure the Redux store
 export const store = configureStore({
     reducer: {
         auth: authReducer,
+        farms: farmReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
