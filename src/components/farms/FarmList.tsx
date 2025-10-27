@@ -3,12 +3,10 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFarms } from '@/hooks/useFarms';
-import { Farm } from '@/types/farm';
 import Button from '@/components/ui/button/Button';
 
 interface FarmListProps {
-  onEditFarm?: (farm: Farm) => void;
-  onDeleteFarm?: (farm: Farm) => void;
+  // Removed onEditFarm and onDeleteFarm as actions are now on farm detail page
 }
 
 const farmTypeLabels: Record<string, string> = {
@@ -20,15 +18,13 @@ const farmTypeLabels: Record<string, string> = {
   other: 'Other',
 };
 
-export default function FarmList({ onEditFarm, onDeleteFarm }: FarmListProps) {
+export default function FarmList({}: FarmListProps) {
   const router = useRouter();
   const {
     farms,
     isLoading,
     error,
     getFarms,
-    removeFarm,
-    clearFarmError,
   } = useFarms();
 
   useEffect(() => {
@@ -41,15 +37,8 @@ export default function FarmList({ onEditFarm, onDeleteFarm }: FarmListProps) {
     }
   }, [error]);
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this farm?')) {
-      try {
-        await removeFarm(id);
-        getFarms(); // Refresh list
-      } catch (err) {
-        console.error('Failed to delete farm:', err);
-      }
-    }
+  const handleFarmClick = (farmId: string) => {
+    router.push(`/farms/${farmId}`);
   };
 
   return (
@@ -90,8 +79,9 @@ export default function FarmList({ onEditFarm, onDeleteFarm }: FarmListProps) {
           {farms.map((farm) => (
             <div
               key={farm.id}
-              className="bg-white dark:bg-gray-dark rounded-lg shadow-md p-6 space-y-3 border border-gray-200 dark:border-gray-800"
+              className="bg-white dark:bg-gray-dark rounded-lg shadow-md p-6 space-y-3 border border-gray-200 dark:border-gray-800 cursor-pointer hover:shadow-lg transition-shadow duration-200"
               data-testid={`farm-card-${farm.id}`}
+              onClick={() => handleFarmClick(farm.id)}
             >
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{farm.name || 'Unnamed Farm'}</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -119,32 +109,6 @@ export default function FarmList({ onEditFarm, onDeleteFarm }: FarmListProps) {
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 <span className="font-medium">Location:</span> {farm.location_address || 'N/A'}
               </p>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => router.push(`/farms/${farm.id}`)}
-                  data-testid={`farm-view-button-${farm.id}`}
-                >
-                  View
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => router.push(`/farms/${farm.id}/edit`)}
-                  data-testid={`farm-edit-button-${farm.id}`}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDelete(farm.id)}
-                  data-testid={`farm-delete-button-${farm.id}`}
-                >
-                  Delete
-                </Button>
-              </div>
             </div>
           ))}
         </div>

@@ -1,29 +1,22 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext";
 import {
-  BoxCubeIcon,
   BoxIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
-  UserCircleIcon,
+  UserCircleIcon
 } from "../icons/index";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  subItems?: { name: string; path: string; icon: React.ReactNode }[];
 };
 
 const navItems: NavItem[] = [
@@ -36,6 +29,18 @@ const navItems: NavItem[] = [
     icon: <BoxIcon />,
     name: "Farms",
     path: "/farms",
+    subItems: [
+      {
+        icon: <BoxIcon />,
+        name: "All Farms",
+        path: "/farms",
+      },
+      {
+        icon: <UserCircleIcon />,
+        name: "My Invitations",
+        path: "/invitations",
+      },
+    ],
   },
 ];
 
@@ -43,6 +48,45 @@ const navItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const [openSubmenu, setOpenSubmenu] = useState<{
+    type: "main" | "others";
+    index: number;
+  } | null>(null);
+
+  const [subMenuHeight, setSubMenuHeight] = useState<{
+    [key: string]: number;
+  }>({});
+
+  const subMenuRefs = useRef<{
+    [key: string]: HTMLDivElement | null;
+  }>({});
+
+  // Generic function to generate test IDs
+  const generateTestId = (name: string, type: 'main' | 'sub' = 'main') => {
+    const normalizedName = name.toLowerCase().replace(/\s+/g, '-');
+    return type === 'main' ? `${normalizedName}-sidebar-button` : `${normalizedName}-sidebar-button`;
+  };
+
+  const handleSubmenuToggle = (index: number) => {
+    const navItem = navItems[index];
+    
+    // Navigate to the main item's path if it exists
+    if (navItem.path) {
+      router.push(navItem.path);
+    }
+    
+    setOpenSubmenu((prevOpenSubmenu) => {
+      if (
+        prevOpenSubmenu &&
+        prevOpenSubmenu.index === index
+      ) {
+        return null;
+      }
+      return { type: "main", index };
+    });
+  };
 
   const renderMenuItems = (navItems: NavItem[]) => (
     <ul className="flex flex-col gap-4">
@@ -60,6 +104,7 @@ const AppSidebar: React.FC = () => {
                   ? "lg:justify-center"
                   : "lg:justify-start"
               }`}
+              data-testid={generateTestId(nav.name)}
             >
               <span
                 className={` ${
@@ -84,28 +129,32 @@ const AppSidebar: React.FC = () => {
               )}
             </button>
           ) : (
-            nav.path && (
-              <Link
-                href={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+            <Link
+              href={nav.path || "#"}
+              className={`menu-item group ${
+                isActive(nav.path || "")
+                  ? "menu-item-active"
+                  : "menu-item-inactive"
+              } ${
+                !isExpanded && !isHovered
+                  ? "lg:justify-center"
+                  : "lg:justify-start"
+              }`}
+              data-testid={generateTestId(nav.name)}
+            >
+              <span
+                className={` ${
+                  isActive(nav.path || "")
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
                 }`}
-                data-testid={`${nav.name.toLowerCase().replace(/\s+/g, '-')}-sidebar-button`}
               >
-                <span
-                  className={`${
-                    isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
-                >
-                  {nav.icon}
-                </span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
-                )}
-              </Link>
-            )
+                {nav.icon}
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className={`menu-item-text`}>{nav.name}</span>
+              )}
+            </Link>
           )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
@@ -130,32 +179,9 @@ const AppSidebar: React.FC = () => {
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
                       }`}
+                      data-testid={generateTestId(subItem.name, 'sub')}
                     >
                       {subItem.name}
-                      <span className="flex items-center gap-1 ml-auto">
-                        {subItem.new && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            new
-                          </span>
-                        )}
-                        {subItem.pro && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            pro
-                          </span>
-                        )}
-                      </span>
                     </Link>
                   </li>
                 ))}
@@ -166,15 +192,6 @@ const AppSidebar: React.FC = () => {
       ))}
     </ul>
   );
-
-  const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "main" | "others";
-    index: number;
-  } | null>(null);
-  const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
-  );
-  const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => path === pathname;
    const isActive = useCallback((path: string) => path === pathname, [pathname]);
@@ -215,18 +232,6 @@ const AppSidebar: React.FC = () => {
       }
     }
   }, [openSubmenu]);
-
-  const handleSubmenuToggle = (index: number) => {
-    setOpenSubmenu((prevOpenSubmenu) => {
-      if (
-        prevOpenSubmenu &&
-        prevOpenSubmenu.index === index
-      ) {
-        return null;
-      }
-      return { type: "main", index };
-    });
-  };
 
   return (
     <aside

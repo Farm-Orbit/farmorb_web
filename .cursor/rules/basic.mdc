@@ -45,6 +45,23 @@ alwaysApply: true
 
 ## Testing
 
+### Integration Testing Philosophy
+- **NO MOCKING in Integration Tests**: Integration tests must test actual API integration
+- Integration tests are the first point to discover if APIs work as expected
+- Use real API calls to validate service layer functionality
+- Test actual HTTP requests/responses, not mocked data
+- Integration tests should fail if the API is broken or changed
+- Only mock external services (not our own APIs) when necessary
+
+### Test Validation Philosophy
+- **Tests must validate expected behavior**: Tests should fail when functionality doesn't work as expected
+- **Never accept empty results when expecting data**: If a test expects invitations and gets an empty array, the test should fail
+- **Create test data to validate functionality**: Set up proper test scenarios with known data to verify expected outcomes
+- **Assert on specific expected values**: Don't just check if arrays exist, verify they contain the expected data
+- **Test the complete workflow**: Create data, perform actions, then verify the results match expectations
+- **Fail fast on unexpected behavior**: If an API returns empty results when data should exist, the test must fail
+- **Validate business logic**: Ensure tests verify that business rules are working correctly, not just that endpoints respond
+
 ### Cypress Testing
 - Use `data-testid` attributes for all element selection
 - Create reusable commands for common actions (signup, signin)
@@ -62,6 +79,8 @@ alwaysApply: true
 - Use `beforeEach` hooks for test isolation
 - Clear authentication state between tests
 - Test error handling and user feedback
+- **Integration tests**: Test real API integration without mocking
+- **Unit tests**: Can use mocks for isolated component testing
 
 ## UI/UX
 
@@ -159,3 +178,84 @@ alwaysApply: true
 - Use proper field names from API responses
 - Handle different response structures gracefully
 - Implement proper error handling for all API calls
+
+## Integration Testing Best Practices
+
+### Test Structure and Setup
+- **Follow the same pattern as working tests**: When fixing failing tests, always reference and follow the exact structure of passing tests
+- **Use const objects for test data**: Define test users as `const` objects with `firstName`/`lastName` (not `first_name`/`last_name`)
+- **Create farms in individual tests**: Don't rely on shared `testFarm` variables; create farms within each test for isolation
+- **Use proper type casting**: Use `(farm as any).id` for type safety when accessing farm IDs
+- **Set tokens correctly**: Always call `TokenManager.setAccessToken()` and `TokenManager.setRefreshToken()` after login
+
+### Business Logic Testing
+- **Test real user flows**: Create proper multi-user scenarios where users perform actions they're authorized for
+- **Validate authentication context**: Users can only perform actions they're authorized for (e.g., can't accept others' invitations)
+- **Test both success and security boundaries**: Verify that security rules are enforced (e.g., access denied for unauthorized actions)
+- **Use proper user switching**: When testing multi-user flows, properly switch authentication tokens between users
+
+### API Contract Validation
+- **Verify parameter types**: Ensure frontend passes the correct parameter types that backend expects
+- **Check ID mappings**: Distinguish between different ID types (user_id vs farm_member_id vs invitation_id)
+- **Validate error structures**: Understand how the API client transforms errors (e.g., `error.statusCode` vs `error.response.status`)
+- **Test actual API endpoints**: Use real API calls to validate the complete request/response cycle
+
+### Error Handling and Debugging
+- **Add comprehensive logging**: Use console.log with emojis to track test flow and identify issues
+- **Debug error structures**: Log the actual error objects to understand the response format
+- **Test API endpoints directly**: Use Node.js scripts to test API endpoints independently when debugging
+- **Validate business rules**: Ensure tests fail when business logic is violated (e.g., unauthorized access attempts)
+
+### Test Development Process
+- **Write one test case at a time**: Focus on getting the first test case to pass completely before moving to the next one
+- **Verify each test passes**: Never move to the next test case until the current one runs successfully
+- **Debug thoroughly**: If a test fails, debug and fix it completely before proceeding
+- **Incremental development**: Build test coverage gradually, ensuring each step works before adding complexity
+
+### Common Integration Test Patterns
+- **Multi-user authentication flow**:
+  1. Register User A and User B
+  2. Login as User A, create farm, invite User B
+  3. Switch to User B's token, accept invitation
+  4. Switch back to User A's token, perform owner actions
+- **Parameter validation**: Always verify that frontend passes the correct parameter types (user_id vs member_id)
+- **Token management**: Properly set and clear tokens between different user contexts
+- **Error expectation**: Test both success cases and expected failure cases (security boundaries)
+
+## Dark Mode Theme Format
+
+### UI Component Design Rules
+- **Always use Tailwind CSS dark mode classes** for all UI components to ensure proper dark mode support
+- **Follow the established theme format** with consistent color schemes across all components
+- **Use semantic color classes** that automatically adapt to light/dark themes
+
+### Required Dark Mode Classes
+- **Background colors**: Use `bg-white dark:bg-gray-800` for cards and main backgrounds
+- **Text colors**: Use `text-gray-900 dark:text-white` for primary text, `text-gray-600 dark:text-gray-400` for secondary text
+- **Border colors**: Use `border-gray-200 dark:border-gray-700` for borders
+- **Input fields**: Use `bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white`
+- **Buttons**: Use `bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white`
+- **Error states**: Use `text-red-600 dark:text-red-400` for error text, `bg-red-50 dark:bg-red-900/20` for error backgrounds
+- **Success states**: Use `text-green-600 dark:text-green-400` for success text, `bg-green-50 dark:bg-green-900/20` for success backgrounds
+
+### Component Structure Requirements
+- **All components must support both light and dark modes**
+- **Use consistent spacing and typography** with Tailwind classes
+- **Ensure proper contrast ratios** in both light and dark themes
+- **Test components in both themes** to verify proper appearance
+
+### Theme Implementation Pattern
+```tsx
+// Example component structure
+<div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+    Component Title
+  </h2>
+  <p className="text-gray-600 dark:text-gray-400 mb-4">
+    Component description
+  </p>
+  <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white">
+    Action Button
+  </Button>
+</div>
+```

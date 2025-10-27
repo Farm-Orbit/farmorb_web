@@ -1,0 +1,369 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Farmorb API - Go Authentication Service
+
+## Project Overview
+This is a Go-based REST API with JWT authentication, PostgreSQL database, and comprehensive testing. The project follows clean architecture principles with a focus on built-in Go packages and minimal external dependencies.
+
+## Tech Stack
+- **Language**: Go 1.23.6
+- **Database**: PostgreSQL with pgx driver
+- **Authentication**: JWT tokens (access + refresh)
+- **Password Hashing**: bcrypt
+- **Testing**: Go testing package with httptest
+- **Migrations**: SQL-based migrations with custom migrator
+- **Configuration**: Environment variables with flag package
+
+## Project Structure
+```
+farmorb_api/
+├── cmd/                    # Application entry points
+│   ├── server/            # Main API server
+│   └── migrate/           # Database migration tool
+├── internal/              # Private application code
+│   ├── auth/              # Authentication logic
+│   ├── config/            # Configuration management
+│   ├── database/          # Database models and migrations
+│   ├── middleware/        # HTTP middleware
+│   ├── server/            # HTTP server setup
+│   └── utils/             # Utility functions
+├── migrations/            # SQL migration files
+│   └── 001_initial_schema/
+│       ├── up.sql
+│       └── down.sql
+├── tests/                 # Test files
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   ├── e2e/               # End-to-end tests
+│   └── helpers/           # Test utilities
+├── go.mod                 # Go module definition
+├── Makefile              # Build and test commands
+└── README.md             # Project documentation
+```
+
+## Code Conventions
+
+### Package Organization
+- Use `internal/` for private application code
+- Use `cmd/` for application entry points
+- Use `pkg/` for public library code (if needed)
+- Keep packages focused and cohesive
+
+### Naming Conventions
+- Use `camelCase` for variables and functions
+- Use `PascalCase` for exported types and functions
+- Use `snake_case` for database columns and environment variables
+- Use descriptive names that explain intent
+
+### Error Handling
+- Always handle errors explicitly
+- Use `fmt.Errorf` with `%w` verb for error wrapping
+- Return meaningful error messages
+- Log errors with appropriate levels
+
+### Database
+- Use UUIDs for primary keys
+- Use `database/sql` with `pgx` driver
+- Implement connection pooling
+- Use prepared statements for security
+- Follow SQL naming conventions (snake_case)
+
+### Authentication
+- Use JWT for stateless authentication
+- Implement access and refresh token pattern
+- Hash passwords with bcrypt (cost 12+)
+- Store refresh tokens securely in database
+- Implement rate limiting for login attempts
+
+## Testing Guidelines
+
+### Test Philosophy
+- **Test-First Development** - Write tests before implementing functionality
+- **Professional Quality Tests** - Write comprehensive, production-ready tests that thoroughly validate functionality
+- **Test Critical Business Logic** - Focus on authentication flows, data integrity, security, and user workflows
+- **Test Real Scenarios** - Cover actual use cases, not just happy paths
+- **Test Edge Cases and Error Conditions** - Validate error handling, boundary conditions, and security scenarios
+- **Avoid Trivial Tests** - Don't test simple getters, setters, or basic data structure operations
+- **Integration Over Unit** - Prioritize integration tests that validate complete workflows
+- **Test Security Critical Paths** - Authentication, authorization, input validation, and data protection
+
+### Test Structure
+- **Three Types Required**: Every feature must have unit, integration, and E2E tests
+- **Unit tests** in `tests/unit/` - Test individual components in isolation
+- **Integration tests** in `tests/integration/` - Test component interactions and workflows
+- **E2E tests** in `tests/e2e/` - Test complete user scenarios with real HTTP requests
+- Unit tests mirror `internal/` structure
+- Integration tests focus on business workflows
+- E2E tests validate complete API endpoints and user journeys
+- Use table-driven tests for multiple scenarios
+- Keep tests focused and short
+
+### Test Naming
+- Use `TestFunctionName` for test functions
+- Use descriptive subtest names
+- Group related tests with `t.Run()`
+- Test both success and error cases
+
+### Test Quality
+- **Write tests for edge cases and boundary conditions**
+- **Mock external dependencies**
+- **Use `httptest` for HTTP testing**
+- **Test error scenarios explicitly**
+- **Keep tests independent and isolated**
+- **Don't test third-party libraries** - Trust that they work
+- **Don't test simple data structures** - Focus on business logic
+- **Don't test configuration loading** - Test the behavior it enables
+
+### What NOT to Test
+- Simple getters and setters
+- Basic data structure initialization
+- Third-party library functionality
+- Configuration parsing (unless complex logic)
+- Simple validation that's just checking length/format
+- Database connection establishment
+- Basic HTTP response formatting
+
+### What TO Test
+- Business logic and algorithms
+- Error handling and edge cases
+- Authentication and authorization flows
+- Data transformation logic
+- Complex validation rules
+- Integration between components
+- Critical user workflows
+
+## Configuration Management
+- Use environment variables for configuration
+- Provide sensible defaults
+- Validate required settings in production
+- Use `flag` package for command-line arguments
+- Support different environments (dev, staging, prod)
+
+## Security Best Practices
+- Validate all input data
+- Use parameterized queries to prevent SQL injection
+- Implement CORS properly
+- Use HTTPS in production
+- Implement rate limiting
+- Log security events
+- Hash sensitive data
+
+## API Design
+- Follow RESTful conventions
+- Use appropriate HTTP status codes
+- Return consistent JSON responses
+- Implement proper error handling
+- Use versioning for API endpoints
+- Document API endpoints
+
+## Development Workflow
+
+### Building
+```bash
+make build          # Build the application
+make run            # Run the server
+make test           # Run all tests
+make test-unit      # Run unit tests only
+make test-coverage  # Run tests with coverage
+```
+
+### Database Migrations
+```bash
+make migrate-up     # Apply migrations
+make migrate-down   # Rollback last migration
+make migrate-status # Check migration status
+```
+
+### Code Quality
+```bash
+make fmt            # Format code
+make lint           # Run linter
+make vet            # Run go vet
+```
+
+## Dependencies
+- **Direct**: golang-jwt/jwt/v5, jackc/pgx/v5, golang.org/x/crypto, go-playground/validator/v10
+- **Indirect**: jackc/pgpassfile, jackc/pgservicefile, jackc/puddle/v2
+- **Avoid**: Heavy frameworks, unnecessary abstractions
+- **Prefer**: Built-in Go packages, minimal external deps
+- **Validation**: Use go-playground/validator for struct validation with tags
+
+## Environment Variables
+```bash
+# Server
+SERVER_PORT=8080
+SERVER_READ_TIMEOUT=30s
+SERVER_WRITE_TIMEOUT=30s
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=farmorb_api
+DB_SSLMODE=disable
+
+# Authentication
+JWT_SECRET=your-secret-key
+ACCESS_TOKEN_EXPIRY=15m
+REFRESH_TOKEN_EXPIRY=24h
+BCRYPT_COST=12
+
+# Environment
+ENV=development
+```
+
+## Common Patterns
+
+### HTTP Handlers
+```go
+func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
+    // Validate request
+    if err := h.validateRequest(r); err != nil {
+        utils.WriteError(w, err, http.StatusBadRequest)
+        return
+    }
+    
+    // Process request
+    result, err := h.service.ProcessRequest(r.Context(), req)
+    if err != nil {
+        utils.WriteError(w, err, http.StatusInternalServerError)
+        return
+    }
+    
+    // Return response
+    utils.WriteSuccess(w, result, http.StatusOK)
+}
+```
+
+### Service Layer
+```go
+func (s *Service) ProcessRequest(ctx context.Context, req *Request) (*Response, error) {
+    // Validate input
+    if err := s.validateInput(req); err != nil {
+        return nil, fmt.Errorf("validation failed: %w", err)
+    }
+    
+    // Business logic
+    result, err := s.repository.GetData(ctx, req.ID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get data: %w", err)
+    }
+    
+    return result, nil
+}
+```
+
+### Database Operations
+```go
+func (r *Repository) GetUser(ctx context.Context, id string) (*User, error) {
+    query := `SELECT id, email, first_name, last_name, created_at FROM users WHERE id = $1`
+    
+    var user User
+    err := r.db.QueryRowContext(ctx, query, id).Scan(
+        &user.ID, &user.Email, &user.FirstName, &user.LastName, &user.CreatedAt,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user: %w", err)
+    }
+    
+    return &user, nil
+}
+```
+
+### Validation Patterns
+```go
+// Define struct with validation tags
+type RegisterRequest struct {
+    Email     string `json:"email" validate:"required,email"`
+    Password  string `json:"password" validate:"required,min=8"`
+    FirstName string `json:"first_name" validate:"required,min=2"`
+    LastName  string `json:"last_name" validate:"required,min=2"`
+}
+
+// Validate in handler
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+    var req RegisterRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        utils.WriteValidationError(w, fmt.Errorf("invalid request body"))
+        return
+    }
+
+    if err := utils.ValidateStruct(&req); err != nil {
+        utils.WriteValidationError(w, err)
+        return
+    }
+    
+    // Process request...
+}
+```
+
+## Performance Considerations
+- Use connection pooling for database
+- Implement caching where appropriate
+- Use prepared statements
+- Optimize database queries
+- Monitor memory usage
+- Profile critical paths
+
+## Monitoring and Logging
+- Use structured logging with `slog`
+- Log important events and errors
+- Implement health checks
+- Use metrics for monitoring
+- Track performance metrics
+
+## Deployment
+- Use Docker for containerization
+- Implement graceful shutdown
+- Use environment-specific configs
+- Set up proper logging
+- Monitor application health
+
+## Docker Setup
+- **Docker Directory**: All Docker files in `docker/` directory
+- **Single Compose File**: One docker-compose.yml with environment variables
+- **Environment Variables**: All configuration via docker/.env file
+- **Health Checks**: Built-in health monitoring
+- **E2E Testing**: Comprehensive test suite with Docker
+- **Scripts**: Automated test and deployment scripts
+
+### Docker Commands
+```bash
+# Setup
+make docker-setup       # Create .env file from example
+
+# Quick start
+make docker-up          # Start all services
+make test-e2e-docker    # Run E2E tests
+make docker-down        # Stop services
+
+# Management
+make docker-logs-api    # View API logs
+make docker-logs-db     # View database logs
+make docker-clean       # Clean up volumes
+
+# Testing
+make test-all           # Comprehensive test suite
+make docker-test        # Full Docker test cycle
+```
+
+## Future Enhancements
+- Add Redis for caching
+- Implement rate limiting
+- Add API documentation
+- Implement user roles and permissions
+- Add email verification
+- Implement password reset
+- Add audit logging
+- Implement API versioning
+
+## Notes
+- This project prioritizes simplicity and maintainability
+- Focus on built-in Go packages over external frameworks
+- Write comprehensive tests for all functionality
+- Follow Go best practices and idioms
+- Keep the codebase clean and well-documented

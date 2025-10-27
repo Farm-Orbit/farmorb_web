@@ -105,15 +105,20 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
       if (farm) {
         // Update existing farm
         await editFarm(farm.id, { ...formData, id: farm.id });
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/farms');
+        }
       } else {
         // Create new farm
-        await addFarm(formData);
-      }
-
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push('/farms');
+        const createdFarm = await addFarm(formData);
+        if (onSuccess) {
+          onSuccess(); 
+        } else {
+          // Redirect to the newly created farm detail page
+          router.push(`/farms/${createdFarm.id}`);
+        }
       }
     } catch (err) {
       console.error('Farm operation error:', err);
@@ -121,7 +126,7 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="w-full p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           {farm ? 'Edit Farm' : 'Create New Farm'}

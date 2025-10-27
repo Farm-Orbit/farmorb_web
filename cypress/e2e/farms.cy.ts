@@ -76,35 +76,30 @@ describe('Farms Feature', () => {
         // Wait for the API call to complete and verify decimal values were sent correctly
         cy.wait('@createFarm');
 
-        // Wait for redirect back to farms list
-        cy.url({ timeout: 10000 }).should('include', '/farms');
+        // Wait for redirect to farm detail page
+        cy.url({ timeout: 10000 }).should('include', '/farms/');
+        cy.url().should('not.include', '/farms/create');
 
-        // Verify the created farm appears in the list
-        cy.get('[data-testid="farms-page"]').should('be.visible');
-
-        // Wait for the farm to be added to the list
-        cy.wait(2000);
-
-        // The test should FAIL if no farm cards are found
-        cy.get('[data-testid^="farm-card-"]').should('be.visible');
+        // Verify we're on the farm detail page
+        cy.get('[data-testid="farm-detail-page"]').should('be.visible');
 
         // The test should FAIL if our specific farm is not found
         cy.contains(farmName).should('be.visible');
 
-        // Verify the farm details are displayed correctly
-        cy.get('[data-testid^="farm-card-"]').contains(farmName).closest('[data-testid^="farm-card-"]').within(() => {
-            // Check that farm name is displayed correctly
-            cy.get('h3').should('contain', farmName);
+        // Verify the farm details are displayed correctly on the detail page
+        // Check that farm name is displayed in the page title
+        cy.get('h1').should('contain', farmName);
 
-            // Check that farm type is displayed
-            cy.contains(/Crop Farm|Livestock Farm|Mixed Farm|Dairy Farm|Poultry Farm|Other/).should('be.visible');
+        // Check that farm type is displayed in the basic information section
+        cy.contains('Farm Type').should('be.visible');
+        cy.contains(/Crop Farm|Livestock Farm|Mixed Farm|Dairy Farm|Poultry Farm|Other/).should('be.visible');
 
-            // Check that farm status is displayed (Active/Inactive only)
-            cy.contains(/Active|Inactive/).should('be.visible');
+        // Check that farm status is displayed (Active/Inactive only)
+        cy.contains('Status').should('be.visible');
+        cy.contains(/Active|Inactive/).should('be.visible');
 
-            // Check that farm size is displayed
-            cy.contains(/Size:/).should('be.visible');
-        });
+        // Check that farm size is displayed
+        cy.contains('Size').should('be.visible');
     });
 
     it('should list farms and verify farm details', () => {
@@ -133,7 +128,7 @@ describe('Farms Feature', () => {
                     cy.contains(/Active|Inactive/).should('be.visible');
 
                     // Check that farm size is displayed
-                    cy.contains(/Size:/).should('be.visible');
+                    cy.contains(/Size/).should('be.visible');
                 });
             } else {
                 // No farms exist - this is also a valid state
@@ -169,19 +164,10 @@ describe('Farms Feature', () => {
         });
 
         cy.get('[data-testid="farm-submit-button"]').click();
-        cy.url({ timeout: 10000 }).should('include', '/farms');
-
-        // Wait for the farm to appear in the list
-        cy.wait(2000);
-        cy.contains(originalFarmName).should('be.visible');
-
-        // Click on the farm to view details
-        cy.contains(originalFarmName).closest('[data-testid^="farm-card-"]').within(() => {
-            cy.get('[data-testid^="farm-view-button-"]').click();
-        });
-
-        // Should be on farm detail page
-        cy.url().should('include', '/farms/');
+        
+        // Should redirect to farm detail page
+        cy.url({ timeout: 10000 }).should('include', '/farms/');
+        cy.url().should('not.include', '/farms/create');
         cy.get('[data-testid="farm-detail-page"]').should('be.visible');
 
         // Click edit button
@@ -228,9 +214,7 @@ describe('Farms Feature', () => {
         cy.contains(originalFarmName).should('not.exist');
 
         // Click on the updated farm to verify the changes were saved
-        cy.contains(updatedFarmName).closest('[data-testid^="farm-card-"]').within(() => {
-            cy.get('[data-testid^="farm-view-button-"]').click();
-        });
+        cy.contains(updatedFarmName).closest('[data-testid^="farm-card-"]').click();
 
         // Should be on farm detail page
         cy.url().should('include', '/farms/');
@@ -269,19 +253,10 @@ describe('Farms Feature', () => {
         });
 
         cy.get('[data-testid="farm-submit-button"]').click();
-        cy.url({ timeout: 10000 }).should('include', '/farms');
-
-        // Wait for the farm to appear in the list
-        cy.wait(2000);
-        cy.contains(farmToDelete).should('be.visible');
-
-        // Click on the farm to view details
-        cy.contains(farmToDelete).closest('[data-testid^="farm-card-"]').within(() => {
-            cy.get('[data-testid^="farm-view-button-"]').click();
-        });
-
-        // Should be on farm detail page
-        cy.url().should('include', '/farms/');
+        
+        // Should redirect to farm detail page
+        cy.url({ timeout: 10000 }).should('include', '/farms/');
+        cy.url().should('not.include', '/farms/create');
         cy.get('[data-testid="farm-detail-page"]').should('be.visible');
 
         // Click delete button
@@ -328,19 +303,10 @@ describe('Farms Feature', () => {
         });
 
         cy.get('[data-testid="farm-submit-button"]').click();
-        cy.url({ timeout: 10000 }).should('include', '/farms');
-
-        // Wait for the farm to appear in the list
-        cy.wait(2000);
-        cy.contains(farmToKeep).should('be.visible');
-
-        // Click on the farm to view details
-        cy.contains(farmToKeep).closest('[data-testid^="farm-card-"]').within(() => {
-            cy.get('[data-testid^="farm-view-button-"]').click();
-        });
-
-        // Should be on farm detail page
-        cy.url().should('include', '/farms/');
+        
+        // Should redirect to farm detail page
+        cy.url({ timeout: 10000 }).should('include', '/farms/');
+        cy.url().should('not.include', '/farms/create');
         cy.get('[data-testid="farm-detail-page"]').should('be.visible');
 
         // Click delete button

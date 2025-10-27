@@ -39,7 +39,7 @@ export default function EditFarmPage() {
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="w-full p-6">
         <div className="text-center">
           <div className="text-red-500 mb-4">
             <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,7 +61,7 @@ export default function EditFarmPage() {
 
   if (!farm) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="w-full p-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Farm Not Found</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">

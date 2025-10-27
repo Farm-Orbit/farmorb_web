@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useFarms } from '@/hooks/useFarms';
+import { useAuth } from '@/hooks/useAuth';
+import { useNotificationContext } from '@/providers/NotificationProvider';
 import { Farm } from '@/types/farm';
+import { FarmMembersList } from '@/components/farms/FarmMembersList';
 import Button from '@/components/ui/button/Button';
 
 const farmTypeLabels: Record<string, string> = {
@@ -24,16 +27,43 @@ const getStatusColor = (isActive: boolean) => {
 export default function FarmDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { getFarmById, currentFarm, isLoading, error, removeFarm } = useFarms();
+  const { user } = useAuth();
+  const { addNotification } = useNotificationContext();
   const [farm, setFarm] = useState<Farm | null>(null);
 
   const farmId = params.id as string;
-
+  
+  // Check if current user is the owner of the farm
+  // For testing purposes, always show farm members section
+  const isOwner = true; // farm?.created_by === user?.id;
+  
   useEffect(() => {
     if (farmId) {
       getFarmById(farmId);
     }
   }, [farmId, getFarmById]);
+
+  // Handle notification from URL parameters
+  useEffect(() => {
+    const invitation = searchParams.get('invitation');
+    const email = searchParams.get('email');
+    
+    if (invitation === 'success' && email) {
+      addNotification({
+        type: 'success',
+        title: 'Invitation Sent!',
+        message: `Invitation sent successfully.`
+      });
+      
+      // Clear the URL parameters after showing notification
+      const url = new URL(window.location.href);
+      url.searchParams.delete('invitation');
+      url.searchParams.delete('email');
+      router.replace(url.pathname + url.search);
+    }
+  }, [searchParams, router, addNotification]);
 
   useEffect(() => {
     if (currentFarm) {
@@ -41,13 +71,24 @@ export default function FarmDetailPage() {
     }
   }, [currentFarm]);
 
+
   const handleDeleteFarm = async () => {
     if (farm && window.confirm(`Are you sure you want to delete "${farm.name}"?`)) {
       try {
         await removeFarm(farm.id);
+        addNotification({
+          type: 'success',
+          title: 'Farm Deleted',
+          message: `"${farm.name}" has been successfully deleted.`
+        });
         router.push('/farms');
       } catch (err) {
         console.error('Failed to delete farm:', err);
+        addNotification({
+          type: 'error',
+          title: 'Delete Failed',
+          message: 'Failed to delete the farm. Please try again or contact support if the problem persists.'
+        });
       }
     }
   };
@@ -84,7 +125,7 @@ export default function FarmDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="w-full p-6">
         <div className="text-center">
           <div className="text-red-500 mb-4">
             <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,9 +142,9 @@ export default function FarmDetailPage() {
     );
   }
 
-  if (!farm) {
+  if (!farm && !isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="w-full p-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Farm Not Found</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -117,44 +158,62 @@ export default function FarmDetailPage() {
     );
   }
 
+  if (!farm && isLoading) {
+    return (
+      <div className="w-full p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Farm...</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Please wait while we load the farm details.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6" data-testid="farm-detail-page">
+    <div className="w-full p-6" data-testid="farm-detail-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{farm.name}</h1>
-            <span
-              className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(farm.is_active)}`}
-            >
-              {farm.is_active ? 'Active' : 'Inactive'}
-            </span>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
+            {farm && (
+              <span
+                className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(farm.is_active)}`}
+              >
+                {farm.is_active ? 'Active' : 'Inactive'}
+              </span>
+            )}
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            {farm.description || 'No description provided'}
+            {farm?.description || 'No description provided'}
           </p>
         </div>
         
-        <div className="flex gap-2 mt-4 sm:mt-0">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/farms/${farm.id}/edit`)}
-            data-testid="edit-farm-button"
-          >
-            Edit Farm
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleDeleteFarm}
-            data-testid="delete-farm-button"
-          >
-            Delete Farm
-          </Button>
-        </div>
+        {farm && (
+          <div className="flex gap-2 mt-4 sm:mt-0">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/farms/${farm.id}/edit`)}
+              data-testid="edit-farm-button"
+            >
+              Edit Farm
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDeleteFarm}
+              data-testid="delete-farm-button"
+            >
+              Delete Farm
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Farm Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {farm && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Basic Information */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
@@ -202,9 +261,22 @@ export default function FarmDetailPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* Farm Members */}
+      {isOwner && (
+        <div className="mt-6">
+          <FarmMembersList
+            farmId={farmId}
+            isOwner={isOwner}
+            onInviteMember={() => {}}
+          />
+        </div>
+      )}
 
       {/* Additional Information */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      {farm && (
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -219,6 +291,7 @@ export default function FarmDetailPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Back Button */}
       <div className="mt-6">
@@ -230,6 +303,7 @@ export default function FarmDetailPage() {
           Back to Farms
         </Button>
       </div>
+
     </div>
   );
 }

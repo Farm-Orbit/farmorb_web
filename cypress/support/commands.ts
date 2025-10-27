@@ -30,6 +30,16 @@ declare global {
              * @example cy.logout()
              */
             logout(): Chainable<void>;
+            /**
+             * Custom command to signout via UI
+             * @example cy.signout()
+             */
+            signout(): Chainable<void>;
+            /**
+             * Custom command to verify farms are present
+             * @example cy.verifyFarmsPresent(['Farm 1', 'Farm 2'])
+             */
+            verifyFarmsPresent(farmNames: string[]): Chainable<void>;
 
             /**
              * Custom command to clear all cookies and localStorage
@@ -60,6 +70,25 @@ declare global {
              * @example cy.signin('test@example.com', 'password123')
              */
             signin(email: string, password: string): Chainable<void>;
+
+            /**
+             * Custom command to create a farm with all details
+             * @example cy.createFarm('My Farm', 'A test farm', 'crop', '123 Main St', 40.7128, -74.0060, 10, 4)
+             */
+            createFarm(name: string, description: string, type: string, address?: string, lat?: number, lng?: number, acres?: number, hectares?: number): Chainable<string>;
+
+            /**
+             * Custom command to navigate to farms page
+             * @example cy.navigateToFarms()
+             */
+            navigateToFarms(): Chainable<void>;
+
+
+            /**
+             * Custom command to get farm ID from current URL
+             * @example cy.getFarmIdFromUrl()
+             */
+            getFarmIdFromUrl(): Chainable<string>;
         }
     }
 }
@@ -88,6 +117,37 @@ Cypress.Commands.add('logout', () => {
         win.sessionStorage.clear();
     });
 });
+
+// Custom command to signout via UI
+Cypress.Commands.add('signout', () => {
+    // Click on user dropdown
+    cy.get('[data-testid="user-dropdown-button"]').click();
+
+    // Wait for dropdown to open and verify signout button is visible
+    cy.get('[data-testid="signout-button"]').should('be.visible');
+
+    // Click sign out button
+    cy.get('[data-testid="signout-button"]').click();
+
+    // Should be redirected to signin page
+    cy.url({ timeout: 10000 }).should('include', '/signin');
+
+    // Should show signin page
+    cy.get('h1').should('contain', 'Sign In');
+});
+
+// Custom command to verify farms are present
+Cypress.Commands.add('verifyFarmsPresent', (farmNames: string[]) => {
+    // Should be on farms page
+    cy.url().should('include', '/farms');
+    cy.contains('Farms').should('be.visible');
+    
+    // Verify each farm name is present
+    farmNames.forEach(farmName => {
+        cy.contains(farmName).should('be.visible');
+    });
+});
+
 
 // Custom command to clear authentication data
 Cypress.Commands.add('clearAuth', () => {
@@ -151,6 +211,74 @@ Cypress.Commands.add('signin', (email: string, password: string) => {
             cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
             cy.get('[data-testid="home-page"]').should('be.visible');
         }
+    });
+});
+
+// Custom command to create a farm with all details
+Cypress.Commands.add('createFarm', (name: string, description: string, type: string, address?: string, lat?: number, lng?: number, acres?: number, hectares?: number) => {
+    cy.get('[data-testid="create-farm-button"]').click();
+    cy.get('[data-testid="farm-name-input"]').type(name);
+    cy.get('[data-testid="farm-description-input"]').type(description);
+    cy.get('[data-testid="farm-type-select"]').select(type);
+    
+    // Fill in location fields with provided values or defaults
+    const farmAddress = address || '123 Farm Road, Farm City, Farm State, Farm Country';
+    const farmLat = lat || 34.0522;
+    const farmLng = lng || -118.2437;
+    const farmAcres = acres || 100;
+    const farmHectares = hectares || 40.47;
+    
+    cy.get('[data-testid="farm-location-address-input"]').type(farmAddress);
+    cy.get('[data-testid="farm-latitude-input"]').then(($input) => {
+        ($input[0] as HTMLInputElement).valueAsNumber = farmLat;
+        cy.wrap($input).trigger('input');
+    });
+    cy.get('[data-testid="farm-longitude-input"]').then(($input) => {
+        ($input[0] as HTMLInputElement).valueAsNumber = farmLng;
+        cy.wrap($input).trigger('input');
+    });
+    cy.get('[data-testid="farm-size-acres-input"]').then(($input) => {
+        ($input[0] as HTMLInputElement).valueAsNumber = farmAcres;
+        cy.wrap($input).trigger('input');
+    });
+    cy.get('[data-testid="farm-size-hectares-input"]').then(($input) => {
+        ($input[0] as HTMLInputElement).valueAsNumber = farmHectares;
+        cy.wrap($input).trigger('input');
+    });
+    
+    // Wait a moment for form state to update
+    cy.wait(500);
+    
+    cy.get('[data-testid="farm-submit-button"]').click();
+
+    // Wait for farm to be created and redirected to farm detail page
+    cy.url({ timeout: 10000 }).should('include', '/farms/');
+    cy.url().should('not.include', '/farms/create');
+    cy.get('[data-testid="farm-detail-page"]').should('be.visible');
+
+    // Return the farm ID from URL
+    return cy.url().then((url) => {
+        const urlParts = url.split('/');
+        const farmId = urlParts[urlParts.length - 1];
+        return farmId;
+    });
+});
+
+
+// Custom command to navigate to farms page
+Cypress.Commands.add('navigateToFarms', () => {
+    cy.get('[data-testid="farms-sidebar-button"]').click();
+    cy.url().should('include', '/farms');
+    cy.get('[data-testid="farms-page"]').should('be.visible');
+});
+
+
+// Custom command to get farm ID from current URL
+Cypress.Commands.add('getFarmIdFromUrl', () => {
+    return cy.url().then((url) => {
+        const urlParts = url.split('/');
+        const farmId = urlParts[urlParts.length - 1];
+        return farmId;
     });
 });
 
