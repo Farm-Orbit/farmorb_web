@@ -25,12 +25,12 @@ export default function AuthLayout({
                   <Image
                     width={231}
                     height={48}
-                    src="./images/logo/auth-logo.svg"
+                    src="/images/logo/logo.png"
                     alt="Logo"
                   />
                 </Link>
                 <p className="text-center text-gray-400 dark:text-white/60">
-                  Free and Open-Source Tailwind CSS Admin Dashboard Template
+                  FarmOrb empowers you to manage your projects efficiently with a clean, customizable dashboard experience.
                 </p>
               </div>
             </div>

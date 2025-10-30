@@ -3,13 +3,15 @@
 export interface User {
     id: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    auth_type?: string;
     avatar?: string;
     role?: string;
     isEmailVerified?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface LoginCredentials {
@@ -56,4 +58,22 @@ export interface RefreshTokenResponse {
     accessToken: string;
     refreshToken?: string;
     expiresIn?: number;
+}
+
+export interface UpdateUserRequest {
+    first_name?: string;
+    last_name?: string;
+}
+
+export interface ChangePasswordRequest {
+    current_password: string;
+    new_password: string;
+}
+
+export interface UpdateEmailRequest {
+    new_email: string;
+}
+
+export interface DeleteUserRequest {
+    password: string;
 }

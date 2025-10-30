@@ -4,12 +4,15 @@ import {
     RegisterData,
     AuthResponse,
     User,
-    RefreshTokenResponse
+    RefreshTokenResponse,
+    UpdateUserRequest,
+    ChangePasswordRequest,
+    UpdateEmailRequest,
+    DeleteUserRequest
 } from '@/types/auth';
 import {
     LoginRequest,
     RegisterRequest,
-    ChangePasswordRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest
 } from '@/types/api';
@@ -140,16 +143,28 @@ export class AuthService {
      * Get current user profile
      */
     static async getCurrentUser(): Promise<User> {
-        const response = await api.get<User>('/auth/me');
-        return response.data;
+        const response = await api.get<any>('/auth/me');
+        
+        // Handle API response structure
+        const data = response.data;
+        if (data.data) {
+            return data.data;
+        }
+        return data;
     }
 
     /**
      * Update user profile
      */
-    static async updateProfile(userData: Partial<User>): Promise<User> {
-        const response = await api.put<User>('/auth/profile', userData);
-        return response.data;
+    static async updateProfile(userData: UpdateUserRequest): Promise<User> {
+        const response = await api.put<any>('/auth/profile', userData);
+        
+        // Handle API response structure
+        const data = response.data;
+        if (data.data) {
+            return data.data;
+        }
+        return data;
     }
 
     /**
@@ -189,10 +204,24 @@ export class AuthService {
     }
 
     /**
+     * Update email address
+     */
+    static async updateEmail(emailData: UpdateEmailRequest): Promise<void> {
+        await api.put('/auth/update-email', emailData);
+    }
+
+    /**
+     * Send email verification
+     */
+    static async sendEmailVerification(email: string): Promise<void> {
+        await api.post('/auth/send-verification', { email });
+    }
+
+    /**
      * Delete user account
      */
-    static async deleteAccount(): Promise<void> {
-        await api.delete('/auth/account');
+    static async deleteAccount(password: string): Promise<void> {
+        await api.delete('/auth/profile', { data: { password } });
     }
 
     /**

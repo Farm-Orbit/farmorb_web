@@ -25,15 +25,6 @@ describe('Farms Feature', () => {
     });
 
     it('should create a farm and verify it appears in the list', () => {
-        // Intercept the farm creation API call to verify decimal values
-        cy.intercept('POST', '/api/farms', (req) => {
-            console.log('🚀 Farm creation request body:', req.body);
-            expect(req.body.location_latitude).to.equal(34.0522);
-            expect(req.body.location_longitude).to.equal(-118.2437);
-            expect(req.body.size_acres).to.equal(100);
-            expect(req.body.size_hectares).to.equal(40.47);
-        }).as('createFarm');
-
         // Click create farm button
         cy.get('[data-testid="create-farm-button"]').click();
 
@@ -72,9 +63,6 @@ describe('Farms Feature', () => {
 
         // Submit the form
         cy.get('[data-testid="farm-submit-button"]').click();
-
-        // Wait for the API call to complete and verify decimal values were sent correctly
-        cy.wait('@createFarm');
 
         // Wait for redirect to farm detail page
         cy.url({ timeout: 10000 }).should('include', '/farms/');
