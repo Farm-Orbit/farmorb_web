@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotificationContext } from '@/providers/NotificationProvider';
 import { Farm } from '@/types/farm';
 import { FarmMembersList } from '@/components/farms/FarmMembersList';
+import HerdList from '@/components/herds/HerdList';
 import Button from '@/components/ui/button/Button';
 
 const farmTypeLabels: Record<string, string> = {
@@ -262,6 +263,11 @@ export default function FarmDetailPage() {
         </div>
       </div>
       )}
+
+      {/* Herds Section */}
+      <div className="mt-6">
+        <HerdList farmId={farmId} />
+      </div>
 
       {/* Farm Members */}
       {isOwner && (
