@@ -1,20 +1,23 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFarms } from '@/hooks/useFarms';
 import Button from '@/components/ui/button/Button';
+import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
+import { type MRT_ColumnDef } from 'material-react-table';
+import { Farm } from '@/types/farm';
 
 interface FarmListProps {
   // Removed onEditFarm and onDeleteFarm as actions are now on farm detail page
 }
 
 const farmTypeLabels: Record<string, string> = {
-  crop: 'Crop Farm',
-  livestock: 'Livestock Farm',
-  mixed: 'Mixed Farm',
-  dairy: 'Dairy Farm',
-  poultry: 'Poultry Farm',
+  crop: 'Crop',
+  livestock: 'Livestock',
+  mixed: 'Mixed',
+  dairy: 'Dairy',
+  poultry: 'Poultry',
   other: 'Other',
 };
 
@@ -27,91 +30,148 @@ export default function FarmList({}: FarmListProps) {
     getFarms,
   } = useFarms();
 
+  const [filterType, setFilterType] = useState<string>('all');
+
   useEffect(() => {
     getFarms();
   }, [getFarms]);
 
-  useEffect(() => {
-    if (error) {
-      console.error('FarmList Error:', error);
-    }
-  }, [error]);
+  // Filter farms based on type
+  const filteredFarms = useMemo(() => {
+    if (!farms) return [];
+    if (filterType === 'all') return farms;
+    return farms.filter(farm => farm.farm_type === filterType);
+  }, [farms, filterType]);
 
-  const handleFarmClick = (farmId: string) => {
-    router.push(`/farms/${farmId}`);
+  const handleFarmClick = (farm: Farm) => {
+    router.push(`/farms/${farm.id}`);
   };
 
+  // Define columns
+  const columns = useMemo<MRT_ColumnDef<Farm>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Farm',
+        size: 200,
+        Cell: ({ row }) => (
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
+            {row.original.name || 'Unnamed Farm'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'location_address',
+        header: 'Location',
+        size: 250,
+        Cell: ({ cell }) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {cell.getValue<string>() || 'N/A'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'farm_type',
+        header: 'Type',
+        size: 120,
+        Cell: ({ cell }) => (
+          <span className="text-sm text-gray-900 dark:text-white">
+            {farmTypeLabels[cell.getValue<string>()] || cell.getValue<string>()}
+          </span>
+        ),
+        filterVariant: 'select',
+        filterSelectOptions: Object.entries(farmTypeLabels).map(([value, label]) => ({
+          value,
+          label,
+        })),
+      },
+      {
+        accessorKey: 'is_active',
+        header: 'Status',
+        size: 120,
+        Cell: ({ cell }) => {
+          const isActive = cell.getValue<boolean>();
+          return (
+            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+              isActive 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+            }`}>
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+          );
+        },
+        filterVariant: 'checkbox',
+      },
+      {
+        accessorFn: (row) => {
+          if (row.size_acres) return `${row.size_acres} acres`;
+          if (row.size_hectares) return `${row.size_hectares} ha`;
+          return 'N/A';
+        },
+        header: 'Size',
+        size: 120,
+        Cell: ({ cell }) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {cell.getValue<string>()}
+          </span>
+        ),
+        enableColumnFilter: false,
+      },
+    ],
+    []
+  );
+
   return (
-    <div className="space-y-6" data-testid="farms-page">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Farms</h1>
-        <Button onClick={() => router.push('/farms/create')} data-testid="create-farm-button">
-          Create New Farm
+    <div className="space-y-4" data-testid="farms-page">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Farms</h1>
+        <Button 
+          onClick={() => router.push('/farms/create')} 
+          data-testid="create-farm-button"
+          size="sm"
+        >
+          Add Farm
         </Button>
       </div>
 
-      {isLoading && <p className="text-center text-gray-500 dark:text-gray-400">Loading farms...</p>}
-      
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800 mb-4">
           <p className="text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
-      {!isLoading && !error && farms && farms.length === 0 && (
-        <div className="text-center p-8 bg-white dark:bg-gray-dark rounded-lg shadow-md">
-          <h3 className="text-lg text-gray-600 dark:text-gray-400">No farms found</h3>
+      {/* Material React Table */}
+      {!isLoading && (!farms || farms.length === 0) ? (
+        <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No farms found</h3>
           <p className="text-gray-500 dark:text-gray-500 mt-2">
             Get started by creating your first farm
           </p>
-          <Button 
-            onClick={() => router.push('/farms/create')} 
-            className="mt-4"
-            data-testid="create-first-farm-button"
-          >
-            Create Your First Farm
-          </Button>
         </div>
-      )}
-
-      {!isLoading && farms && farms.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {farms.map((farm) => (
-            <div
-              key={farm.id}
-              className="bg-white dark:bg-gray-dark rounded-lg shadow-md p-6 space-y-3 border border-gray-200 dark:border-gray-800 cursor-pointer hover:shadow-lg transition-shadow duration-200"
-              data-testid={`farm-card-${farm.id}`}
-              onClick={() => handleFarmClick(farm.id)}
-            >
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{farm.name || 'Unnamed Farm'}</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                <span className="font-medium">Type:</span> {farmTypeLabels[farm.farm_type] || farm.farm_type || 'Unknown'}
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                <span className="font-medium">Status:</span>{' '}
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    farm.is_active 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                  }`}
-                >
-                  {farm.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                <span className="font-medium">Size:</span> {
-                  farm.size_acres ? `${farm.size_acres} acres` : 
-                  farm.size_hectares ? `${farm.size_hectares} hectares` : 
-                  'N/A'
-                }
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                <span className="font-medium">Location:</span> {farm.location_address || 'N/A'}
-              </p>
+      ) : (
+        <CustomMaterialTable
+          columns={columns}
+          data={filteredFarms}
+          isLoading={isLoading}
+          onRowClick={handleFarmClick}
+          getRowId={(row) => row.id}
+          renderTopToolbarCustomActions={() => (
+            <div className="flex gap-2 items-center">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Types</option>
+                {Object.entries(farmTypeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </div>
-          ))}
-        </div>
+          )}
+        />
       )}
     </div>
   );

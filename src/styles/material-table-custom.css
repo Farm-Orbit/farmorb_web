@@ -1,0 +1,71 @@
+/* Custom Material React Table Styling - Additional overrides */
+
+/* Remove default white background from table rows */
+.MuiTableRow-root {
+  background-color: transparent !important;
+}
+
+/* Icons color for toolbar */
+.MuiIconButton-root {
+  color: inherit !important;
+}
+
+.MuiIconButton-root .MuiSvgIcon-root {
+  color: inherit !important;
+}
+
+/* Button styling */
+.MuiButton-root {
+  border-radius: 8px;
+  text-transform: none;
+}
+
+/* Column filter popover */
+.MuiPopover-paper {
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Pagination select dropdown */
+.MuiSelect-select {
+  color: inherit !important;
+}
+
+.MuiSelect-icon {
+  color: inherit !important;
+}
+
+/* Menu items in dropdowns */
+.MuiMenuItem-root {
+  font-size: 0.875rem;
+}
+
+/* Sort icons */
+.MuiTableSortLabel-root {
+  color: inherit !important;
+}
+
+.MuiTableSortLabel-icon {
+  color: inherit !important;
+  opacity: 0.5;
+}
+
+.MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
+  opacity: 1;
+  color: #16a34a !important;
+}
+
+/* Toolbar icons and buttons */
+.MuiToolbar-root .MuiIconButton-root {
+  color: inherit !important;
+}
+
+.MuiToolbar-root .MuiSvgIcon-root {
+  color: inherit !important;
+}
+
+/* All SVG icons */
+.MuiSvgIcon-root {
+  color: inherit !important;
+}
+

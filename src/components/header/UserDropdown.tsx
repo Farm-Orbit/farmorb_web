@@ -65,12 +65,12 @@ export default function UserDropdown() {
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
           {user?.avatar ? (
-            <Image
-              width={44}
-              height={44}
+          <Image
+            width={44}
+            height={44}
               src={user.avatar}
-              alt="User"
-            />
+            alt="User"
+          />
           ) : (
             <span className="text-gray-600 dark:text-gray-300 font-semibold text-sm">
               {getUserInitials()}

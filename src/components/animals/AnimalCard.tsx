@@ -42,78 +42,138 @@ export default function AnimalCard({ animal, farmId, onEdit, onDelete }: AnimalC
     });
   };
 
+  const getTrackingIcon = () => {
+    switch (animal.tracking_type) {
+      case 'ear_tag':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+        );
+      case 'microchip':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+          </svg>
+        );
+      case 'rfid':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+          </svg>
+        );
+    }
+  };
+
   return (
     <div 
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 space-y-3 border border-gray-200 dark:border-gray-700"
+      className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 overflow-hidden"
       data-testid={`animal-card-${animal.id}`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {animal.name || `Tag: ${animal.tag_id}`}
+      {/* Header with tag badge */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getTrackingIcon()}
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-amber-200 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-mono border border-amber-300 dark:border-amber-800">
+                {animal.tag_id}
+              </span>
+              {animal.tracking_type && (
+                <span className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  {animal.tracking_type.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+          </div>
+          <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(animal.status)}`}>
+            {statusLabels[animal.status] || animal.status}
+          </span>
+        </div>
+      </div>
+
+      {/* Card content */}
+      <div className="p-4 space-y-3">
+        {/* Name */}
+        {animal.name && (
+          <h4 className="text-base font-bold text-gray-900 dark:text-white">
+            {animal.name}
           </h4>
-          {animal.name && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Tag: {animal.tag_id}</p>
+        )}
+
+        {/* Details grid */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          {animal.breed && (
+            <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="truncate">{animal.breed}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <span className={`text-lg ${animal.sex === 'male' ? 'text-blue-600 dark:text-blue-400' : 'text-pink-600 dark:text-pink-400'}`}>
+              {animal.sex === 'male' ? '♂' : '♀'}
+            </span>
+            <span className="text-gray-700 dark:text-gray-300">{animal.sex === 'male' ? 'Male' : 'Female'}</span>
+          </div>
+
+          {animal.birth_date && (
+            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 col-span-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs">Born: {formatDate(animal.birth_date)}</span>
+            </div>
+          )}
+
+          {animal.color && (
+            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 col-span-2">
+              <div className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" style={{ backgroundColor: animal.color.toLowerCase() }}></div>
+              <span className="text-xs">{animal.color}</span>
+            </div>
+          )}
+
+          {animal.markings && (
+            <div className="col-span-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/30 p-2 rounded">
+              <span className="font-medium">Markings:</span> {animal.markings}
+            </div>
           )}
         </div>
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(animal.status)}`}>
-          {statusLabels[animal.status] || animal.status}
-        </span>
-      </div>
 
-      <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-        {animal.breed && (
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        {/* Actions */}
+        <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onEdit}
+            data-testid={`edit-animal-${animal.id}`}
+            className="flex-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            <span>{animal.breed}</span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span>{animal.sex === 'male' ? '♂ Male' : '♀ Female'}</span>
+            Edit
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onDelete}
+            data-testid={`delete-animal-${animal.id}`}
+            className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </Button>
         </div>
-
-        {animal.birth_date && (
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>DOB: {formatDate(animal.birth_date)}</span>
-          </div>
-        )}
-
-        {animal.color && (
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-            </svg>
-            <span>{animal.color}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onEdit}
-          data-testid={`edit-animal-${animal.id}`}
-        >
-          Edit
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onDelete}
-          data-testid={`delete-animal-${animal.id}`}
-        >
-          Delete
-        </Button>
       </div>
     </div>
   );
