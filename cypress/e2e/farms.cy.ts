@@ -78,6 +78,9 @@ describe('Farms Feature', () => {
         // Check that farm name is displayed in the page title
         cy.get('h1').should('contain', farmName);
 
+        // Navigate to Details tab to see farm information
+        cy.get('[data-testid="tab-details"]').click();
+
         // Check that farm type is displayed in the basic information section
         cy.contains('Farm Type').should('be.visible');
         cy.contains(/Crop Farm|Livestock Farm|Mixed Farm|Dairy Farm|Poultry Farm|Other/).should('be.visible');
@@ -100,23 +103,20 @@ describe('Farms Feature', () => {
         // This test should verify that farms are properly listed
         // Check if farms exist and verify they are displayed correctly
         cy.get('body').then(($body) => {
-            if ($body.find('[data-testid^="farm-card-"]').length > 0) {
-                // Farms exist - verify they are displayed correctly
-                cy.get('[data-testid^="farm-card-"]').first().should('be.visible');
+            if ($body.find('[data-testid^="farm-row-"]').length > 0) {
+                // Farms exist - verify they are displayed correctly in table
+                cy.get('[data-testid^="farm-row-"]').first().should('be.visible');
 
-                // Verify farm details are displayed
-                cy.get('[data-testid^="farm-card-"]').first().within(() => {
+                // Verify farm details are displayed in table row
+                cy.get('[data-testid^="farm-row-"]').first().within(() => {
                     // Check that farm name is displayed
-                    cy.get('h3').should('be.visible').and('not.be.empty');
+                    cy.get('td').first().should('be.visible').and('not.be.empty');
 
                     // Check that farm type is displayed
-                    cy.contains(/Crop Farm|Livestock Farm|Mixed Farm|Dairy Farm|Poultry Farm|Other/).should('be.visible');
+                    cy.contains(/Crop|Livestock|Mixed|Dairy|Poultry|Other/).should('be.visible');
 
                     // Check that farm status is displayed (Active/Inactive only)
                     cy.contains(/Active|Inactive/).should('be.visible');
-
-                    // Check that farm size is displayed
-                    cy.contains(/Size/).should('be.visible');
                 });
             } else {
                 // No farms exist - this is also a valid state
@@ -202,11 +202,14 @@ describe('Farms Feature', () => {
         cy.contains(originalFarmName).should('not.exist');
 
         // Click on the updated farm to verify the changes were saved
-        cy.contains(updatedFarmName).closest('[data-testid^="farm-card-"]').click();
+        cy.contains(updatedFarmName).closest('[data-testid^="farm-row-"]').click();
 
         // Should be on farm detail page
         cy.url().should('include', '/farms/');
         cy.get('[data-testid="farm-detail-page"]').should('be.visible');
+
+        // Navigate to Details tab to verify updated information
+        cy.get('[data-testid="tab-details"]').click();
 
         // Verify the updated information is displayed
         cy.contains(updatedFarmName).should('be.visible');

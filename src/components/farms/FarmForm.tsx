@@ -128,7 +128,7 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
   return (
     <div className="w-full p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
           {farm ? 'Edit Farm' : 'Create New Farm'}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">

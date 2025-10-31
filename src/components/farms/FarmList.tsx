@@ -124,9 +124,9 @@ export default function FarmList({}: FarmListProps) {
 
   return (
     <div className="space-y-4" data-testid="farms-page">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Farms</h1>
+             {/* Header */}
+             <div className="flex justify-between items-center mb-4">
+               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Farms</h2>
         <Button 
           onClick={() => router.push('/farms/create')} 
           data-testid="create-farm-button"

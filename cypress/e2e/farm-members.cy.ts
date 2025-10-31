@@ -42,8 +42,11 @@ describe('Farm Members Feature', () => {
       cy.log('Farm created with ID:', farmId);
     });
 
+    // Navigate to Members tab
+    cy.get('[data-testid="tab-members"]').click();
+
     // Check that farm members section is visible (owner should see it)
-    cy.contains('Farm Members').should('be.visible');
+    cy.contains('Team Members').should('be.visible');
     cy.contains('Invite Member').should('be.visible');
 
     // Check that the farm owner is present in the members list
@@ -59,8 +62,11 @@ describe('Farm Members Feature', () => {
       cy.log('Farm created with ID:', farmId);
     });
 
+    // Navigate to Members tab
+    cy.get('[data-testid="tab-members"]').click();
+
     // Check that farm members section is visible (owner should see it)
-    cy.contains('Farm Members').should('be.visible');
+    cy.contains('Team Members').should('be.visible');
     cy.contains('Invite Member').should('be.visible');
     
     // Check that the farm owner is present in the members list
@@ -94,7 +100,17 @@ describe('Farm Members Feature', () => {
     });
     
     // Verify we're on the farm page
-    cy.contains('Farm Members').should('be.visible');
+    cy.url().should('include', '/farms/');
+    cy.get('[data-testid="farm-detail-page"]').should('be.visible');
+    
+    // Navigate to Members tab to verify
+    cy.get('[data-testid="tab-members"]').click();
+    cy.contains('Team Members').should('be.visible');
+
+    // Store the farm URL for later use
+    cy.url().then((farmUrl) => {
+      cy.wrap(farmUrl).as('farmUrl');
+    });
 
     // Now verify the invitation appears in the invited user's account
     // Log out and sign in as the invited user
@@ -103,7 +119,9 @@ describe('Farm Members Feature', () => {
     // Sign in as the invited user
     cy.signin(inviteeEmail, inviteePassword);
     
-    // Navigate to invitations page
+    // Now verify the invitation appears in the invited user's account
+    // Navigate to invitations page using the sidebar
+    cy.get('[data-testid="farms-sidebar-button"]').click({ force: true });
     cy.get('[data-testid="my-invitations-sidebar-button"]').click({ force: true });
     
     // Verify the invitation appears
@@ -127,17 +145,21 @@ describe('Farm Members Feature', () => {
     cy.get('[data-testid="farms-sidebar-button"]').click({ force: true });
     
     // Verify the invited user can see the farm they were invited to
-    cy.verifyFarmsPresent(['Test Farm for Inviting']);
+    cy.contains('Test Farm for Inviting').should('be.visible');
     
     // Click on the farm to access it
     cy.contains('Test Farm for Inviting').click();
     
     // Verify the user can access the farm (they should have member access)
     // The farm detail page should show the farm name and basic information
+    cy.get('[data-testid="farm-detail-page"]').should('be.visible');
     cy.contains('Test Farm for Inviting').should('be.visible');
     
     // Wait a moment for the page to load
     cy.wait(2000);
+    
+    // Navigate to Details tab to verify farm details
+    cy.get('[data-testid="tab-details"]').click();
     
     // Verify farm details are visible
     cy.contains('Basic Information').should('be.visible');
@@ -150,22 +172,24 @@ describe('Farm Members Feature', () => {
     // Verify the user can see farm description
     cy.contains('A test farm for inviting members').should('be.visible');
     
-    // But they should see the farm members section (read-only)
-    cy.contains('Farm Members').should('be.visible');
+    // Navigate to Members tab to see the farm members section
+    cy.get('[data-testid="tab-members"]').click();
+    
+    // Verify the members table is visible
+    cy.contains('Team Members').should('be.visible');
+    
+    // Verify there are exactly 2 members in the table
+    cy.get('tbody tr').should('have.length', 2);
     
     // Verify there are two members: the owner and the invited member
-    cy.get('[data-testid="farm-members-section"]').within(() => {
-      // Should have exactly 2 members (owner + invited member)
-      cy.get('[data-testid^="farm-member-"]').should('have.length', 2);
-      
-      // Verify the owner is present
-      cy.contains('Owner').should('be.visible');
-      
-      // Verify the member role is present
-      cy.contains('Member').should('be.visible');
-      
-      // Verify the member count shows 2
-      cy.contains('Farm Members (2)').should('be.visible');
-    });
+    // Check for Owner role
+    cy.contains('Owner').should('be.visible');
+    
+    // Check for Member role
+    cy.contains('Member').should('be.visible');
+    
+    // Verify both email addresses are present in the members table
+    cy.contains(testEmail).should('be.visible'); // Farm owner
+    cy.contains(inviteeEmail).should('be.visible'); // Invited member
   });
 });

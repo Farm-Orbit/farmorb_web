@@ -8,6 +8,9 @@ import { useNotificationContext } from '@/providers/NotificationProvider';
 import { Farm } from '@/types/farm';
 import { FarmMembersList } from '@/components/farms/FarmMembersList';
 import HerdList from '@/components/herds/HerdList';
+import HerdsTable from '@/components/herds/HerdsTable';
+import AnimalsTable from '@/components/animals/AnimalsTable';
+import MembersTable from '@/components/farms/MembersTable';
 import Button from '@/components/ui/button/Button';
 
 const farmTypeLabels: Record<string, string> = {
@@ -33,6 +36,7 @@ export default function FarmDetailPage() {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
   const [farm, setFarm] = useState<Farm | null>(null);
+  const [activeTab, setActiveTab] = useState<'animals' | 'herds' | 'details' | 'members'>('animals');
 
   const farmId = params.id as string;
   
@@ -50,6 +54,7 @@ export default function FarmDetailPage() {
   useEffect(() => {
     const invitation = searchParams.get('invitation');
     const email = searchParams.get('email');
+    const tab = searchParams.get('tab');
     
     if (invitation === 'success' && email) {
       addNotification({
@@ -63,6 +68,10 @@ export default function FarmDetailPage() {
       url.searchParams.delete('invitation');
       url.searchParams.delete('email');
       router.replace(url.pathname + url.search);
+    }
+
+    if (tab === 'animals' || tab === 'details' || tab === 'herds' || tab === 'members') {
+      setActiveTab(tab);
     }
   }, [searchParams, router, addNotification]);
 
@@ -178,7 +187,7 @@ export default function FarmDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
             {farm && (
               <span
                 className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(farm.is_active)}`}
@@ -212,92 +221,134 @@ export default function FarmDetailPage() {
         )}
       </div>
 
-      {/* Farm Information */}
-      {farm && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Farm Type</span>
-              <span className="text-gray-900 dark:text-white">{farmTypeLabels[farm.farm_type] || farm.farm_type || 'Unknown'}</span>
-            </div>
-            
-            <div>
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size</span>
-              <span className="text-gray-900 dark:text-white">{formatSize(farm.size_acres, farm.size_hectares)}</span>
-            </div>
-            
-            <div>
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</span>
-              <span
-                className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}
-              >
-                {farm.is_active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Location Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location Information</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</span>
-              <span className="text-gray-900 dark:text-white">{farm.location_address || 'N/A'}</span>
-            </div>
-            
-            {(farm.location_latitude && farm.location_longitude) && (
-              <div>
-                <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Coordinates</span>
-                <span className="text-gray-900 dark:text-white">
-                  {farm.location_latitude}, {farm.location_longitude}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* Herds Section */}
+      {/* Tabs */}
       <div className="mt-6">
-        <HerdList farmId={farmId} />
-      </div>
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex gap-6" aria-label="Tabs">
+            <button
+              type="button"
+              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
+                activeTab === 'animals'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              onClick={() => setActiveTab('animals')}
+              data-testid="tab-animals"
+            >
+              Animals
+            </button>
+            <button
+              type="button"
+              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
+                activeTab === 'herds'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              onClick={() => setActiveTab('herds')}
+              data-testid="tab-herds"
+            >
+              Herds
+            </button>
+            <button
+              type="button"
+              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
+                activeTab === 'details'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              onClick={() => setActiveTab('details')}
+              data-testid="tab-details"
+            >
+              Details
+            </button>
+            <button
+              type="button"
+              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
+                activeTab === 'members'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              onClick={() => setActiveTab('members')}
+              data-testid="tab-members"
+            >
+              Members
+            </button>
+          </nav>
+        </div>
 
-      {/* Farm Members */}
-      {isOwner && (
         <div className="mt-6">
-          <FarmMembersList
-            farmId={farmId}
-            isOwner={isOwner}
-            onInviteMember={() => {}}
-          />
-        </div>
-      )}
+          {activeTab === 'animals' && (
+            <AnimalsTable farmId={farmId} />
+          )}
 
-      {/* Additional Information */}
-      {farm && (
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Created</span>
-            <span className="text-gray-900 dark:text-white">{formatDate(farm.created_at)}</span>
-          </div>
-          
-          <div>
-            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</span>
-            <span className="text-gray-900 dark:text-white">{formatDate(farm.updated_at)}</span>
-          </div>
+          {activeTab === 'details' && farm && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Farm Type</span>
+                      <span className="text-gray-900 dark:text-white">{farmTypeLabels[farm.farm_type] || farm.farm_type || 'Unknown'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size</span>
+                      <span className="text-gray-900 dark:text-white">{formatSize(farm.size_acres, farm.size_hectares)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</span>
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}>
+                        {farm.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location Information */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location Information</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</span>
+                      <span className="text-gray-900 dark:text-white">{farm.location_address || 'N/A'}</span>
+                    </div>
+                    {(farm.location_latitude && farm.location_longitude) && (
+                      <div>
+                        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Coordinates</span>
+                        <span className="text-gray-900 dark:text-white">{farm.location_latitude}, {farm.location_longitude}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Created</span>
+                    <span className="text-gray-900 dark:text-white">{formatDate(farm.created_at)}</span>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</span>
+                    <span className="text-gray-900 dark:text-white">{formatDate(farm.updated_at)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'herds' && (
+            <HerdsTable farmId={farmId} />
+          )}
+
+          {activeTab === 'members' && isOwner && (
+            <MembersTable farmId={farmId} isOwner={isOwner} />
+          )}
         </div>
       </div>
-      )}
 
       {/* Back Button */}
       <div className="mt-6">

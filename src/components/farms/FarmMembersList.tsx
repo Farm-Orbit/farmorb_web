@@ -78,15 +78,12 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
   };
 
   const getMemberContact = (member: FarmMemberResponse) => {
-    if (member.email && member.phone) {
-      return `${member.email} • ${member.phone}`;
-    }
-    if (member.email) {
-      return member.email;
-    }
-    if (member.phone) {
-      return member.phone;
-    }
+    const display = getMemberDisplayName(member);
+    const showEmail = member.email && display !== member.email; // avoid showing email twice
+    const showPhone = Boolean(member.phone);
+    if (showEmail && showPhone) return `${member.email} • ${member.phone}`;
+    if (showEmail) return member.email as string;
+    if (showPhone) return member.phone as string;
     return 'No contact info';
   };
 
@@ -97,12 +94,6 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
   if (loading) {
     return (
       <Card data-testid="farm-members-section">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GroupIcon className="h-5 w-5" />
-            Farm Members
-          </CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <div className="text-gray-500 dark:text-gray-400">Loading members...</div>
@@ -115,12 +106,6 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
   if (error) {
     return (
       <Card data-testid="farm-members-section">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GroupIcon className="h-5 w-5" />
-            Farm Members
-          </CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="text-center py-8">
             <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
@@ -135,12 +120,8 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
 
   return (
     <Card data-testid="farm-members-section">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <GroupIcon className="h-5 w-5" />
-            Farm Members ({members.length})
-          </CardTitle>
+      <CardContent>
+        <div className="flex items-center justify-end mb-4">
           {isOwner && (
             <Button onClick={() => router.push(`/farms/${farmId}/invite`)} size="sm" className="flex items-center gap-2" data-testid="invite-member-button">
               <PlusIcon className="h-4 w-4" />
@@ -148,8 +129,6 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
             </Button>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
         {members.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <GroupIcon className="h-12 w-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
@@ -159,39 +138,37 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {members.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                className="grid grid-cols-[1fr_auto] items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 data-testid={`farm-member-${member.id}`}
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                        {getMemberDisplayName(member).charAt(0).toUpperCase()}
-                      </span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 dark:text-blue-400 font-medium text-xs">
+                      {getMemberDisplayName(member).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                      {getMemberDisplayName(member)}
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {getMemberDisplayName(member)}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {getMemberContact(member)}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge
-                          variant={member.role === 'owner' ? 'solid' : 'light'}
-                          color={member.role === 'owner' ? 'primary' : 'info'}
-                          size="sm"
-                        >
-                          {FARM_ROLES[member.role as keyof typeof FARM_ROLES] || member.role}
-                        </Badge>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">
-                          Joined {formatDate(member.joined_at)}
-                        </span>
-                      </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      {getMemberContact(member)}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge
+                        variant={member.role === 'owner' ? 'solid' : 'light'}
+                        color={member.role === 'owner' ? 'primary' : 'info'}
+                        size="sm"
+                      >
+                        {FARM_ROLES[member.role as keyof typeof FARM_ROLES] || member.role}
+                      </Badge>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        Joined {formatDate(member.joined_at)}
+                      </span>
                     </div>
                   </div>
                 </div>

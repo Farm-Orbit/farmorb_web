@@ -24,6 +24,12 @@ export const FarmMemberService = {
     return response.data;
   },
 
+  // Update farm member role
+  updateFarmMember: async (farmId: string, memberId: string, data: { role: string }): Promise<FarmMemberResponse> => {
+    const response = await apiClient.patch<{success: boolean, data: FarmMemberResponse}>(`/farms/${farmId}/members/${memberId}`, data);
+    return response.data.data;
+  },
+
   // Invite member to farm
   inviteMember: async (farmId: string, data: InviteMemberRequest): Promise<FarmInvitationResponse> => {
     const response = await apiClient.post<InviteMemberResponse>(`/farms/${farmId}/invite`, data);
