@@ -17,18 +17,6 @@ const initialState: AnimalState = {
 };
 
 // Async thunks
-export const fetchHerdAnimals = createAsyncThunk(
-  'animals/fetchHerdAnimals',
-  async ({ farmId, herdId }: { farmId: string; herdId: string }, { rejectWithValue }) => {
-    try {
-      const animals = await AnimalService.getHerdAnimals(farmId, herdId);
-      return animals;
-    } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to fetch animals');
-    }
-  }
-);
-
 export const fetchAnimalById = createAsyncThunk(
   'animals/fetchAnimalById',
   async ({ farmId, animalId }: { farmId: string; animalId: string }, { rejectWithValue }) => {
@@ -43,9 +31,9 @@ export const fetchAnimalById = createAsyncThunk(
 
 export const createAnimal = createAsyncThunk(
   'animals/createAnimal',
-  async ({ farmId, herdId, data }: { farmId: string; herdId: string; data: CreateAnimalData }, { rejectWithValue }) => {
+  async ({ farmId, data }: { farmId: string; data: CreateAnimalData }, { rejectWithValue }) => {
     try {
-      const animal = await AnimalService.createAnimal(farmId, herdId, data);
+      const animal = await AnimalService.createAnimal(farmId, data);
       return animal;
     } catch (error: any) {
       return rejectWithValue(error.error || 'Failed to create animal');
@@ -55,7 +43,7 @@ export const createAnimal = createAsyncThunk(
 
 export const updateAnimal = createAsyncThunk(
   'animals/updateAnimal',
-  async ({ farmId, animalId, data }: { farmId: string; animalId: string; data: Partial<CreateAnimalData & { status?: string; herd_id?: string }> }, { rejectWithValue }) => {
+  async ({ farmId, animalId, data }: { farmId: string; animalId: string; data: Partial<CreateAnimalData & { status?: string }> }, { rejectWithValue }) => {
     try {
       const animal = await AnimalService.updateAnimal(farmId, animalId, data);
       return animal;
@@ -93,19 +81,6 @@ const animalSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch herd animals
-      .addCase(fetchHerdAnimals.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchHerdAnimals.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.animals = action.payload;
-      })
-      .addCase(fetchHerdAnimals.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
       // Fetch animal by ID
       .addCase(fetchAnimalById.pending, (state) => {
         state.isLoading = true;

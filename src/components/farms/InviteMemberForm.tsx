@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { InviteMemberRequest } from '../../types/farmMember';
-import { FarmMemberService } from '../../services/farmMemberService';
+import { useFarmMembers } from '@/hooks/useFarmMembers';
 import Button from '../ui/button/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card/Card';
 import { Input } from '../ui/input/Input';
@@ -23,6 +23,7 @@ export const InviteMemberForm: React.FC<InviteMemberFormProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { inviteMember } = useFarmMembers();
   const [formData, setFormData] = useState<InviteMemberRequest>({
     email: '',
     phone: '',
@@ -76,7 +77,7 @@ export const InviteMemberForm: React.FC<InviteMemberFormProps> = ({
         phone: formData.phone?.trim() || undefined,
       };
 
-      await FarmMemberService.inviteMember(farmId, cleanData);
+      await inviteMember(farmId, cleanData);
       
       // Reset form
       setFormData({
@@ -89,7 +90,7 @@ export const InviteMemberForm: React.FC<InviteMemberFormProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Failed to invite member:', err);
-      setError(err.error || 'Failed to send invitation');
+      setError(err?.message || 'Failed to send invitation');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,5 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-    fetchHerdAnimals,
     fetchAnimalById,
     createAnimal,
     updateAnimal,
@@ -16,13 +15,6 @@ export const useAnimals = () => {
     const dispatch = useAppDispatch();
     const { animals, currentAnimal, isLoading, error } = useAppSelector((state) => state.animals);
 
-    const getHerdAnimals = useCallback(
-        (farmId: string, herdId: string) => {
-            dispatch(fetchHerdAnimals({ farmId, herdId }));
-        },
-        [dispatch]
-    );
-
     const getAnimalById = useCallback(
         (farmId: string, animalId: string) => {
             dispatch(fetchAnimalById({ farmId, animalId }));
@@ -31,14 +23,14 @@ export const useAnimals = () => {
     );
 
     const addAnimal = useCallback(
-        (farmId: string, herdId: string, animalData: CreateAnimalData) => {
-            return dispatch(createAnimal({ farmId, herdId, data: animalData })).unwrap();
+        (farmId: string, animalData: CreateAnimalData) => {
+            return dispatch(createAnimal({ farmId, data: animalData })).unwrap();
         },
         [dispatch]
     );
 
     const editAnimal = useCallback(
-        (farmId: string, animalId: string, data: Partial<CreateAnimalData & { status?: string; herd_id?: string }>) => {
+        (farmId: string, animalId: string, data: Partial<CreateAnimalData & { status?: string; group_id?: string }>) => {
             return dispatch(updateAnimal({ farmId, animalId, data })).unwrap();
         },
         [dispatch]
@@ -71,9 +63,9 @@ export const useAnimals = () => {
         currentAnimal,
         isLoading,
         error,
-        getHerdAnimals,
         getAnimalById,
         addAnimal,
+        createAnimal: addAnimal,
         editAnimal,
         removeAnimal,
         clearError,

@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
 import { type MRT_ColumnDef } from 'material-react-table';
 import { FarmInvitationResponse, INVITATION_STATUSES } from '@/types/farmMember';
-import { FarmMemberService } from '@/services/farmMemberService';
+import { useFarmMembers } from '@/hooks/useFarmMembers';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotificationContext } from '@/providers/NotificationProvider';
 import Button from '@/components/ui/button/Button';
@@ -14,40 +14,20 @@ interface InvitationsTableProps {}
 export default function InvitationsTable({}: InvitationsTableProps) {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
-  const [invitations, setInvitations] = useState<FarmInvitationResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { invitations, isLoading, error, getMyInvitations, acceptInvitation, declineInvitation } = useFarmMembers();
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const loadInvitations = async () => {
-    if (!user?.email) {
-      setError('User email not available');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      const invitationsData = await FarmMemberService.getUserInvitations(user.email);
-      setInvitations(invitationsData);
-    } catch (err: any) {
-      console.error('Failed to load invitations:', err);
-      setError(err.error || 'Failed to load invitations');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadInvitations();
-  }, [user?.email]);
+    if (user?.email) {
+      getMyInvitations(user.email);
+    }
+  }, [user?.email, getMyInvitations]);
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
       setProcessingInvitation(invitationId);
-      await FarmMemberService.acceptInvitation(invitationId);
+      await acceptInvitation(invitationId);
       
       addNotification({
         type: 'success',
@@ -55,13 +35,15 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         message: 'You have successfully joined the farm. You can now access it from the farms page.'
       });
       
-      await loadInvitations();
+      if (user?.email) {
+        await getMyInvitations(user.email);
+      }
     } catch (err: any) {
       console.error('Failed to accept invitation:', err);
       addNotification({
         type: 'error',
         title: 'Failed to Accept Invitation',
-        message: err.error || 'Failed to accept invitation. Please try again.'
+        message: err?.message || 'Failed to accept invitation. Please try again.'
       });
     } finally {
       setProcessingInvitation(null);
@@ -75,7 +57,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
 
     try {
       setProcessingInvitation(invitationId);
-      await FarmMemberService.declineInvitation(invitationId);
+      await declineInvitation(invitationId);
       
       addNotification({
         type: 'info',
@@ -83,13 +65,15 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         message: 'You have declined the farm invitation.'
       });
       
-      await loadInvitations();
+      if (user?.email) {
+        await getMyInvitations(user.email);
+      }
     } catch (err: any) {
       console.error('Failed to decline invitation:', err);
       addNotification({
         type: 'error',
         title: 'Failed to Decline Invitation',
-        message: err.error || 'Failed to decline invitation. Please try again.'
+        message: err?.message || 'Failed to decline invitation. Please try again.'
       });
     } finally {
       setProcessingInvitation(null);
@@ -250,7 +234,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button
-            onClick={loadInvitations}
+            onClick={() => user?.email && getMyInvitations(user.email)}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
           >
             Try Again

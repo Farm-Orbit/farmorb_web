@@ -5,15 +5,15 @@ import { Modal } from '@/components/ui/modal';
 import Button from '@/components/ui/button/Button';
 import Label from '@/components/form/Label';
 import Input from '@/components/form/input/InputField';
+import { useAnimals } from '@/hooks/useAnimals';
+
 interface CreateAnimalModalProps {
-  isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
   farmId: string;
-  herdId: string;
 }
 
-export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, herdId }: CreateAnimalModalProps) {
+export default function CreateAnimalModal({ onClose, farmId }: CreateAnimalModalProps) {
+  const { createAnimal } = useAnimals();
   const [formData, setFormData] = useState({
     tag_id: '',
     name: '',
@@ -25,6 +25,7 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
     tracking_type: 'individual',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -42,7 +43,7 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) {
@@ -51,8 +52,8 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
 
     const submitData = {
       tag_id: formData.tag_id,
-      sex: formData.sex,
-      tracking_type: formData.tracking_type,
+      sex: formData.sex as 'male' | 'female',
+      tracking_type: formData.tracking_type as 'individual' | 'batch',
       ...(formData.name && { name: formData.name }),
       ...(formData.breed && { breed: formData.breed }),
       ...(formData.birth_date && { birth_date: formData.birth_date }),
@@ -60,19 +61,27 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
       ...(formData.markings && { markings: formData.markings }),
     };
 
-    onSubmit(submitData);
-    // Reset form
-    setFormData({
-      tag_id: '',
-      name: '',
-      breed: '',
-      sex: 'male',
-      birth_date: '',
-      color: '',
-      markings: '',
-      tracking_type: 'individual',
-    });
-    setErrors({});
+    try {
+      setIsSubmitting(true);
+      await createAnimal(farmId, submitData);
+      // Reset form and close modal on success
+      setFormData({
+        tag_id: '',
+        name: '',
+        breed: '',
+        sex: 'male',
+        birth_date: '',
+        color: '',
+        markings: '',
+        tracking_type: 'individual',
+      });
+      setErrors({});
+      onClose();
+    } catch (error: any) {
+      setErrors({ submit: error.error || 'Failed to create animal' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -91,10 +100,16 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} className="max-w-[584px] p-5 lg:p-10 max-h-[90vh] overflow-y-auto">
+    <Modal isOpen={true} onClose={handleClose} className="max-w-[584px] p-5 lg:p-10 max-h-[90vh] overflow-y-auto">
       <h4 className="mb-6 text-lg font-medium text-gray-800 dark:text-white/90">
         Add New Animal
       </h4>
+
+      {errors.submit && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-5">
@@ -207,6 +222,7 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
             size="sm" 
             variant="outline" 
             onClick={handleClose}
+            disabled={isSubmitting}
             data-testid="cancel-animal-button"
           >
             Cancel
@@ -214,9 +230,10 @@ export default function CreateAnimalModal({ isOpen, onClose, onSubmit, farmId, h
           <Button 
             size="sm" 
             type="submit"
+            disabled={isSubmitting}
             data-testid="create-animal-submit-button"
           >
-            Add Animal
+            {isSubmitting ? 'Adding...' : 'Add Animal'}
           </Button>
         </div>
       </form>

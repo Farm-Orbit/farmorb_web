@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { FarmMemberResponse, FARM_ROLES } from '../../types/farmMember';
-import { FarmMemberService } from '../../services/farmMemberService';
-import Button from '../ui/button/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card/Card';
-import Badge from '../ui/badge/Badge';
-import { TrashBinIcon, PlusIcon, GroupIcon } from '../../icons';
+import { useFarmMembers } from '@/hooks/useFarmMembers';
 import { formatDate } from '@/utils/dateUtils';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { GroupIcon, PlusIcon, TrashBinIcon } from '../../icons';
+import { FARM_ROLES, FarmMemberResponse } from '../../types/farmMember';
+import Badge from '../ui/badge/Badge';
+import Button from '../ui/button/Button';
+import { Card, CardContent } from '../ui/card/Card';
 
 interface FarmMembersListProps {
   farmId: string;
@@ -22,26 +22,14 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
   onInviteMember,
 }) => {
   const router = useRouter();
-  
-  const [members, setMembers] = useState<FarmMemberResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { members, isLoading: loading, error, getFarmMembers, deleteMember } = useFarmMembers();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
 
-
-  const loadMembers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const membersData = await FarmMemberService.getFarmMembers(farmId);
-      setMembers(membersData);
-    } catch (err: any) {
-      console.error('Failed to load farm members:', err);
-      setError(err.error || 'Failed to load farm members');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (farmId) {
+      getFarmMembers(farmId);
     }
-  };
+  }, [farmId, getFarmMembers]);
 
   const handleRemoveMember = async (member: FarmMemberResponse) => {
     if (!window.confirm('Are you sure you want to remove this member from the farm?')) {
@@ -50,12 +38,11 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
 
     try {
       setRemovingMember(member.id);
-      // Use user_id instead of farm member id - this is what the backend expects
-      await FarmMemberService.removeFarmMember(farmId, member.user_id);
-      await loadMembers(); // Reload the list
+      await deleteMember(farmId, member.user_id);
+      await getFarmMembers(farmId);
     } catch (err: any) {
       console.error('Failed to remove member:', err);
-      alert(err.error || 'Failed to remove member');
+      alert(err?.message || 'Failed to remove member');
     } finally {
       setRemovingMember(null);
     }
@@ -87,10 +74,6 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
     return 'No contact info';
   };
 
-  useEffect(() => {
-    loadMembers();
-  }, [farmId]);
-
   if (loading) {
     return (
       <Card data-testid="farm-members-section">
@@ -109,7 +92,7 @@ export const FarmMembersList: React.FC<FarmMembersListProps> = ({
         <CardContent>
           <div className="text-center py-8">
             <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
-            <Button onClick={loadMembers} variant="outline">
+            <Button onClick={() => getFarmMembers(farmId)} variant="outline">
               Try Again
             </Button>
           </div>

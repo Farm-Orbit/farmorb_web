@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
 import { type MRT_ColumnDef } from 'material-react-table';
 import { FarmMemberResponse, FARM_ROLES } from '@/types/farmMember';
-import { FarmMemberService } from '@/services/farmMemberService';
+import { useFarmMembers } from '@/hooks/useFarmMembers';
 import Button from '@/components/ui/button/Button';
 
 interface MembersTableProps {
@@ -15,33 +15,17 @@ interface MembersTableProps {
 
 export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
   const router = useRouter();
-  const [members, setMembers] = useState<FarmMemberResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { members, isLoading, error, getFarmMembers, updateMemberRole, deleteMember } = useFarmMembers();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string>('all');
   const [editingMember, setEditingMember] = useState<FarmMemberResponse | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
-  const loadMembers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const membersData = await FarmMemberService.getFarmMembers(farmId);
-      setMembers(membersData);
-    } catch (err: any) {
-      console.error('Failed to load farm members:', err);
-      setError(err.error || 'Failed to load farm members');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (farmId) {
-      loadMembers();
+      getFarmMembers(farmId);
     }
-  }, [farmId]);
+  }, [farmId, getFarmMembers]);
 
   const handleRemoveMember = async (member: FarmMemberResponse) => {
     if (!window.confirm('Are you sure you want to remove this member from the farm?')) {
@@ -50,11 +34,11 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
 
     try {
       setRemovingMember(member.id);
-      await FarmMemberService.removeFarmMember(farmId, member.user_id);
-      await loadMembers();
+      await deleteMember(farmId, member.user_id);
+      await getFarmMembers(farmId);
     } catch (err: any) {
       console.error('Failed to remove member:', err);
-      alert(err.error || 'Failed to remove member');
+      alert(err?.message || 'Failed to remove member');
     } finally {
       setRemovingMember(null);
     }
@@ -68,12 +52,12 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
 
     try {
       setUpdatingRole(member.id);
-      await FarmMemberService.updateFarmMember(farmId, member.user_id, { role: newRole });
-      await loadMembers();
+      await updateMemberRole(farmId, member.user_id, newRole);
+      await getFarmMembers(farmId);
       setEditingMember(null);
     } catch (err: any) {
       console.error('Failed to update member role:', err);
-      alert(err.error || 'Failed to update member role');
+      alert(err?.message || 'Failed to update member role');
     } finally {
       setUpdatingRole(null);
     }
@@ -256,7 +240,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button
-            onClick={loadMembers}
+            onClick={() => getFarmMembers(farmId)}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
           >
             Try Again
@@ -264,8 +248,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
         </div>
       )}
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Team Members</h2>
+      <div className="flex justify-end items-center">
         {isOwner && (
           <Button
             onClick={() => router.push(`/farms/${farmId}/invite`)}

@@ -45,9 +45,8 @@ describe('Farm Members Feature', () => {
     // Navigate to Members tab
     cy.get('[data-testid="tab-members"]').click();
 
-    // Check that farm members section is visible (owner should see it)
-    cy.contains('Team Members').should('be.visible');
-    cy.contains('Invite Member').should('be.visible');
+    // Check that the invite member button is visible (owner should see it)
+    cy.get('[data-testid="invite-member-button"]').should('be.visible');
 
     // Check that the farm owner is present in the members list
     cy.contains('Owner').should('be.visible');
@@ -65,9 +64,8 @@ describe('Farm Members Feature', () => {
     // Navigate to Members tab
     cy.get('[data-testid="tab-members"]').click();
 
-    // Check that farm members section is visible (owner should see it)
-    cy.contains('Team Members').should('be.visible');
-    cy.contains('Invite Member').should('be.visible');
+    // Check that the invite member button is visible (owner should see it)
+    cy.get('[data-testid="invite-member-button"]').should('be.visible');
     
     // Check that the farm owner is present in the members list
     cy.contains('Owner').should('be.visible');
@@ -105,7 +103,7 @@ describe('Farm Members Feature', () => {
     
     // Navigate to Members tab to verify
     cy.get('[data-testid="tab-members"]').click();
-    cy.contains('Team Members').should('be.visible');
+    cy.get('[data-testid="invite-member-button"]').should('be.visible');
 
     // Store the farm URL for later use
     cy.url().then((farmUrl) => {
@@ -175,8 +173,8 @@ describe('Farm Members Feature', () => {
     // Navigate to Members tab to see the farm members section
     cy.get('[data-testid="tab-members"]').click();
     
-    // Verify the members table is visible
-    cy.contains('Team Members').should('be.visible');
+    // Wait for the members table to load
+    cy.wait(2000);
     
     // Verify there are exactly 2 members in the table
     cy.get('tbody tr').should('have.length', 2);

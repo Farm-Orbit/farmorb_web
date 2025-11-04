@@ -1,50 +1,61 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
 import { type MRT_ColumnDef } from 'material-react-table';
-import { Herd } from '@/types/herd';
-import { useHerds } from '@/hooks/useHerds';
+import { Group } from '@/types/group';
 import Button from '@/components/ui/button/Button';
-import CreateHerdModal from './CreateHerdModal';
-import EditHerdModal from './EditHerdModal';
+import CreateGroupModal from './CreateGroupModal';
+import EditGroupModal from './EditGroupModal';
+import { GroupService } from '@/services/groupService';
 
-interface HerdsTableProps {
+interface GroupsTableProps {
   farmId: string;
 }
 
-export default function HerdsTable({ farmId }: HerdsTableProps) {
-  const router = useRouter();
-  const { herds, isLoading, error, getFarmHerds, removeHerd } = useHerds();
+export default function GroupsTable({ farmId }: GroupsTableProps) {
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingHerd, setEditingHerd] = useState<Herd | null>(null);
-  const [filterSpecies, setFilterSpecies] = useState<string>('all');
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [animalCounts, setAnimalCounts] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    if (farmId) {
-      getFarmHerds(farmId);
+  const loadGroups = async () => {
+    if (!farmId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await GroupService.getFarmGroups(farmId);
+      setGroups(data);
+    } catch (err: any) {
+      console.error('Failed to load groups:', err);
+      setError(err.error || err.message || 'Failed to load groups');
+    } finally {
+      setIsLoading(false);
     }
-  }, [farmId, getFarmHerds]);
+  };
 
-  // Load animal counts for each herd
+  useEffect(() => {
+    loadGroups();
+  }, [farmId]);
+
+  // Load animal counts for each group
   useEffect(() => {
     const loadAnimalCounts = async () => {
-      if (!herds || herds.length === 0) return;
+      if (!groups || groups.length === 0) return;
 
       try {
-        const { AnimalService } = await import('@/services/animalService');
-        
-        const countPromises = herds.map(herd =>
-          AnimalService.getHerdAnimals(farmId, herd.id)
-            .then(animals => ({ herdId: herd.id, count: animals?.length || 0 }))
-            .catch(() => ({ herdId: herd.id, count: 0 }))
+        const countPromises = groups.map(group =>
+          GroupService.getGroupAnimals(group.id)
+            .then(animals => ({ groupId: group.id, count: animals?.length || 0 }))
+            .catch(() => ({ groupId: group.id, count: 0 }))
         );
 
         const results = await Promise.all(countPromises);
-        const counts = results.reduce((acc, { herdId, count }) => {
-          acc[herdId] = count;
+        const counts = results.reduce((acc, { groupId, count }) => {
+          acc[groupId] = count;
           return acc;
         }, {} as Record<string, number>);
 
@@ -55,20 +66,29 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
     };
 
     loadAnimalCounts();
-  }, [herds, farmId]);
+  }, [groups]);
 
-  const handleDeleteHerd = async (herdId: string) => {
-    if (window.confirm('Are you sure you want to delete this herd?')) {
-      await removeHerd(herdId);
+  const handleDeleteGroup = async (groupId: string) => {
+    if (window.confirm('Are you sure you want to delete this group?')) {
+      try {
+        await GroupService.deleteGroup(farmId, groupId);
+        await loadGroups();
+      } catch (err: any) {
+        console.error('Failed to delete group:', err);
+        setError(err.error || err.message || 'Failed to delete group');
+      }
     }
   };
 
-  // Filter herds based on species
-  const filteredHerds = useMemo(() => {
-    if (!herds) return [];
-    if (filterSpecies === 'all') return herds;
-    return herds.filter(herd => herd.species_type === filterSpecies);
-  }, [herds, filterSpecies]);
+  const handleCreateSuccess = () => {
+    setShowCreateModal(false);
+    loadGroups();
+  };
+
+  const handleEditSuccess = () => {
+    setEditingGroup(null);
+    loadGroups();
+  };
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'N/A';
@@ -80,28 +100,25 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
   };
 
   // Define columns
-  const columns = useMemo<MRT_ColumnDef<Herd>[]>(
+  const columns = useMemo<MRT_ColumnDef<Group>[]>(
     () => [
       {
         accessorKey: 'name',
-        header: 'Herd Name',
+        header: 'Group Name',
         size: 200,
         Cell: ({ row }) => (
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {row.original.name}
-          </span>
+          <div className="flex items-center gap-2">
+            {row.original.color && (
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: row.original.color }}
+              />
+            )}
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {row.original.name}
+            </span>
+          </div>
         ),
-      },
-      {
-        accessorKey: 'species_type',
-        header: 'Species',
-        size: 130,
-        Cell: ({ cell }) => (
-          <span className="text-sm text-gray-900 dark:text-white capitalize">
-            {cell.getValue<string>()}
-          </span>
-        ),
-        filterVariant: 'select',
       },
       {
         accessorKey: 'purpose',
@@ -114,9 +131,9 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
         ),
       },
       {
-        accessorKey: 'location',
-        header: 'Location',
-        size: 150,
+        accessorKey: 'description',
+        header: 'Description',
+        size: 200,
         Cell: ({ cell }) => (
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {cell.getValue<string>() || '-'}
@@ -154,13 +171,13 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
         Cell: ({ row }) => (
           <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setEditingHerd(row.original)}
+              onClick={() => setEditingGroup(row.original)}
               className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
               Edit
             </button>
             <button
-              onClick={() => handleDeleteHerd(row.original.id)}
+              onClick={() => handleDeleteGroup(row.original.id)}
               className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
             >
               Delete
@@ -169,7 +186,7 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
         ),
       },
     ],
-    [animalCounts]
+    [animalCounts, farmId]
   );
 
   return (
@@ -180,62 +197,46 @@ export default function HerdsTable({ farmId }: HerdsTableProps) {
         </div>
       )}
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Herds</h2>
+      <div className="flex justify-end items-center">
         <Button
           onClick={() => setShowCreateModal(true)}
           size="sm"
-          data-testid="create-herd-button"
+          data-testid="create-group-button"
         >
-          Add Herd
+          Add Group
         </Button>
       </div>
 
-      {!isLoading && (!herds || herds.length === 0) ? (
+      {!isLoading && (!groups || groups.length === 0) ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No herds found</h3>
+          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No groups found</h3>
           <p className="text-gray-500 dark:text-gray-500 mt-2">
-            Get started by creating your first herd
+            Get started by creating your first group
           </p>
         </div>
       ) : (
         <CustomMaterialTable
           columns={columns}
-          data={filteredHerds}
+          data={groups}
           isLoading={isLoading}
           getRowId={(row) => row.id}
           enableRowSelection={false}
-          renderTopToolbarCustomActions={() => (
-            <div className="flex gap-2 items-center">
-              <select
-                value={filterSpecies}
-                onChange={(e) => setFilterSpecies(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="all">All Species</option>
-                <option value="cattle">Cattle</option>
-                <option value="sheep">Sheep</option>
-                <option value="goat">Goat</option>
-                <option value="pig">Pig</option>
-                <option value="chicken">Chicken</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          )}
         />
       )}
 
       {showCreateModal && (
-        <CreateHerdModal
+        <CreateGroupModal
           farmId={farmId}
           onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateSuccess}
         />
       )}
 
-      {editingHerd && (
-        <EditHerdModal
-          herd={editingHerd}
-          onClose={() => setEditingHerd(null)}
+      {editingGroup && (
+        <EditGroupModal
+          group={editingGroup}
+          onClose={() => setEditingGroup(null)}
+          onSuccess={handleEditSuccess}
         />
       )}
     </div>

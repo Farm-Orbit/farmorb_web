@@ -1,6 +1,6 @@
 export interface Animal {
   id: string;
-  herd_id: string;
+  farm_id: string;
   tag_id: string;
   name?: string | null;
   breed?: string | null;
@@ -31,7 +31,6 @@ export interface CreateAnimalData {
 
 export interface UpdateAnimalData extends Partial<CreateAnimalData> {
   id: string;
-  herd_id?: string; // For moving animals between herds
   status?: 'active' | 'sold' | 'deceased' | 'culled';
 }
 

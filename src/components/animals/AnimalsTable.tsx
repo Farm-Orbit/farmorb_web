@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
 import { type MRT_ColumnDef } from 'material-react-table';
 import { Animal } from '@/types/animal';
-import { useAnimals } from '@/hooks/useAnimals';
-import { useHerds } from '@/hooks/useHerds';
+import { AnimalService } from '@/services/animalService';
+import CreateAnimalModal from './CreateAnimalModal';
+import Button from '@/components/ui/button/Button';
 
 interface AnimalsTableProps {
   farmId: string;
@@ -36,68 +37,38 @@ const getStatusColor = (status: string) => {
 
 export default function AnimalsTable({ farmId }: AnimalsTableProps) {
   const router = useRouter();
-  const { herds, getFarmHerds } = useHerds();
-  const [allAnimals, setAllAnimals] = useState<Animal[]>([]);
+  const [animals, setAnimals] = useState<Animal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Load all herds for the farm
-  useEffect(() => {
-    if (farmId) {
-      getFarmHerds(farmId);
+  // Load all animals for the farm
+  const loadAnimals = async () => {
+    if (!farmId) return;
+
+    setIsLoading(true);
+    try {
+      const data = await AnimalService.getFarmAnimals(farmId);
+      setAnimals(data || []);
+    } catch (error) {
+      console.error('Failed to load animals:', error);
+      setAnimals([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [farmId, getFarmHerds]);
+  };
 
-  // Load animals from all herds
   useEffect(() => {
-    const loadAllAnimals = async () => {
-      if (!herds || herds.length === 0) {
-        setAllAnimals([]);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        // Import animalService dynamically to avoid circular dependencies
-        const { AnimalService } = await import('@/services/animalService');
-        
-        // Fetch animals from all herds
-        const animalPromises = herds.map(herd => 
-          AnimalService.getHerdAnimals(farmId, herd.id).then(animals => ({
-            animals: animals || [],
-            herdId: herd.id,
-            herdName: herd.name,
-          }))
-        );
-
-        const results = await Promise.all(animalPromises);
-        
-        // Flatten all animals and add herd info
-        const animals = results.flatMap(result => 
-          result.animals.map(animal => ({
-            ...animal,
-            herdName: result.herdName,
-          }))
-        );
-
-        setAllAnimals(animals);
-      } catch (error) {
-        console.error('Failed to load animals:', error);
-        setAllAnimals([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAllAnimals();
-  }, [herds, farmId]);
+    loadAnimals();
+  }, [farmId]);
 
   // Filter animals based on status
   const filteredAnimals = useMemo(() => {
-    if (filterStatus === 'all') return allAnimals;
-    return allAnimals.filter(animal => animal.status === filterStatus);
-  }, [allAnimals, filterStatus]);
+    if (filterStatus === 'all') {
+      return animals;
+    }
+    return animals.filter(animal => animal.status === filterStatus);
+  }, [animals, filterStatus]);
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'N/A';
@@ -109,7 +80,7 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
   };
 
   // Define columns
-  const columns = useMemo<MRT_ColumnDef<Animal & { herdName?: string }>[]>(
+  const columns = useMemo<MRT_ColumnDef<Animal>[]>(
     () => [
       {
         accessorKey: 'tag_id',
@@ -128,16 +99,6 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
         Cell: ({ cell }) => (
           <span className="text-sm text-gray-900 dark:text-white">
             {cell.getValue<string>() || '-'}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'herdName',
-        header: 'Herd',
-        size: 150,
-        Cell: ({ cell }) => (
-          <span className="text-sm text-gray-900 dark:text-white">
-            {cell.getValue<string>() || 'Unknown'}
           </span>
         ),
       },
@@ -193,34 +154,58 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Showing all animals across all herds in this farm
-        </p>
+      <div className="flex justify-end items-center">
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          size="sm"
+          data-testid="create-animal-button"
+        >
+          Add Animal
+        </Button>
       </div>
 
-      <CustomMaterialTable
-        columns={columns}
-        data={filteredAnimals}
-        isLoading={isLoading}
-        getRowId={(row) => row.id}
-        enableRowSelection={false}
-        renderTopToolbarCustomActions={() => (
-          <div className="flex gap-2 items-center">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="sold">Sold</option>
-              <option value="deceased">Deceased</option>
-              <option value="culled">Culled</option>
-            </select>
-          </div>
-        )}
-      />
+      {!isLoading && (!animals || animals.length === 0) ? (
+        <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No animals found</h3>
+          <p className="text-gray-500 dark:text-gray-500 mt-2">
+            Get started by adding your first animal
+          </p>
+        </div>
+      ) : (
+        <CustomMaterialTable
+          columns={columns}
+          data={filteredAnimals}
+          isLoading={isLoading}
+          getRowId={(row) => row.id}
+          enableRowSelection={false}
+          renderTopToolbarCustomActions={() => (
+            <div className="flex gap-2 items-center">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="sold">Sold</option>
+                <option value="deceased">Deceased</option>
+                <option value="culled">Culled</option>
+              </select>
+            </div>
+          )}
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateAnimalModal
+          farmId={farmId}
+          onClose={() => {
+            setShowCreateModal(false);
+            // Reload animals after creating
+            loadAnimals();
+          }}
+        />
+      )}
     </div>
   );
 }

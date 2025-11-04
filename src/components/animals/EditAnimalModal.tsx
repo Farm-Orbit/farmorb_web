@@ -6,7 +6,6 @@ import Button from '@/components/ui/button/Button';
 import Label from '@/components/form/Label';
 import Input from '@/components/form/input/InputField';
 import { Animal } from '@/types/animal';
-import { useHerds } from '@/hooks/useHerds';
 
 interface EditAnimalModalProps {
   isOpen: boolean;
@@ -17,7 +16,6 @@ interface EditAnimalModalProps {
 }
 
 export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, farmId }: EditAnimalModalProps) {
-  const { herds } = useHerds();
   const [formData, setFormData] = useState({
     tag_id: animal.tag_id,
     name: animal.name || '',
@@ -28,7 +26,6 @@ export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, far
     markings: animal.markings || '',
     tracking_type: animal.tracking_type,
     status: animal.status,
-    herd_id: animal.herd_id,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -43,17 +40,8 @@ export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, far
       markings: animal.markings || '',
       tracking_type: animal.tracking_type,
       status: animal.status,
-      herd_id: animal.herd_id,
     });
   }, [animal]);
-
-  // Load herds for the farm
-  useEffect(() => {
-    if (farmId && isOpen) {
-      // Herds will be loaded by the parent component
-      // This component receives herds from the useHerds hook
-    }
-  }, [farmId, isOpen]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -90,11 +78,6 @@ export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, far
       ...(formData.markings && { markings: formData.markings }),
     };
 
-    // Include herd_id if it's different from the original
-    if (formData.herd_id !== animal.herd_id) {
-      submitData.herd_id = formData.herd_id;
-    }
-
     onSubmit(submitData);
   };
 
@@ -109,7 +92,6 @@ export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, far
       markings: animal.markings || '',
       tracking_type: animal.tracking_type,
       status: animal.status,
-      herd_id: animal.herd_id,
     });
     setErrors({});
     onClose();
@@ -242,24 +224,6 @@ export default function EditAnimalModal({ isOpen, onClose, onSubmit, animal, far
             </select>
           </div>
 
-          {/* Move to Different Herd */}
-          {herds && herds.length > 1 && (
-            <div>
-              <Label>Move to Herd (Optional)</Label>
-              <select
-                value={formData.herd_id}
-                onChange={(e) => handleInputChange('herd_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                data-testid="edit-animal-herd-select"
-              >
-                {herds.map((herd) => (
-                  <option key={herd.id} value={herd.id}>
-                    {herd.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center justify-end w-full gap-3 mt-6">
