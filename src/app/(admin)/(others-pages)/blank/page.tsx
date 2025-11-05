@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Blank Page | FarmOrbit - Next.js Dashboard Template",
-  description: "This is Next.js Blank Page FarmOrbit Dashboard Template",
+  title: "Blank Page | FarmOrbit - Farm Management Platform",
+  description: "Blank page template in FarmOrbit",
 };
 
 export default function BlankPage() {

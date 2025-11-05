@@ -6,9 +6,9 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "User Profile | FarmOrb - Farm Management System",
+  title: "Profile | FarmOrbit - Farm Management Platform",
   description:
-    "Manage your profile information, password, and email settings in FarmOrb",
+    "Manage your profile information, password, and email settings in FarmOrbit",
 };
 
 export default function Profile() {

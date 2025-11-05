@@ -8,10 +8,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Modals | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Modals page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
-  // other metadata
+  title: "Modals | FarmOrbit - Farm Management Platform",
+  description: "View modal component examples and usage in FarmOrbit",
 };
 
 export default function Modals() {

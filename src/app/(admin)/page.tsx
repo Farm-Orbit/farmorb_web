@@ -8,9 +8,8 @@ import StatisticsChart from "@/components/ecommerce/StatisticsChart";
 import DemographicCard from "@/components/ecommerce/DemographicCard";
 
 export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | FarmOrbit - Next.js Dashboard Template",
-  description: "This is Next.js Home for FarmOrbit Dashboard Template",
+  title: "Dashboard | FarmOrbit - Farm Management Platform",
+  description: "Manage your farms, livestock, and operations with FarmOrbit",
 };
 
 export default function Ecommerce() {

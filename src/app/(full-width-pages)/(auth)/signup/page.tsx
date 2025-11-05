@@ -2,9 +2,8 @@ import SignUpForm from "@/components/auth/SignUpForm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Next.js SignUp Page | FarmOrbit - Next.js Dashboard Template",
-  description: "This is Next.js SignUp Page FarmOrbit Dashboard Template",
-  // other metadata
+  title: "Sign Up | FarmOrbit - Farm Management Platform",
+  description: "Create a new FarmOrbit account to start managing your farms and livestock",
 };
 
 export default function SignUp() {

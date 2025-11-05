@@ -5,9 +5,8 @@ import Link from "next/link";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Error 404 | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Error 404 page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Page Not Found | FarmOrbit - Farm Management Platform",
+  description: "The page you're looking for doesn't exist on FarmOrbit",
 };
 
 export default function Error404() {

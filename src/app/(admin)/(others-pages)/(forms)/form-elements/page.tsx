@@ -13,9 +13,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Form Elements | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Form Elements page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Form Elements | FarmOrbit - Farm Management Platform",
+  description: "View form element components and examples in FarmOrbit",
 };
 
 export default function FormElements() {

@@ -5,9 +5,8 @@ import { Metadata } from "next";
 import React, { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Bar Chart | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Bar Chart page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Bar Chart | FarmOrbit - Farm Management Platform",
+  description: "View farm data and statistics with bar charts in FarmOrbit",
 };
 
 export default function page() {

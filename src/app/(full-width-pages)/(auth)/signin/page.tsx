@@ -3,8 +3,8 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js SignIn Page | FarmOrbit - Next.js Dashboard Template",
-  description: "This is Next.js Signin Page FarmOrbit Dashboard Template",
+  title: "Sign In | FarmOrbit - Farm Management Platform",
+  description: "Sign in to your FarmOrbit account to manage your farms and livestock",
 };
 
 export default function SignIn() {

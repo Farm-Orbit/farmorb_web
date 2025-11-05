@@ -5,9 +5,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Avatars | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Avatars page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Avatars | FarmOrbit - Farm Management Platform",
+  description: "View avatar component examples and usage in FarmOrbit",
 };
 
 export default function AvatarPage() {

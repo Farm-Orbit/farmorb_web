@@ -7,10 +7,8 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Images | FarmOrbit - Next.js Dashboard Template",
-  description:
-    "This is Next.js Images page for FarmOrbit - Next.js Tailwind CSS Admin Dashboard Template",
-  // other metadata
+  title: "Images | FarmOrbit - Farm Management Platform",
+  description: "View image component examples and usage in FarmOrbit",
 };
 
 export default function Images() {
