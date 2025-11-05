@@ -12,6 +12,9 @@ A reusable Material React Table wrapper with built-in dark mode support and cons
 - ✅ Click handlers for rows
 - ✅ Custom toolbar actions
 - ✅ Fully typed with TypeScript
+- ✅ **Responsive mobile card view** - Automatically switches to card layout on small screens
+- ✅ **Mobile-optimized pagination** - Custom pagination controls for mobile view
+- ✅ **Accessible cards** - Keyboard navigation and ARIA labels
 
 ## Basic Usage
 
@@ -73,6 +76,8 @@ const MyComponent = () => {
 | `getRowId` | `(row: TData) => string` | `undefined` | Custom row ID function |
 | `initialPageSize` | `number` | `10` | Initial page size |
 | `additionalTableOptions` | `Partial<MRT_TableOptions<TData>>` | `{}` | Additional MRT options |
+| `mobileBreakpoint` | `string` | `'(max-width:768px)'` | Media query breakpoint for mobile view |
+| `mobilePrimaryColumns` | `string[]` | `undefined` | Column keys to highlight as title/subtitle on mobile cards (defaults to first 2 columns) |
 
 ## Advanced Usage
 
@@ -145,6 +150,28 @@ const columns = useMemo<MRT_ColumnDef<Farm>[]>(
   }}
 />
 ```
+
+### With Mobile Configuration
+
+```tsx
+<CustomMaterialTable
+  columns={columns}
+  data={data}
+  enableRowSelection
+  enablePagination
+  initialPageSize={5}
+  mobileBreakpoint="(max-width: 768px)"
+  mobilePrimaryColumns={['name', 'email']}
+  onRowClick={(row) => console.log('clicked', row)}
+/>
+```
+
+The component automatically switches to a card-based layout on mobile devices. Cards display:
+- Primary columns (first 2 by default, or specified via `mobilePrimaryColumns`) as title/subtitle
+- Remaining columns in a stacked key-value format
+- Selection checkboxes (if `enableRowSelection` is true)
+- Full pagination support
+- Same search and filter functionality as the table view
 
 ## Styling
 

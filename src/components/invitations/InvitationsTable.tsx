@@ -232,7 +232,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
     <div className="space-y-4" data-testid="invitations-page">
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           <button
             onClick={() => user?.email && getMyInvitations(user.email)}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
@@ -243,13 +243,13 @@ export default function InvitationsTable({}: InvitationsTableProps) {
       )}
 
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Farm Invitations</h2>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Farm Invitations</h1>
       </div>
 
       {!isLoading && invitations.length === 0 ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No invitations found</h3>
-          <p className="text-gray-500 dark:text-gray-500 mt-2">
+          <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No invitations found</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
             You don't have any pending farm invitations at the moment.
           </p>
         </div>

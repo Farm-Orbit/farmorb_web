@@ -83,7 +83,7 @@ export default function InviteMemberPage() {
           </Button>
           <div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Invite Member</h1>
-            <p className="text-gray-600 dark:text-gray-400">Send an invitation to join this farm</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Send an invitation to join this farm</p>
           </div>
         </div>
 

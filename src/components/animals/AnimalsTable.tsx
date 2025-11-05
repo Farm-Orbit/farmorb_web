@@ -50,8 +50,20 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
     try {
       const data = await AnimalService.getFarmAnimals(farmId);
       setAnimals(data || []);
-    } catch (error) {
-      console.error('Failed to load animals:', error);
+    } catch (error: any) {
+      // Log detailed error information for debugging
+      const errorMessage = error?.error || error?.message || error?.details?.message || 'Failed to load animals';
+      const statusCode = error?.statusCode || error?.response?.status;
+      
+      console.error('Failed to load animals:', {
+        message: errorMessage,
+        statusCode,
+        error: error?.error,
+        details: error?.details || error?.response?.data,
+        farmId,
+        fullError: error,
+      });
+      
       setAnimals([]);
     } finally {
       setIsLoading(false);
@@ -166,8 +178,8 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
 
       {!isLoading && (!animals || animals.length === 0) ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No animals found</h3>
-          <p className="text-gray-500 dark:text-gray-500 mt-2">
+          <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No animals found</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
             Get started by adding your first animal
           </p>
         </div>

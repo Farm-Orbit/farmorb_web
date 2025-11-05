@@ -41,21 +41,27 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     initializeAuth();
   }, [isAuthenticated, user, fetchCurrentUser]);
 
+  // Redirect to signin if not authenticated (useEffect to avoid render-time side effects)
+  useEffect(() => {
+    if (isInitialized && !isLoading && !isAuthenticated) {
+      router.push(redirectTo);
+    }
+  }, [isInitialized, isLoading, isAuthenticated, redirectTo, router]);
+
   // Show loading state while checking authentication
   if (isLoading || !isInitialized) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Redirect to signin if not authenticated
+  // Return null if not authenticated (redirect will happen in useEffect)
   if (!isAuthenticated) {
-    router.push(redirectTo);
     return null;
   }
 

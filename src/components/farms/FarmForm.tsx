@@ -128,10 +128,10 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
   return (
     <div className="w-full p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           {farm ? 'Edit Farm' : 'Create New Farm'}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
           {farm ? 'Update your farm information' : 'Add a new farm to your portfolio'}
         </p>
       </div>
@@ -155,7 +155,7 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
 
         {/* Basic Information */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
           
           <div>
             <Label>
@@ -201,7 +201,7 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
 
         {/* Location Information */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location Information</h3>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location Information</h2>
           
           <div>
             <Label>Location Address</Label>
@@ -249,7 +249,7 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
 
         {/* Size Information */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Size Information</h3>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Size Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

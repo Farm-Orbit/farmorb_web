@@ -126,7 +126,7 @@ export default function FarmList({}: FarmListProps) {
     <div className="space-y-4" data-testid="farms-page">
              {/* Header */}
              <div className="flex justify-between items-center mb-4">
-               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Farms</h2>
+               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Farms</h1>
         <Button 
           onClick={() => router.push('/farms/create')} 
           data-testid="create-farm-button"
@@ -138,15 +138,15 @@ export default function FarmList({}: FarmListProps) {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800 mb-4">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {/* Material React Table */}
       {!isLoading && (!farms || farms.length === 0) ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg text-gray-600 dark:text-gray-400 font-medium">No farms found</h3>
-          <p className="text-gray-500 dark:text-gray-500 mt-2">
+          <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No farms found</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
             Get started by creating your first farm
           </p>
         </div>

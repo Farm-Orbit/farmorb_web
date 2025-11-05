@@ -174,6 +174,9 @@ Cypress.Commands.add('waitForApi', (method: string, url: string) => {
 
 // Custom command to sign up a new user
 Cypress.Commands.add('signup', (email: string, password: string) => {
+    // Intercept the signup API call
+    cy.intercept('POST', '**/auth/register').as('signupRequest');
+    
     cy.visit('/signup');
     cy.get('h1').should('contain', 'Sign Up');
 
@@ -184,9 +187,27 @@ Cypress.Commands.add('signup', (email: string, password: string) => {
 
     cy.get('[data-testid="signup-submit-button"]').click();
 
-    // Wait for signup to complete and redirect to home
-    cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
-    cy.get('[data-testid="home-page"]').should('be.visible');
+    // Wait for the API call to complete
+    cy.wait('@signupRequest', { timeout: 15000 }).then((interception) => {
+        // Check if signup was successful (status 200 or 201)
+        if (interception.response && (interception.response.statusCode === 200 || interception.response.statusCode === 201)) {
+            cy.log('Signup successful');
+        } else {
+            cy.log('Signup may have failed, checking for errors');
+            // Check for error messages on the page
+            cy.get('body').then(($body) => {
+                if ($body.find('[data-testid="error-message"]').length > 0) {
+                    cy.get('[data-testid="error-message"]').then(($error) => {
+                        throw new Error(`Signup failed: ${$error.text()}`);
+                    });
+                }
+            });
+        }
+    });
+
+    // Wait for redirect to home page (successful signup)
+    cy.url({ timeout: 15000 }).should('eq', Cypress.config().baseUrl + '/');
+    cy.get('[data-testid="home-page"]', { timeout: 10000 }).should('be.visible');
 });
 
 // Custom command to sign in with credentials

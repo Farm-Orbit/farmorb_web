@@ -222,6 +222,59 @@ alwaysApply: true
 - **Token management**: Properly set and clear tokens between different user contexts
 - **Error expectation**: Test both success cases and expected failure cases (security boundaries)
 
+## Typography System
+
+### Font Family
+- **Primary Font**: Outfit (sans-serif) - applied globally via `font-outfit`
+- Always use Tailwind text size utilities, never inline styles
+
+### Typography Scale
+
+#### Headings
+- **Page Titles (H1)**: `text-xl font-semibold text-gray-900 dark:text-white`
+- **Section Headers (H2)**: `text-lg font-semibold text-gray-900 dark:text-white`
+- **Subsection Headers (H3)**: `text-lg font-medium text-gray-900 dark:text-white` or `text-base font-medium text-gray-900 dark:text-white`
+
+#### Body Text
+- **Primary Body Text**: `text-sm text-gray-900 dark:text-white`
+- **Secondary Body Text**: `text-sm text-gray-600 dark:text-gray-400`
+- **Tertiary Body Text**: `text-sm text-gray-500 dark:text-gray-500`
+
+#### Labels
+- **Form Labels**: `text-sm font-medium text-gray-700 dark:text-gray-300`
+- **Field Labels**: `text-sm font-medium text-gray-700 dark:text-gray-300`
+
+#### UI Elements
+- **Buttons**: `text-sm font-medium` (handled by Button component)
+- **Badges/Tags**: `text-xs font-medium` with context-dependent colors
+- **Small Text/Captions**: `text-xs text-gray-400 dark:text-gray-500`
+
+#### Empty States
+- **Empty State Title**: `text-lg font-medium text-gray-600 dark:text-gray-400`
+- **Empty State Description**: `text-sm text-gray-500 dark:text-gray-500`
+
+#### Error Messages
+- **Error Text**: `text-sm text-red-600 dark:text-red-400`
+
+### Typography Rules
+- **DO**: Use `text-sm` (14px) for most body text and UI elements
+- **DO**: Use `text-xl` (20px) for page titles
+- **DO**: Use `text-lg` (18px) for section headers
+- **DO**: Use `text-xs` (12px) for badges and small text
+- **DO**: Always include dark mode color variants
+- **DO**: Use semantic font weights (normal, medium, semibold)
+- **DON'T**: Use `text-base` (16px) for body text - use `text-sm` instead
+- **DON'T**: Use `text-2xl`, `text-3xl`, `text-4xl` for UI text (reserved for marketing/hero sections)
+- **DON'T**: Use `font-bold` or `font-extrabold` (use `font-semibold` instead)
+- **DON'T**: Use `font-light` or `font-thin`
+- **DON'T**: Skip dark mode color variants
+- **DON'T**: Use inline styles for font sizes
+
+### Table Typography
+- **Table Headers**: Handled by CustomMaterialTable (text-sm font-semibold)
+- **Table Cells (Primary)**: `text-sm font-medium text-gray-900 dark:text-white`
+- **Table Cells (Secondary)**: `text-sm text-gray-600 dark:text-gray-400`
+
 ## Dark Mode Theme Format
 
 ### UI Component Design Rules

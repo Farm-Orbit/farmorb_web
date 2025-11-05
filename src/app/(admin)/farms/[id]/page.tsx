@@ -125,7 +125,7 @@ export default function FarmDetailPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading farm details...</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Loading farm details...</p>
         </div>
       </div>
     );
@@ -140,8 +140,8 @@ export default function FarmDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Farm</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Farm</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <Button onClick={() => router.push('/farms')}>
             Back to Farms
           </Button>
@@ -154,8 +154,8 @@ export default function FarmDetailPage() {
     return (
       <div className="w-full p-6">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Farm Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Farm Not Found</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             The farm you're looking for doesn't exist or you don't have permission to view it.
           </p>
           <Button onClick={() => router.push('/farms')}>
@@ -170,8 +170,8 @@ export default function FarmDetailPage() {
     return (
       <div className="w-full p-6">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Farm...</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Farm...</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Please wait while we load the farm details.
           </p>
         </div>
@@ -194,7 +194,7 @@ export default function FarmDetailPage() {
               </span>
             )}
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {farm?.description || 'No description provided'}
           </p>
         </div>
@@ -288,15 +288,15 @@ export default function FarmDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Farm Type</span>
-                      <span className="text-gray-900 dark:text-white">{farmTypeLabels[farm.farm_type] || farm.farm_type || 'Unknown'}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{farmTypeLabels[farm.farm_type] || farm.farm_type || 'Unknown'}</span>
                     </div>
                     <div>
                       <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size</span>
-                      <span className="text-gray-900 dark:text-white">{formatSize(farm.size_acres, farm.size_hectares)}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{formatSize(farm.size_acres, farm.size_hectares)}</span>
                     </div>
                     <div>
                       <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</span>
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}>
+                      <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}>
                         {farm.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
@@ -309,12 +309,12 @@ export default function FarmDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</span>
-                      <span className="text-gray-900 dark:text-white">{farm.location_address || 'N/A'}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{farm.location_address || 'N/A'}</span>
                     </div>
                     {(farm.location_latitude && farm.location_longitude) && (
                       <div>
                         <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Coordinates</span>
-                        <span className="text-gray-900 dark:text-white">{farm.location_latitude}, {farm.location_longitude}</span>
+                        <span className="text-sm text-gray-900 dark:text-white">{farm.location_latitude}, {farm.location_longitude}</span>
                       </div>
                     )}
                   </div>
@@ -324,14 +324,14 @@ export default function FarmDetailPage() {
               {/* Additional Information */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Created</span>
-                    <span className="text-gray-900 dark:text-white">{formatDate(farm.created_at)}</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{formatDate(farm.created_at)}</span>
                   </div>
                   <div>
                     <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</span>
-                    <span className="text-gray-900 dark:text-white">{formatDate(farm.updated_at)}</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{formatDate(farm.updated_at)}</span>
                   </div>
                 </div>
               </div>
