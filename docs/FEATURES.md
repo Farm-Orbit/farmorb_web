@@ -1,7 +1,7 @@
-# Farmorb Features Implementation Status
+# FarmOrbit Features Implementation Status
 
 ## 🎯 Overview
-This document tracks the implementation status of all features across the Farmorb platform, including both backend API and frontend UI components.
+This document tracks the implementation status of all features across the FarmOrbit platform, including both backend API and frontend UI components.
 
 ---
 
@@ -89,26 +89,28 @@ This document tracks the implementation status of all features across the Farmor
 ## 🐄 Livestock Management
 
 ### Backend Status: ✅ **COMPLETE**
-- [x] Create Herd (`/api/farms/{id}/herds` - POST)
-- [x] Get Farm Herds (`/api/farms/{id}/herds` - GET)
-- [x] Get Herd Details (`/api/farms/{id}/herds/{herd_id}` - GET)
-- [x] Update Herd (`/api/farms/{id}/herds/{herd_id}` - PUT)
-- [x] Delete Herd (`/api/farms/{id}/herds/{herd_id}` - DELETE)
-- [x] Create Animal (`/api/farms/{id}/herds/{herd_id}/animals` - POST)
-- [x] Get Herd Animals (`/api/farms/{id}/herds/{herd_id}/animals` - GET)
+- [x] Create Group (`/api/farms/{id}/groups` - POST)
+- [x] Get Farm Groups (`/api/farms/{id}/groups` - GET)
+- [x] Get Group Details (`/api/farms/{id}/groups/{group_id}` - GET)
+- [x] Update Group (`/api/farms/{id}/groups/{group_id}` - PUT)
+- [x] Delete Group (`/api/farms/{id}/groups/{group_id}` - DELETE)
+- [x] Create Animal (`/api/farms/{id}/animals` - POST)
+- [x] Get Farm Animals (`/api/farms/{id}/animals` - GET)
 - [x] Get Animal Details (`/api/farms/{id}/animals/{animal_id}` - GET)
 - [x] Update Animal (`/api/farms/{id}/animals/{animal_id}` - PUT)
 - [x] Delete Animal (`/api/farms/{id}/animals/{animal_id}` - DELETE)
 
-### Frontend Status: ❌ **NOT IMPLEMENTED**
-- [ ] Herd List Page
-- [ ] Create Herd Page
-- [ ] Herd Detail Page
-- [ ] Edit Herd Page
-- [ ] Animal List Page
-- [ ] Create Animal Page
-- [ ] Animal Detail Page
-- [ ] Edit Animal Page
+### Frontend Status: ✅ **PARTIALLY COMPLETE**
+- [x] Groups Table (displayed on farm detail page)
+- [x] Create Group Modal
+- [x] Edit Group Modal
+- [x] Delete Group functionality
+- [x] Animals Table (displayed on farm detail page)
+- [x] Create Animal Modal
+- [x] Edit Animal Modal
+- [x] Delete Animal functionality
+- [ ] Group Detail Page (full page view)
+- [ ] Animal Detail Page (full page view)
 
 ---
 
@@ -168,25 +170,23 @@ This document tracks the implementation status of all features across the Farmor
 
 ## 🚀 **NEXT PRIORITIES - LIVESTOCK MANAGEMENT**
 
-### **Phase 1: Herd Management (HIGH PRIORITY)** ⚠️ **BACKEND READY, FRONTEND MISSING**
-1. **Herd List Page** - View all herds within a farm
-2. **Create Herd** - Add new herds to farms
-3. **Herd Detail Page** - View herd information and statistics
-4. **Edit Herd** - Update herd details (name, purpose, location)
-5. **Delete Herd** - Remove herds from farms
+### **Phase 1: Group Management Enhancements (MEDIUM PRIORITY)**
+1. **Group Detail Page** - Dedicated page view for group information and statistics
+2. **Group Analytics** - View group performance metrics and statistics
+3. **Group Members** - Detailed member management within groups
 
-### **Phase 2: Animal Management (HIGH PRIORITY)** ⚠️ **BACKEND READY, FRONTEND MISSING**
-6. **Animal List Page** - View all animals within a herd
-7. **Create Animal** - Add individual animals to herds
-8. **Animal Detail Page** - View complete animal information
-9. **Edit Animal** - Update animal details (tag, breed, status)
-10. **Delete Animal** - Remove animals from herds
+### **Phase 2: Animal Management Enhancements (MEDIUM PRIORITY)**
+4. **Animal Detail Page** - Dedicated page view for complete animal information
+5. **Animal Health Records** - Track vaccinations, treatments, and veterinary visits
+6. **Animal Breeding Records** - Monitor breeding cycles and offspring
+7. **Animal History** - Complete timeline of animal events and movements
 
 ### **Phase 3: Enhanced Features (MEDIUM PRIORITY)**
-11. **Search & Filter** - Find herds and animals quickly
-12. **Bulk Operations** - Manage multiple animals at once
-13. **Import/Export** - CSV import and export functionality
-14. **Data Visualization** - Charts and graphs for livestock data
+8. **Search & Filter** - Advanced search and filtering for groups and animals
+9. **Bulk Operations** - Manage multiple animals at once
+10. **Import/Export** - CSV import and export functionality
+11. **Data Visualization** - Charts and graphs for livestock data
+12. **Health Monitoring** - Health alerts and reminders
 
 ### **Phase 4: Optional Features (LOW PRIORITY)**
 15. **Password Management** - Forgot/reset password flows (backend ready)
@@ -204,12 +204,12 @@ This document tracks the implementation status of all features across the Farmor
 | Authentication | ✅ Complete | ✅ Complete | 100% |
 | Farm Management | ✅ Complete | ✅ Complete | 100% |
 | Invitations | ✅ Complete | ✅ Complete | 100% |
-| **Livestock Management** | ✅ Complete | ❌ Not Implemented | **50%** |
+| **Livestock Management** | ✅ Complete | ✅ Partially Complete | **75%** |
 | Notifications | ✅ Complete | ✅ Complete | 100% |
 | Testing | ✅ Complete | ✅ Complete | 100% |
 | UI/UX | N/A | ✅ Complete | 100% |
 
-**Overall Progress: 82% Complete (28/34 major features implemented)**
+**Overall Progress: 85% Complete (30/34 major features implemented)**
 
 ---
 

@@ -1,25 +1,25 @@
 import { apiClient } from './api';
-import { Animal, CreateAnimalData, UpdateAnimalData, AnimalListResponse } from '@/types/animal';
+import { ApiResponse } from '@/types/api';
+import { Animal, CreateAnimalData, UpdateAnimalData } from '@/types/animal';
+import { ListOptions, PaginatedList } from '@/types/list';
+import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
 
 export const AnimalService = {
     // Get all animals for a farm
-    getFarmAnimals: async (farmId: string): Promise<Animal[]> => {
+    getFarmAnimals: async (farmId: string, params?: ListOptions): Promise<PaginatedList<Animal>> => {
         try {
-            const response = await apiClient.get<any>(`/farms/${farmId}/animals`);
-            // Handle response structure: { success, message, data: [animals array] }
-            if (response.data.success && response.data.data) {
-                return response.data.data;
-            }
-            // If success is false or no data, return empty array
-            console.warn('getFarmAnimals: Unexpected response structure', response.data);
-            return [];
+            const searchParams = createListSearchParams(params);
+            const queryString = searchParams.toString();
+            const url = queryString ? `/farms/${farmId}/animals?${queryString}` : `/farms/${farmId}/animals`;
+
+            const { data } = await apiClient.get<ApiResponse<PaginatedList<Animal>> | PaginatedList<Animal>>(url);
+            const payload = 'data' in data && data.data ? data.data : data;
+
+            return normalizePaginatedResponse<Animal>(payload, params);
         } catch (error: any) {
-            // The API interceptor transforms errors into ApiError format
-            // Extract error information from the transformed error
             const errorMessage = error?.error || error?.message || error?.response?.data?.message || 'Failed to load animals';
             const statusCode = error?.statusCode || error?.response?.status;
             
-            // Create a properly structured error object
             const apiError = new Error(errorMessage);
             (apiError as any).error = error?.error || errorMessage;
             (apiError as any).message = errorMessage;

@@ -1,20 +1,31 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { FarmState, Farm, CreateFarmData, UpdateFarmData } from '@/types/farm';
 import { FarmService } from '@/services/farmService';
+import type { ListOptions, PaginatedList } from '@/types/list';
 
 const initialState: FarmState = {
     farms: [],
+    page: 1,
+    pageSize: 0,
+    total: 0,
+    sortBy: undefined,
+    sortOrder: undefined,
+    filters: undefined,
     currentFarm: null,
     isLoading: false,
     error: null,
 };
 
 // Async Thunks
-export const fetchFarms = createAsyncThunk(
+export const fetchFarms = createAsyncThunk<
+    PaginatedList<Farm>,
+    ListOptions | undefined,
+    { rejectValue: string }
+>(
     'farms/fetchFarms',
-    async (_, { rejectWithValue }) => {
+    async (params, { rejectWithValue }) => {
         try {
-            const response = await FarmService.getFarms();
+            const response = await FarmService.getFarms(params);
             return response;
         } catch (error: any) {
             return rejectWithValue(error.error || error.message || 'Failed to fetch farms');
@@ -90,7 +101,14 @@ const farmSlice = createSlice({
             })
             .addCase(fetchFarms.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.farms = action.payload.farms || [];
+                state.farms = action.payload.items ?? [];
+                state.page = action.payload.page ?? 1;
+                state.pageSize = action.payload.pageSize ?? state.farms.length;
+                state.total = action.payload.total ?? state.farms.length;
+                const params = action.meta.arg;
+                state.sortBy = params?.sortBy;
+                state.sortOrder = params?.sortOrder;
+                state.filters = params?.filters;
             })
             .addCase(fetchFarms.rejected, (state, action) => {
                 state.isLoading = false;
@@ -115,13 +133,10 @@ const farmSlice = createSlice({
                 state.isLoading = true;
                 state.error = null;
             })
-            .addCase(createFarm.fulfilled, (state, action) => {
+            .addCase(createFarm.fulfilled, (state, action: PayloadAction<Farm>) => {
                 state.isLoading = false;
-                if (state.farms) {
-                    state.farms.push(action.payload); // Add new farm to the list
-                } else {
-                    state.farms = [action.payload];
-                }
+                state.farms = [action.payload, ...state.farms];
+                state.total += 1;
             })
             .addCase(createFarm.rejected, (state, action) => {
                 state.isLoading = false;
@@ -132,13 +147,11 @@ const farmSlice = createSlice({
                 state.isLoading = true;
                 state.error = null;
             })
-            .addCase(updateFarm.fulfilled, (state, action) => {
+            .addCase(updateFarm.fulfilled, (state, action: PayloadAction<Farm>) => {
                 state.isLoading = false;
-                if (state.farms) {
-                    const index = state.farms.findIndex((f) => f.id === action.payload.id);
-                    if (index !== -1) {
-                        state.farms[index] = action.payload;
-                    }
+                const index = state.farms.findIndex((f) => f.id === action.payload.id);
+                if (index !== -1) {
+                    state.farms[index] = action.payload;
                 }
                 if (state.currentFarm?.id === action.payload.id) {
                     state.currentFarm = action.payload;
@@ -153,11 +166,10 @@ const farmSlice = createSlice({
                 state.isLoading = true;
                 state.error = null;
             })
-            .addCase(deleteFarm.fulfilled, (state, action) => {
+            .addCase(deleteFarm.fulfilled, (state, action: PayloadAction<string>) => {
                 state.isLoading = false;
-                if (state.farms) {
-                    state.farms = state.farms.filter((farm) => farm.id !== action.payload);
-                }
+                state.farms = state.farms.filter((farm) => farm.id !== action.payload);
+                state.total = Math.max(0, state.total - 1);
                 if (state.currentFarm?.id === action.payload) {
                     state.currentFarm = null;
                 }

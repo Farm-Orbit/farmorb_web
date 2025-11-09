@@ -6,6 +6,7 @@ import { useFarms } from '@/hooks/useFarms';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotificationContext } from '@/providers/NotificationProvider';
 import { Farm } from '@/types/farm';
+import { FarmActivity } from '@/components/farms';
 import GroupsTable from '@/components/groups/GroupsTable';
 import AnimalsTable from '@/components/animals/AnimalsTable';
 import MembersTable from '@/components/farms/MembersTable';
@@ -34,7 +35,7 @@ export default function FarmDetailPage() {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
   const [farm, setFarm] = useState<Farm | null>(null);
-  const [activeTab, setActiveTab] = useState<'animals' | 'groups' | 'details' | 'members'>('animals');
+  const [activeTab, setActiveTab] = useState<'animals' | 'groups' | 'details' | 'members' | 'activity'>('animals');
 
   const farmId = params.id as string;
   
@@ -68,7 +69,7 @@ export default function FarmDetailPage() {
       router.replace(url.pathname + url.search);
     }
 
-    if (tab === 'animals' || tab === 'details' || tab === 'groups' || tab === 'members') {
+    if (tab === 'animals' || tab === 'details' || tab === 'groups' || tab === 'members' || tab === 'activity') {
       setActiveTab(tab);
     }
   }, [searchParams, router, addNotification]);
@@ -271,6 +272,18 @@ export default function FarmDetailPage() {
             >
               Members
             </button>
+            <button
+              type="button"
+              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
+                activeTab === 'activity'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              onClick={() => setActiveTab('activity')}
+              data-testid="tab-activity"
+            >
+              Activity
+            </button>
           </nav>
         </div>
 
@@ -339,11 +352,15 @@ export default function FarmDetailPage() {
           )}
 
           {activeTab === 'groups' && (
-            <GroupsTable farmId={farmId} />
+            <GroupsTable farmId={farmId} isOwner={isOwner} />
           )}
 
           {activeTab === 'members' && isOwner && (
             <MembersTable farmId={farmId} isOwner={isOwner} />
+          )}
+
+          {activeTab === 'activity' && (
+            <FarmActivity farmId={farmId} />
           )}
         </div>
       </div>

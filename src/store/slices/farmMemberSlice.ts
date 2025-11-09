@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { FarmMemberService } from '@/services/farmMemberService';
 import { FarmMemberResponse, InviteMemberRequest, FarmInvitationResponse } from '@/types/farmMember';
+import { ListOptions, PaginatedList } from '@/types/list';
 
 interface FarmMemberState {
   members: FarmMemberResponse[];
@@ -17,11 +18,15 @@ const initialState: FarmMemberState = {
 };
 
 // Async thunks
-export const fetchFarmMembers = createAsyncThunk(
+export const fetchFarmMembers = createAsyncThunk<
+  PaginatedList<FarmMemberResponse>,
+  { farmId: string; params?: ListOptions },
+  { rejectValue: string }
+>(
   'farmMembers/fetchFarmMembers',
-  async (farmId: string, { rejectWithValue }) => {
+  async ({ farmId, params }, { rejectWithValue }) => {
     try {
-      const members = await FarmMemberService.getFarmMembers(farmId);
+      const members = await FarmMemberService.getFarmMembers(farmId, params);
       return members;
     } catch (error: any) {
       return rejectWithValue(error.error || 'Failed to fetch farm members');
@@ -65,11 +70,15 @@ export const removeFarmMember = createAsyncThunk(
   }
 );
 
-export const fetchMyInvitations = createAsyncThunk(
+export const fetchMyInvitations = createAsyncThunk<
+  PaginatedList<FarmInvitationResponse>,
+  (ListOptions & { email?: string; phone?: string }) | undefined,
+  { rejectValue: string }
+>(
   'farmMembers/fetchMyInvitations',
-  async ({ email, phone }: { email?: string; phone?: string } = {}, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const invitations = await FarmMemberService.getUserInvitations(email, phone);
+      const invitations = await FarmMemberService.getUserInvitations(params);
       return invitations;
     } catch (error: any) {
       return rejectWithValue(error.error || 'Failed to fetch invitations');
@@ -107,9 +116,9 @@ const farmMemberSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     });
-    builder.addCase(fetchFarmMembers.fulfilled, (state, action: PayloadAction<FarmMemberResponse[]>) => {
+    builder.addCase(fetchFarmMembers.fulfilled, (state, action) => {
       state.isLoading = false;
-      state.members = action.payload;
+      state.members = action.payload.items ?? [];
     });
     builder.addCase(fetchFarmMembers.rejected, (state, action) => {
       state.isLoading = false;
@@ -159,9 +168,9 @@ const farmMemberSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     });
-    builder.addCase(fetchMyInvitations.fulfilled, (state, action: PayloadAction<FarmInvitationResponse[]>) => {
+    builder.addCase(fetchMyInvitations.fulfilled, (state, action) => {
       state.isLoading = false;
-      state.invitations = action.payload;
+      state.invitations = action.payload.items ?? [];
     });
     builder.addCase(fetchMyInvitations.rejected, (state, action) => {
       state.isLoading = false;

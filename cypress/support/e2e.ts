@@ -21,13 +21,22 @@ import './commands';
 
 // Hide fetch/XHR requests from command log
 Cypress.on('window:before:load', (win) => {
-    // Disable service workers
-    if (win.navigator && win.navigator.serviceWorker) {
-        win.navigator.serviceWorker.getRegistrations().then((registrations) => {
-            registrations.forEach((registration) => {
-                registration.unregister();
-            });
-        });
+    try {
+        const serviceWorker = win.navigator?.serviceWorker;
+        if (serviceWorker?.getRegistrations) {
+            serviceWorker
+                .getRegistrations()
+                .then((registrations) => {
+                    registrations.forEach((registration) => {
+                        registration.unregister();
+                    });
+                })
+                .catch(() => {
+                    // ignore failures when service workers cannot be queried (e.g. invalid controller state)
+                });
+        }
+    } catch (error) {
+        // ignore errors that occur while attempting to disable service workers
     }
 });
 

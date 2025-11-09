@@ -1,30 +1,28 @@
 "use client";
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { useModal } from "../../hooks/useModal";
 import { useNotificationContext } from "../../providers/NotificationProvider";
 import { AuthService } from "../../services/authService";
 import { UpdateEmailRequest } from "../../types/auth";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Button from "../ui/button/Button";
-import { Modal } from "../ui/modal";
 
 export default function UserEmailCard() {
-  const { isOpen, openModal, closeModal } = useModal();
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [formError, setFormError] = useState<string>('');
   const [formData, setFormData] = useState({
     new_email: '',
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const handleCloseModal = () => {
+  const resetForm = () => {
     setFormError('');
     setErrors({});
-    closeModal();
+    setFormData({ new_email: '' });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,10 +80,7 @@ export default function UserEmailCard() {
 
       await AuthService.updateEmail(emailData);
       
-      // Reset form
-      setFormData({
-        new_email: '',
-      });
+      resetForm();
       
       // Show success notification before closing modal
       addNotification({
@@ -94,8 +89,7 @@ export default function UserEmailCard() {
         message: 'Verification email sent to your new email address. Please check your inbox and follow the instructions.'
       });
       
-      // Close modal after showing notification
-      handleCloseModal();
+      setIsEditing(false);
     } catch (error: any) {
       console.error('Error updating email:', error);
       
@@ -169,11 +163,13 @@ export default function UserEmailCard() {
                 Email Status
               </p>
               <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  user.isEmailVerified 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                }`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.isEmailVerified
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                  }`}
+                >
                   {user.isEmailVerified ? 'Verified' : 'Unverified'}
                 </span>
               </div>
@@ -205,9 +201,12 @@ export default function UserEmailCard() {
               Resend Verification
             </button>
           )}
-          
+
           <button
-            onClick={openModal}
+            onClick={() => {
+              resetForm();
+              setIsEditing((prev) => !prev);
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
             data-testid="change-email-button"
           >
@@ -226,79 +225,69 @@ export default function UserEmailCard() {
                 fill=""
               />
             </svg>
-            Change Email
+            {isEditing ? 'Close Form' : 'Change Email'}
           </button>
         </div>
       </div>
 
-      <Modal isOpen={isOpen} onClose={handleCloseModal} className="max-w-[500px] m-4">
-        <div className="no-scrollbar relative w-full max-w-[500px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Change Email Address
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Enter your new email address. A verification email will be sent to confirm the change.
-            </p>
+      {isEditing && (
+        <div className="mt-6 space-y-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900/40 lg:p-6">
+          {formError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+              {formError}
+            </div>
+          )}
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Label>Current Email</Label>
+              <Input type="email" value={user.email} disabled className="bg-gray-100 dark:bg-gray-800" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Label>New Email Address</Label>
+              <Input
+                type="email"
+                name="new_email"
+                value={formData.new_email}
+                onChange={handleInputChange}
+                placeholder="Enter your new email address"
+                data-testid="new-email-input"
+                className={errors.new_email ? 'border-red-500' : ''}
+              />
+              {errors.new_email && <p className="mt-1 text-xs text-red-500">{errors.new_email}</p>}
+            </div>
           </div>
-          <form className="flex flex-col">
-            {formError && (
-              <div className="mx-2 mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
-              </div>
-            )}
-            <div className="px-2 pb-3">
-              <div className="space-y-5">
-                <div>
-                  <Label>Current Email</Label>
-                  <Input 
-                    type="email" 
-                    value={user.email}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
 
-                <div>
-                  <Label>New Email Address</Label>
-                  <Input 
-                    type="email" 
-                    name="new_email"
-                    value={formData.new_email}
-                    onChange={handleInputChange}
-                    placeholder="Enter your new email address"
-                    data-testid="new-email-input"
-                    className={errors.new_email ? 'border-red-500' : ''}
-                  />
-                  {errors.new_email && (
-                    <p className="mt-1 text-xs text-red-500">{errors.new_email}</p>
-                  )}
-                </div>
+          <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+            <strong>Note:</strong> After submitting, you'll receive a verification email at your new address. You must click the verification link to complete the email change process.
+          </div>
 
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    <strong>Note:</strong> After submitting, you'll receive a verification email at your new address. 
-                    You must click the verification link to complete the email change process.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={handleCloseModal} disabled={isLoading} data-testid="cancel-email-button">
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleUpdateEmail}
-                disabled={isLoading}
-                data-testid="save-email-button"
-              >
-                {isLoading ? 'Sending...' : 'Send Verification Email'}
-              </Button>
-            </div>
-          </form>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                resetForm();
+                setIsEditing(false);
+              }}
+              disabled={isLoading}
+              data-testid="cancel-email-button"
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleUpdateEmail}
+              disabled={isLoading}
+              data-testid="save-email-button"
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? 'Sending...' : 'Send Verification Email'}
+            </Button>
+          </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
-# Farmorb Product Roadmap
+# FarmOrbit Product Roadmap
 ## Comprehensive Livestock Management System
 
 ### Executive Summary
 
-Farmorb is evolving from a farm and team collaboration platform into a comprehensive livestock management system. This roadmap outlines the strategic development plan to integrate advanced livestock tracking, health management, breeding programs, and analytics while maintaining the existing team collaboration foundation.
+FarmOrbit is evolving from a farm and team collaboration platform into a comprehensive livestock management system. This roadmap outlines the strategic development plan to integrate advanced livestock tracking, health management, breeding programs, and analytics while maintaining the existing team collaboration foundation.
+
+**📋 Related Documentation**: See `FARMBRITE_ANALYSIS.md` for comprehensive feature analysis and competitive research based on Farmbrite.com (5,000+ farmers worldwide).
 
 ---
 
@@ -11,7 +13,7 @@ Farmorb is evolving from a farm and team collaboration platform into a comprehen
 
 ### Mission Statement
 
-Farmorb provides livestock farmers with a comprehensive digital platform to manage their operations, from individual animal health to herd performance analytics, enabling data-driven decisions and improved profitability.
+FarmOrbit provides livestock farmers with a comprehensive digital platform to manage their operations, from individual animal health to group performance analytics, enabling data-driven decisions and improved profitability.
 
 ### Target Market
 
@@ -38,7 +40,7 @@ Farmorb provides livestock farmers with a comprehensive digital platform to mana
 Farm (existing)
   ├── Farm Members (existing)
   ├── Farm Invitations (existing)
-  └── Herds/Groups (NEW)
+  └── Groups (NEW)
         └── Animals (NEW)
               ├── Health Records
               ├── Breeding Records
@@ -48,33 +50,33 @@ Farm (existing)
 
 ### How It Connects
 
-- Each **Farm** (existing) can have multiple **Herds/Groups**
-- Herds organize animals by: location, purpose, age group, or species
-- Examples: "Dairy Herd A", "Breeding Bulls", "Weaners Pen 3"
-- **Farm Members** (existing) can access all herds within their assigned farms
+- Each **Farm** (existing) can have multiple **Groups**
+- Groups organize animals by: location, purpose, age group, or species
+- Examples: "Dairy Group A", "Breeding Bulls", "Weaners Pen 3"
+- **Farm Members** (existing) can access all groups within their assigned farms
 - Permissions cascade: Farm Owner → full access, Farm Member → view/limited edit
 
 ---
 
 ## 3. MVP Feature Roadmap - Livestock Management
 
-### Phase 1: Herd Organization & Animal Registry (Weeks 1-4)
+### Phase 1: Group Organization & Animal Registry (Weeks 1-4) ✅ **COMPLETE**
 
-#### Herd/Group Management
-- Create herds/groups within farms
-- Assign herds to locations/pens/pastures
-- Set herd purpose (breeding, dairy, beef, etc.)
-- View herd summary statistics
-- Archive/delete herds
+#### Group Management
+- ✅ Create groups within farms
+- ✅ Assign groups to locations/pens/pastures
+- ✅ Set group purpose (breeding, dairy, beef, etc.)
+- ✅ View group summary statistics
+- ✅ Archive/delete groups
 
 #### Animal Registry
-- Add individual animals to herds
-- Basic info: ID/tag number, name, breed, sex, date of birth
-- Physical description: color, markings, photos
-- Parent tracking: sire, dam lineage
-- Identification methods: ear tags, RFID, visual markers
-- Import/export animals (CSV, spreadsheet)
-- Search and filter animals across herds
+- ✅ Add individual animals to groups
+- ✅ Basic info: ID/tag number, name, breed, sex, date of birth
+- ✅ Physical description: color, markings, photos
+- ✅ Parent tracking: sire, dam lineage
+- ✅ Identification methods: ear tags, RFID, visual markers
+- ⏳ Import/export animals (CSV, spreadsheet) - **PLANNED**
+- ⏳ Search and filter animals across groups - **PLANNED**
 
 ### Phase 2: Health Management (Weeks 5-8)
 
@@ -104,57 +106,82 @@ Farm (existing)
 - Breeding performance metrics
 - Genetic tracking and reporting
 
-### Phase 4: Feeding & Nutrition (Weeks 13-16)
+### Phase 3.5: Task & Work Management (Weeks 13-16) ⭐ **NEW PRIORITY**
+
+#### Task Organization
+- Create and assign tasks to team members
+- Task prioritization and status tracking
+- Due date management
+- Task categorization (health checks, feeding, breeding, etc.)
+- Task templates for recurring activities
+
+#### Work Management
+- Team collaboration on tasks
+- Time tracking for activities
+- Task completion tracking
+- Mobile-optimized task interface
+- Offline task management (sync when online)
+- Integration with livestock management (auto-create health check tasks, breeding reminders)
+
+#### Task Integration
+- Auto-generate tasks from health schedules (vaccination reminders)
+- Auto-generate tasks from breeding schedules (heat detection reminders)
+- Link tasks to animals, groups, or farm activities
+- Task notifications and alerts
+
+**Rationale**: Based on Farmbrite analysis, task management is essential for operational efficiency. Farmers need to organize daily work, assign tasks to team members, and track completion. This integrates seamlessly with livestock management (health check reminders, breeding schedules, etc.).
+
+### Phase 4: Feeding & Nutrition (Weeks 17-20)
 
 #### Feed Management
 - Feed types and inventory
-- Feeding schedules by herd
+- Feeding schedules by group
 - Ration planning and calculations
 - Feed consumption tracking
-- Cost per animal/herd
+- Cost per animal/group
 - Nutritional analysis
 - Feed efficiency metrics (gain/feed ratio)
 
-### Phase 5: Movement & Location Tracking (Weeks 17-20)
+### Phase 5: Movement & Location Tracking (Weeks 21-24)
 
 #### Animal Movements
 - Pen/pasture assignments
-- Movement history (between herds, locations)
+- Movement history (between groups, locations)
 - Grazing rotation management
 - Sales/purchases (animal in/out)
 - Death/culling records
 - Transport logs
 
-### Phase 6: Financial Management - Livestock Focus (Weeks 21-24)
+### Phase 6: Financial Management - Livestock Focus (Weeks 25-28) ⭐ **UPDATED PRIORITY**
 
 #### Livestock Economics
 - Animal purchase costs
-- Veterinary expenses per animal/herd
+- Veterinary expenses per animal/group
 - Feed costs allocation
 - Sale prices and revenues
 - Cost per animal analysis
-- Profit/loss by herd
+- Profit/loss by group
 - Return on investment calculations
 
-### Phase 7: Analytics & Reporting (Weeks 25-28)
+### Phase 7: Analytics & Reporting (Weeks 29-32)
 
-#### Herd Performance Dashboards
-- Herd overview (size, composition, health status)
+#### Group Performance Dashboards
+- Group overview (size, composition, health status)
 - Growth rates and weight trends
 - Breeding performance metrics
 - Mortality rates and causes
 - Feed conversion efficiency
-- Financial performance by herd
+- Financial performance by group
 
 #### Custom Reports
 - Breeding reports
 - Health records for regulatory compliance
 - Inventory reports (current stock)
 - Financial summaries
-- Performance comparisons (herd vs herd, year vs year)
+- Performance comparisons (group vs group, year vs year)
 - Export to PDF, Excel, CSV
 
-### Phase 8: Mobile & Field Access (Weeks 29-32)
+### Phase 8: Mobile & Field Access (Weeks 33-36)
 
 #### Mobile Application
 - Quick animal lookup by tag/ID
@@ -171,37 +198,45 @@ Farm (existing)
 ### Database Schema Additions
 
 #### Tables to Create:
-- `herds` (farm_id, name, purpose, location, created_at)
-- `animals` (herd_id, tag_id, name, breed, sex, birth_date, parent_ids)
-- `health_records` (animal_id, type, date, notes, vet_id, cost)
-- `breeding_records` (animal_id, event_type, date, mate_id, outcome)
-- `feeding_records` (herd_id, feed_type, amount, date, cost)
-- `movements` (animal_id, from_herd, to_herd, date, reason)
-- `animal_weights` (animal_id, weight, date, body_condition_score)
+- ✅ `groups` (farm_id, name, purpose, location, created_at) - **COMPLETE**
+- ✅ `animals` (group_id, tag_id, name, breed, sex, birth_date, parent_ids) - **COMPLETE**
+- ⏳ `health_records` (animal_id, type, date, notes, vet_id, cost) - **PLANNED**
+- ⏳ `breeding_records` (animal_id, event_type, date, mate_id, outcome) - **PLANNED**
+- ⏳ `tasks` (farm_id, assigned_to, title, description, priority, status, due_date, related_entity_type, related_entity_id) - **PLANNED** ⭐ **NEW**
+- ⏳ `feeding_records` (group_id, feed_type, amount, date, cost) - **PLANNED**
+- ⏳ `movements` (animal_id, from_group, to_group, date, reason) - **PLANNED**
+- ⏳ `animal_weights` (animal_id, weight, date, body_condition_score) - **PLANNED**
+- ⏳ `transactions` (farm_id, type, category, amount, description, related_entity_type, related_entity_id, date) - **PLANNED** ⭐ **NEW**
 
 ### API Endpoints Structure
 
 ```
-/api/farms/{farm_id}/herds (GET, POST)
-/api/farms/{farm_id}/herds/{herd_id} (GET, PUT, DELETE)
-/api/farms/{farm_id}/herds/{herd_id}/animals (GET, POST)
-/api/farms/{farm_id}/animals/{animal_id} (GET, PUT, DELETE)
-/api/farms/{farm_id}/animals/{animal_id}/health (GET, POST)
-/api/farms/{farm_id}/animals/{animal_id}/breeding (GET, POST)
-/api/farms/{farm_id}/herds/{herd_id}/feeding (GET, POST)
-/api/farms/{farm_id}/analytics/dashboard
+✅ /api/farms/{farm_id}/groups (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/groups/{group_id} (GET, PUT, DELETE) - COMPLETE
+✅ /api/farms/{farm_id}/animals (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/animals/{animal_id} (GET, PUT, DELETE) - COMPLETE
+⏳ /api/farms/{farm_id}/animals/{animal_id}/health (GET, POST) - PLANNED
+⏳ /api/farms/{farm_id}/animals/{animal_id}/breeding (GET, POST) - PLANNED
+⏳ /api/farms/{farm_id}/tasks (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/tasks/{task_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/groups/{group_id}/feeding (GET, POST) - PLANNED
+⏳ /api/farms/{farm_id}/transactions (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/financial/summary (GET) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/analytics/dashboard - PLANNED
 ```
 
 ### Frontend Pages Structure
 
 ```
-/farms/{id}/herds - List all herds
-/farms/{id}/herds/{herd_id} - Herd details & animals
-/farms/{id}/herds/{herd_id}/animals/create - Add animal
-/farms/{id}/animals/{animal_id} - Individual animal profile
-/farms/{id}/animals/{animal_id}/health - Health records
-/farms/{id}/animals/{animal_id}/breeding - Breeding history
-/farms/{id}/analytics - Farm dashboard
+✅ /farms/{id} - Farm details with groups & animals tabs - COMPLETE
+⏳ /farms/{id}/groups/{group_id} - Group detail page - PLANNED
+⏳ /farms/{id}/animals/{animal_id} - Individual animal profile - PLANNED
+⏳ /farms/{id}/animals/{animal_id}/health - Health records - PLANNED
+⏳ /farms/{id}/animals/{animal_id}/breeding - Breeding history - PLANNED
+⏳ /farms/{id}/tasks - Task list and management - PLANNED ⭐ NEW
+⏳ /farms/{id}/tasks/{task_id} - Task detail page - PLANNED ⭐ NEW
+⏳ /farms/{id}/financial - Financial dashboard - PLANNED ⭐ NEW
+⏳ /farms/{id}/analytics - Farm dashboard - PLANNED
 ```
 
 ---
@@ -210,7 +245,7 @@ Farm (existing)
 
 ### Adoption Metrics
 - Farms created per week
-- Herds created per farm (average)
+- Groups created per farm (average)
 - Animals registered per farm (average)
 - Active users per farm
 - Daily/weekly active users
@@ -264,11 +299,11 @@ Farm (existing)
 
 ## 7. Competitive Differentiation
 
-### Farmorb Advantages
+### FarmOrbit Advantages
 - Modern, intuitive UI (Next.js, Tailwind)
 - Strong team collaboration foundation (already built)
 - Mobile-first approach for field use
-- Flexible herd organization
+- Flexible group organization
 - Comprehensive yet simple
 
 ### Focus Areas
@@ -282,30 +317,33 @@ Farm (existing)
 
 ## 8. Development Priorities
 
-### Immediate (Weeks 1-4)
-1. Design database schema for herds and animals
-2. Build herd management backend APIs
-3. Create animal registry backend APIs
-4. Implement herd listing UI
+### Immediate (Weeks 1-4) ✅ **COMPLETE**
+1. ✅ Design database schema for groups and animals - **COMPLETE**
+2. ✅ Build group management backend APIs - **COMPLETE**
+3. ✅ Create animal registry backend APIs - **COMPLETE**
+4. ✅ Implement group listing UI - **COMPLETE**
 5. Build animal profile pages
 
-### Short-term (Weeks 5-12)
-6. Health records system
-7. Breeding management
-8. Mobile responsive design
-9. Basic analytics dashboard
+### Short-term (Weeks 5-16)
+6. Health records system (Weeks 5-8)
+7. Breeding management (Weeks 9-12)
+8. Task & work management system (Weeks 13-16) ⭐ **NEW PRIORITY**
+9. Mobile responsive design
+10. Basic analytics dashboard
 
-### Medium-term (Weeks 13-28)
-10. Feeding management
-11. Financial tracking
-12. Advanced analytics
-13. Reporting system
+### Medium-term (Weeks 17-32)
+11. Feeding management (Weeks 17-20)
+12. Movement & location tracking (Weeks 21-24)
+13. Financial tracking (Weeks 25-28) ⭐ **UPDATED PRIORITY**
+14. Advanced analytics and reporting (Weeks 29-32)
 
-### Long-term (Weeks 29+)
-14. Mobile application
-15. Offline support
-16. Advanced features
-17. Integrations
+### Long-term (Weeks 33+)
+15. Mobile application (Weeks 33-36)
+16. Offline support
+17. Advanced features
+18. Integrations
+19. Resource management (inventory, inputs)
+20. Crop management (if market demands)
 
 ---
 
@@ -315,11 +353,11 @@ Farm (existing)
 
 The current architecture is designed to seamlessly support poultry management when ready:
 
-#### Flexible Herd/Group Structure
+#### Flexible Group Structure
 ```sql
-herds (
+groups (
   farm_id,
-  name,           -- "Dairy Herd A" OR "Laying Hens"
+  name,           -- "Dairy Group A" OR "Laying Hens"
   purpose,        -- "dairy" OR "egg_production" 
   species_type,   -- "mammal" OR "poultry"
   location,       -- "Pasture 1" OR "Chicken Coop A"
@@ -330,7 +368,7 @@ herds (
 #### Adaptable Animal Tracking
 ```sql
 animals (
-  herd_id,
+  group_id,
   tag_id,                    -- Individual ear tag OR batch number
   name,                      -- "Bella" OR "Batch-2024-001"
   species,                   -- "cattle" OR "chicken"
@@ -342,18 +380,18 @@ animals (
 
 ### Migration Path: Mammals → Poultry
 
-#### Phase 1: Build Mammal System (Current Plan)
-- Use the existing schema as-is
-- Focus on individual animal tracking
-- Perfect the herd management UI
+#### Phase 1: Build Mammal System ✅ **COMPLETE**
+- ✅ Use the existing schema as-is
+- ✅ Focus on individual animal tracking
+- ✅ Perfect the group management UI
 
-#### Phase 2: Add Poultry Support (When Ready)
-- Add `species_type` field to herds
+#### Phase 2: Add Poultry Support (When Ready) ⏳ **PLANNED**
+- Add `species_type` field to groups
 - Add `tracking_type` field to animals  
 - Create poultry-specific UI components
 - Add batch management features
 
-#### Phase 3: Mixed Farm Support
+#### Phase 3: Mixed Farm Support ⏳ **PLANNED**
 - Unified dashboard showing both species
 - Species-specific workflows
 - Cross-species analytics
@@ -384,7 +422,7 @@ animals (
 - Farm detail pages
 
 ### 📋 Planned (Next 32 Weeks)
-- Herd/Group management system
+- ✅ Group management system - **COMPLETE**
 - Animal registry and tracking
 - Health records management
 - Breeding management
@@ -399,7 +437,7 @@ animals (
 ## 11. Technical Notes
 
 ### Architecture Principles
-- **Hierarchical Design**: Farm → Herds → Animals
+- **Hierarchical Design**: Farm → Groups → Animals
 - **Permission System**: Existing farm member system works for both mammals and poultry
 - **API Structure**: Flexible endpoints that work for both species
 - **UI Components**: Reusable components that adapt based on species
@@ -417,11 +455,11 @@ animals (
 
 ## 12. Success Criteria
 
-### Phase 1 Success (Weeks 1-4)
-- [ ] Herd management system fully functional
-- [ ] Animal registry with basic CRUD operations
-- [ ] Integration with existing farm system
-- [ ] Mobile-responsive UI
+### Phase 1 Success (Weeks 1-4) ✅ **COMPLETE**
+- [x] Group management system fully functional
+- [x] Animal registry with basic CRUD operations
+- [x] Integration with existing farm system
+- [x] Mobile-responsive UI
 
 ### Phase 2 Success (Weeks 5-8)
 - [ ] Health records system operational
@@ -433,8 +471,10 @@ animals (
 - [ ] Genetic tracking capabilities
 - [ ] Reproduction analytics
 
-### Overall Success (32 Weeks)
-- [ ] Complete livestock management platform
+### Overall Success (32 Weeks) 🚧 **IN PROGRESS**
+- [x] Group and animal management platform (MVP)
+- [ ] Health records system
+- [ ] Breeding management
 - [ ] Mobile application launched
 - [ ] 100+ active farms
 - [ ] 1000+ animals tracked
@@ -442,4 +482,4 @@ animals (
 
 ---
 
-*This roadmap represents a comprehensive plan for transforming Farmorb into a leading livestock management platform while maintaining the existing team collaboration foundation.*
+*This roadmap represents a comprehensive plan for transforming FarmOrbit into a leading livestock management platform while maintaining the existing team collaboration foundation.*

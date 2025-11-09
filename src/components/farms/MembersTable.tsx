@@ -1,33 +1,100 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
-import { type MRT_ColumnDef } from 'material-react-table';
+import {
+  type MRT_ColumnDef,
+  type MRT_PaginationState,
+  type MRT_SortingState,
+  type MRT_ColumnFiltersState,
+  type MRT_TableOptions,
+} from 'material-react-table';
 import { FarmMemberResponse, FARM_ROLES } from '@/types/farmMember';
 import { useFarmMembers } from '@/hooks/useFarmMembers';
 import Button from '@/components/ui/button/Button';
+import { ListOptions } from '@/types/list';
+import { buildListOptions } from '@/utils/listOptions';
 
 interface MembersTableProps {
   farmId: string;
   isOwner: boolean;
 }
 
+const sortColumnMap: Record<string, string> = {
+  first_name: 'first_name',
+  email: 'email',
+  phone: 'phone',
+  role: 'role',
+  joined_at: 'joined_at',
+};
+
+const filterColumnMap: Record<string, string> = {
+  first_name: 'first_name',
+  email: 'email',
+  phone: 'phone',
+  role: 'role',
+};
+
 export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
   const router = useRouter();
-  const { members, isLoading, error, getFarmMembers, updateMemberRole, deleteMember } = useFarmMembers();
+  const {
+    members,
+    isLoading,
+    error,
+    getFarmMembers,
+    updateMemberRole,
+    deleteMember,
+  } = useFarmMembers();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string>('all');
   const [editingMember, setEditingMember] = useState<FarmMemberResponse | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [paginationState, setPaginationState] = useState<MRT_PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [sortingState, setSortingState] = useState<MRT_SortingState>([]);
+  const [columnFiltersState, setColumnFiltersState] = useState<MRT_ColumnFiltersState>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const buildMemberParams = useCallback((): ListOptions => {
+    return buildListOptions({
+      paginationState,
+      sortingState,
+      columnFiltersState,
+      sortColumnMap,
+      filterColumnMap,
+      extraFilters: {
+        role: filterRole === 'all' ? undefined : filterRole,
+      },
+    });
+  }, [paginationState, sortingState, columnFiltersState, filterRole]);
 
   useEffect(() => {
-    if (farmId) {
-      getFarmMembers(farmId);
+    if (!farmId) {
+      return;
     }
-  }, [farmId, getFarmMembers]);
 
-  const handleRemoveMember = async (member: FarmMemberResponse) => {
+    const params = buildMemberParams();
+    getFarmMembers(farmId, params)
+      .then((result) => {
+        setTotalCount(result.total ?? result.items.length);
+        setPaginationState((prev) => {
+          const nextPageIndex = Math.max((result.page ?? params.page ?? 1) - 1, 0);
+          const nextPageSize = result.pageSize ?? params.pageSize ?? prev.pageSize;
+          if (prev.pageIndex === nextPageIndex && prev.pageSize === nextPageSize) {
+            return prev;
+          }
+          return {
+            pageIndex: nextPageIndex,
+            pageSize: nextPageSize,
+          };
+        });
+      })
+      .catch(() => {
+        setTotalCount(0);
+      });
+  }, [farmId, buildMemberParams, getFarmMembers]);
+
+  const handleRemoveMember = useCallback(async (member: FarmMemberResponse) => {
     if (!window.confirm('Are you sure you want to remove this member from the farm?')) {
       return;
     }
@@ -35,16 +102,17 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
     try {
       setRemovingMember(member.id);
       await deleteMember(farmId, member.user_id);
-      await getFarmMembers(farmId);
+      const result = await getFarmMembers(farmId, buildMemberParams());
+      setTotalCount(result.total ?? result.items.length);
     } catch (err: any) {
       console.error('Failed to remove member:', err);
       alert(err?.message || 'Failed to remove member');
     } finally {
       setRemovingMember(null);
     }
-  };
+  }, [farmId, deleteMember, getFarmMembers, buildMemberParams]);
 
-  const handleUpdateRole = async (member: FarmMemberResponse, newRole: string) => {
+  const handleUpdateRole = useCallback(async (member: FarmMemberResponse, newRole: string) => {
     if (newRole === member.role) {
       setEditingMember(null);
       return;
@@ -53,7 +121,8 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
     try {
       setUpdatingRole(member.id);
       await updateMemberRole(farmId, member.user_id, newRole);
-      await getFarmMembers(farmId);
+      const result = await getFarmMembers(farmId, buildMemberParams());
+      setTotalCount(result.total ?? result.items.length);
       setEditingMember(null);
     } catch (err: any) {
       console.error('Failed to update member role:', err);
@@ -61,7 +130,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
     } finally {
       setUpdatingRole(null);
     }
-  };
+  }, [farmId, updateMemberRole, getFarmMembers, buildMemberParams]);
 
   const getMemberDisplayName = (member: FarmMemberResponse) => {
     if (member.first_name && member.last_name) {
@@ -73,7 +142,6 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
     if (member.last_name) {
       return member.last_name;
     }
-    // Don't return email or phone here to avoid duplication in the table
     return 'Member';
   };
 
@@ -86,13 +154,6 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
     });
   };
 
-  // Filter members based on role
-  const filteredMembers = useMemo(() => {
-    if (filterRole === 'all') return members;
-    return members.filter(member => member.role === filterRole);
-  }, [members, filterRole]);
-
-  // Define columns
   const columns = useMemo<MRT_ColumnDef<FarmMemberResponse>[]>(
     () => [
       {
@@ -173,7 +234,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
         Cell: ({ row }) => {
           const member = row.original;
           const canEdit = isOwner && member.role !== 'owner';
-          
+
           if (!canEdit) {
             return (
               <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
@@ -230,9 +291,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
           );
         },
       },
-    ],
-    [isOwner, removingMember, editingMember, updatingRole]
-  );
+    ], [editingMember, handleRemoveMember, handleUpdateRole, isOwner, removingMember, updatingRole]);
 
   return (
     <div className="space-y-4">
@@ -240,7 +299,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button
-            onClick={() => getFarmMembers(farmId)}
+            onClick={() => getFarmMembers(farmId, buildMemberParams())}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
           >
             Try Again
@@ -270,15 +329,22 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
       ) : (
         <CustomMaterialTable
           columns={columns}
-          data={filteredMembers}
+          data={members}
           isLoading={isLoading}
           getRowId={(row) => row.id}
           enableRowSelection={false}
+          enableColumnFilters
+          enableGlobalFilter={false}
+          initialPageSize={paginationState.pageSize}
           renderTopToolbarCustomActions={() => (
             <div className="flex gap-2 items-center">
               <select
                 value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
+                onChange={(e) => {
+                  setFilterRole(e.target.value);
+                  setPaginationState((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                data-testid="member-role-filter"
                 className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="all">All Roles</option>
@@ -290,6 +356,21 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
               </select>
             </div>
           )}
+          additionalTableOptions={{
+            manualPagination: true,
+            manualSorting: true,
+            manualFiltering: true,
+            rowCount: totalCount,
+            onPaginationChange: setPaginationState,
+            onSortingChange: setSortingState,
+            onColumnFiltersChange: setColumnFiltersState,
+            state: {
+              pagination: paginationState,
+              sorting: sortingState,
+              columnFilters: columnFiltersState,
+              isLoading,
+            },
+          } as Partial<MRT_TableOptions<FarmMemberResponse>>}
         />
       )}
     </div>

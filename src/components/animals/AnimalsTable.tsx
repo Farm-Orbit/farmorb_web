@@ -1,13 +1,19 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
-import { type MRT_ColumnDef } from 'material-react-table';
-import { Animal } from '@/types/animal';
-import { AnimalService } from '@/services/animalService';
-import CreateAnimalModal from './CreateAnimalModal';
 import Button from '@/components/ui/button/Button';
+import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
+import { useAnimals } from '@/hooks/useAnimals';
+import { Animal } from '@/types/animal';
+import { buildListOptions } from '@/utils/listOptions';
+import {
+  type MRT_ColumnDef,
+  type MRT_ColumnFiltersState,
+  type MRT_PaginationState,
+  type MRT_SortingState,
+  type MRT_TableOptions,
+} from 'material-react-table';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface AnimalsTableProps {
   farmId: string;
@@ -18,6 +24,23 @@ const statusLabels: Record<string, string> = {
   sold: 'Sold',
   deceased: 'Deceased',
   culled: 'Culled',
+};
+
+const sortColumnMap: Record<string, string> = {
+  tag_id: 'tag_id',
+  name: 'name',
+  breed: 'breed',
+  sex: 'sex',
+  birth_date: 'birth_date',
+  status: 'status',
+};
+
+const filterColumnMap: Record<string, string> = {
+  tag_id: 'tag_id',
+  name: 'name',
+  breed: 'breed',
+  sex: 'sex',
+  status: 'status',
 };
 
 const getStatusColor = (status: string) => {
@@ -37,50 +60,85 @@ const getStatusColor = (status: string) => {
 
 export default function AnimalsTable({ farmId }: AnimalsTableProps) {
   const router = useRouter();
+  const {
+    animals: storeAnimals,
+    getFarmAnimals,
+    removeAnimal,
+  } = useAnimals();
   const [animals, setAnimals] = useState<Animal[]>([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paginationState, setPaginationState] = useState<MRT_PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [sortingState, setSortingState] = useState<MRT_SortingState>([]);
+  const [columnFiltersState, setColumnFiltersState] = useState<MRT_ColumnFiltersState>([]);
 
-  // Load all animals for the farm
-  const loadAnimals = async () => {
-    if (!farmId) return;
+  const syncAnimalsFromStore = useCallback(() => {
+    if (storeAnimals.length > 0 || animals.length > 0) {
+      setAnimals(storeAnimals);
+    }
+  }, [storeAnimals, animals.length]);
+
+  const fetchAnimals = useCallback(async () => {
+    if (!farmId) {
+      setAnimals([]);
+      setTotal(0);
+      return;
+    }
 
     setIsLoading(true);
+
     try {
-      const data = await AnimalService.getFarmAnimals(farmId);
-      setAnimals(data || []);
-    } catch (error: any) {
-      // Log detailed error information for debugging
-      const errorMessage = error?.error || error?.message || error?.details?.message || 'Failed to load animals';
-      const statusCode = error?.statusCode || error?.response?.status;
-      
-      console.error('Failed to load animals:', {
-        message: errorMessage,
-        statusCode,
-        error: error?.error,
-        details: error?.details || error?.response?.data,
-        farmId,
-        fullError: error,
+      const params = buildListOptions({
+        paginationState,
+        sortingState,
+        columnFiltersState,
+        sortColumnMap,
+        filterColumnMap,
+        extraFilters: {
+          status: filterStatus === 'all' ? undefined : filterStatus,
+        },
       });
-      
+
+      const result = await getFarmAnimals(farmId, params);
+
+      if (result.items.length === 0 && result.total > 0 && paginationState.pageIndex > 0) {
+        setPaginationState((prev) => ({ ...prev, pageIndex: Math.max(prev.pageIndex - 1, 0) }));
+        return;
+      }
+
+      setAnimals(result.items);
+      setTotal(result.total);
+
+      setPaginationState((prev) => {
+        const nextPageIndex = Math.max((result.page ?? params.page ?? 1) - 1, 0);
+        const nextPageSize = result.pageSize ?? params.pageSize ?? prev.pageSize;
+        if (prev.pageIndex === nextPageIndex && prev.pageSize === nextPageSize) {
+          return prev;
+        }
+        return {
+          pageIndex: nextPageIndex,
+          pageSize: nextPageSize,
+        };
+      });
+    } catch (error: any) {
+      const errorMessage = error?.error || error?.message || 'Failed to load animals';
+      console.error('Failed to load animals:', errorMessage);
       setAnimals([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [farmId, paginationState.pageIndex, paginationState.pageSize, sortingState, columnFiltersState, filterStatus, getFarmAnimals]);
 
   useEffect(() => {
-    loadAnimals();
-  }, [farmId]);
+    fetchAnimals();
+  }, [fetchAnimals]);
 
-  // Filter animals based on status
-  const filteredAnimals = useMemo(() => {
-    if (filterStatus === 'all') {
-      return animals;
-    }
-    return animals.filter(animal => animal.status === filterStatus);
-  }, [animals, filterStatus]);
+  useEffect(() => {
+    syncAnimalsFromStore();
+  }, [syncAnimalsFromStore]);
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'N/A';
@@ -91,7 +149,39 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
     });
   };
 
-  // Define columns
+  const handleNavigateToCreate = useCallback(() => {
+    router.push(`/farms/${farmId}/animals/new`);
+  }, [router, farmId]);
+
+  const handleNavigateToEdit = useCallback(
+    (animal: Animal) => {
+      router.push(`/farms/${farmId}/animals/${animal.id}/edit`);
+    },
+    [router, farmId]
+  );
+
+  const handleDeleteClick = useCallback(
+    async (animal: Animal) => {
+      if (!farmId) return;
+
+      const confirmed = window.confirm(`Are you sure you want to delete animal ${animal.tag_id}?`);
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        setIsProcessing(true);
+        await removeAnimal(farmId, animal.id);
+        await fetchAnimals();
+      } catch (error) {
+        console.error('Failed to delete animal:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [farmId, fetchAnimals, removeAnimal]
+  );
+
   const columns = useMemo<MRT_ColumnDef<Animal>[]>(
     () => [
       {
@@ -159,24 +249,65 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
             </span>
           );
         },
+        filterVariant: 'select',
+        filterSelectOptions: Object.entries(statusLabels).map(([value, label]) => ({
+          value,
+          label,
+        })),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        size: 160,
+        enableColumnFilter: false,
+        enableSorting: false,
+        Cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`edit-animal-button-${row.original.tag_id}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleNavigateToEdit(row.original);
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-300 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              data-testid={`delete-animal-button-${row.original.tag_id}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeleteClick(row.original);
+              }}
+              disabled={isProcessing}
+            >
+              Delete
+            </Button>
+          </div>
+        ),
       },
     ],
-    []
+    [handleNavigateToEdit, handleDeleteClick, isProcessing]
   );
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end items-center">
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleNavigateToCreate}
           size="sm"
           data-testid="create-animal-button"
+          disabled={isProcessing}
         >
           Add Animal
         </Button>
       </div>
 
-      {!isLoading && (!animals || animals.length === 0) ? (
+      {!isLoading && animals.length === 0 ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No animals found</h3>
           <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
@@ -186,15 +317,22 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
       ) : (
         <CustomMaterialTable
           columns={columns}
-          data={filteredAnimals}
+          data={animals}
           isLoading={isLoading}
           getRowId={(row) => row.id}
           enableRowSelection={false}
+          enableColumnFilters
+          enableGlobalFilter
+          initialPageSize={paginationState.pageSize}
           renderTopToolbarCustomActions={() => (
             <div className="flex gap-2 items-center">
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPaginationState((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                data-testid="animal-status-filter"
                 className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
@@ -205,17 +343,21 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
               </select>
             </div>
           )}
-        />
-      )}
-
-      {showCreateModal && (
-        <CreateAnimalModal
-          farmId={farmId}
-          onClose={() => {
-            setShowCreateModal(false);
-            // Reload animals after creating
-            loadAnimals();
-          }}
+          additionalTableOptions={{
+            manualPagination: true,
+            manualSorting: true,
+            manualFiltering: true,
+            rowCount: total,
+            onPaginationChange: setPaginationState,
+            onSortingChange: setSortingState,
+            onColumnFiltersChange: setColumnFiltersState,
+            state: {
+              pagination: paginationState,
+              sorting: sortingState,
+              columnFilters: columnFiltersState,
+              isLoading,
+            },
+          } as Partial<MRT_TableOptions<Animal>>}
         />
       )}
     </div>

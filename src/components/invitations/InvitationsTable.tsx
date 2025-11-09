@@ -1,28 +1,96 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
-import { type MRT_ColumnDef } from 'material-react-table';
+import {
+  type MRT_ColumnDef,
+  type MRT_PaginationState,
+  type MRT_SortingState,
+  type MRT_ColumnFiltersState,
+  type MRT_TableOptions,
+} from 'material-react-table';
 import { FarmInvitationResponse, INVITATION_STATUSES } from '@/types/farmMember';
 import { useFarmMembers } from '@/hooks/useFarmMembers';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotificationContext } from '@/providers/NotificationProvider';
-import Button from '@/components/ui/button/Button';
+import { ListOptions } from '@/types/list';
+import { buildListOptions } from '@/utils/listOptions';
 
 interface InvitationsTableProps {}
+
+const sortColumnMap: Record<string, string> = {
+  farm_name: 'farm_name',
+  role: 'role',
+  status: 'status',
+  created_at: 'created_at',
+  expires_at: 'expires_at',
+};
+
+const filterColumnMap: Record<string, string> = {
+  farm_name: 'farm_name',
+  role: 'role',
+  status: 'status',
+};
 
 export default function InvitationsTable({}: InvitationsTableProps) {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
-  const { invitations, isLoading, error, getMyInvitations, acceptInvitation, declineInvitation } = useFarmMembers();
+  const {
+    invitations,
+    isLoading,
+    error,
+    getMyInvitations,
+    acceptInvitation,
+    declineInvitation,
+  } = useFarmMembers();
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [paginationState, setPaginationState] = useState<MRT_PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [sortingState, setSortingState] = useState<MRT_SortingState>([]);
+  const [columnFiltersState, setColumnFiltersState] = useState<MRT_ColumnFiltersState>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const buildInvitationParams = useCallback((): (ListOptions & { email?: string; phone?: string }) => {
+    const baseParams = buildListOptions({
+      paginationState,
+      sortingState,
+      columnFiltersState,
+      sortColumnMap,
+      filterColumnMap,
+      extraFilters: {
+        status: filterStatus === 'all' ? undefined : filterStatus,
+      },
+    });
+
+    return {
+      ...baseParams,
+      ...(user?.email ? { email: user.email } : {}),
+    };
+  }, [paginationState, sortingState, columnFiltersState, filterStatus, user?.email]);
 
   useEffect(() => {
-    if (user?.email) {
-      getMyInvitations(user.email);
+    const params = buildInvitationParams();
+    if (params.email || params.phone) {
+      getMyInvitations(params)
+        .then((result) => {
+          setTotalCount(result.total ?? result.items.length);
+          setPaginationState((prev) => {
+            const nextPageIndex = Math.max((result.page ?? params.page ?? 1) - 1, 0);
+            const nextPageSize = result.pageSize ?? params.pageSize ?? prev.pageSize;
+            if (prev.pageIndex === nextPageIndex && prev.pageSize === nextPageSize) {
+              return prev;
+            }
+            return {
+              pageIndex: nextPageIndex,
+              pageSize: nextPageSize,
+            };
+          });
+        })
+        .catch(() => {
+          setTotalCount(0);
+        });
     }
-  }, [user?.email, getMyInvitations]);
+  }, [buildInvitationParams, getMyInvitations]);
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
@@ -35,9 +103,8 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         message: 'You have successfully joined the farm. You can now access it from the farms page.'
       });
       
-      if (user?.email) {
-        await getMyInvitations(user.email);
-      }
+      const result = await getMyInvitations(buildInvitationParams());
+      setTotalCount(result.total ?? result.items.length);
     } catch (err: any) {
       console.error('Failed to accept invitation:', err);
       addNotification({
@@ -65,9 +132,8 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         message: 'You have declined the farm invitation.'
       });
       
-      if (user?.email) {
-        await getMyInvitations(user.email);
-      }
+      const result = await getMyInvitations(buildInvitationParams());
+      setTotalCount(result.total ?? result.items.length);
     } catch (err: any) {
       console.error('Failed to decline invitation:', err);
       addNotification({
@@ -121,6 +187,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         accessorKey: 'farm_name',
         header: 'Farm Name',
         size: 200,
+        filterVariant: 'text',
         Cell: ({ cell }) => (
           <span className="text-sm font-medium text-gray-900 dark:text-white">
             {cell.getValue<string>()}
@@ -234,7 +301,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           <button
-            onClick={() => user?.email && getMyInvitations(user.email)}
+            onClick={() => getMyInvitations(buildInvitationParams())}
             className="mt-2 text-sm text-red-700 dark:text-red-300 underline"
           >
             Try Again
@@ -256,15 +323,22 @@ export default function InvitationsTable({}: InvitationsTableProps) {
       ) : (
         <CustomMaterialTable
           columns={columns}
-          data={filteredInvitations}
+          data={invitations}
           isLoading={isLoading}
           getRowId={(row) => row.id}
           enableRowSelection={false}
+          enableColumnFilters
+          enableGlobalFilter={false}
+          initialPageSize={paginationState.pageSize}
           renderTopToolbarCustomActions={() => (
             <div className="flex gap-2 items-center">
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPaginationState((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                data-testid="invitation-status-filter"
                 className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
@@ -276,6 +350,21 @@ export default function InvitationsTable({}: InvitationsTableProps) {
               </select>
             </div>
           )}
+          additionalTableOptions={{
+            manualPagination: true,
+            manualSorting: true,
+            manualFiltering: true,
+            rowCount: totalCount,
+            onPaginationChange: setPaginationState,
+            onSortingChange: setSortingState,
+            onColumnFiltersChange: setColumnFiltersState,
+            state: {
+              pagination: paginationState,
+              sorting: sortingState,
+              columnFilters: columnFiltersState,
+              isLoading,
+            },
+          } as Partial<MRT_TableOptions<FarmInvitationResponse>>}
         />
       )}
     </div>

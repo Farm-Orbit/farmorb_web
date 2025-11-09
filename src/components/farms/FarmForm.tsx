@@ -127,22 +127,20 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
 
   return (
     <div className="w-full p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-          {farm ? 'Edit Farm' : 'Create New Farm'}
-        </h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-          {farm ? 'Update your farm information' : 'Add a new farm to your portfolio'}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Error Display */}
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+            {farm ? 'Edit Farm' : 'Create New Farm'}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            {farm ? 'Update your farm information' : 'Add a new farm to your portfolio'}
+          </p>
+        </div>
+ 
+      <form onSubmit={handleSubmit} className="space-y-8">
         {(error || validationErrors.length > 0) && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             {validationErrors.length > 0 && (
               <ul className="mt-2 text-sm text-red-600 dark:text-red-400">
                 {validationErrors.map((error, index) => (
@@ -153,21 +151,36 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
           </div>
         )}
 
-        {/* Basic Information */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
-          
-          <div>
-            <Label>
-              Farm Name <span className="text-error-500">*</span>
-            </Label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Enter farm name"
-              data-testid="farm-name-input"
-            />
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2">
+              <Label>
+                Farm Name <span className="text-error-500">*</span>
+              </Label>
+              <Input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter farm name"
+                data-testid="farm-name-input"
+              />
+            </div>
+            <div>
+              <Label>Farm Type</Label>
+              <select
+                value={formData.farm_type}
+                onChange={(e) => handleInputChange('farm_type', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                data-testid="farm-type-select"
+              >
+                {farmTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -181,77 +194,57 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
               data-testid="farm-description-input"
             />
           </div>
+        </section>
 
-          <div>
-            <Label>Farm Type</Label>
-            <select
-              value={formData.farm_type}
-              onChange={(e) => handleInputChange('farm_type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              data-testid="farm-type-select"
-            >
-              {farmTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Location Information */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location Information</h2>
-          
-          <div>
-            <Label>Location Address</Label>
-            <Input
-              type="text"
-              value={formData.location_address}
-              onChange={(e) => handleInputChange('location_address', e.target.value)}
-              placeholder="Enter farm location address"
-              data-testid="farm-location-address-input"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Latitude</Label>
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location Information</h2>
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <Label>Location Address</Label>
               <Input
-                type="number"
-                step={0.000001}
-                value={formData.location_latitude?.toString() || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  handleInputChange('location_latitude', value === '' ? undefined : parseFloat(value));
-                }}
-                placeholder="Latitude"
-                data-testid="farm-latitude-input"
+                type="text"
+                value={formData.location_address}
+                onChange={(e) => handleInputChange('location_address', e.target.value)}
+                placeholder="Enter farm location address"
+                data-testid="farm-location-address-input"
               />
             </div>
-
-            <div>
-              <Label>Longitude</Label>
-              <Input
-                type="number"
-                step={0.000001}
-                value={formData.location_longitude?.toString() || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  handleInputChange('location_longitude', value === '' ? undefined : parseFloat(value));
-                }}
-                placeholder="Longitude"
-                data-testid="farm-longitude-input"
-              />
+            <div className="lg:col-span-1 grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+              <div>
+                <Label>Latitude</Label>
+                <Input
+                  type="number"
+                  step={0.000001}
+                  value={formData.location_latitude?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('location_latitude', value === '' ? undefined : parseFloat(value));
+                  }}
+                  placeholder="Latitude"
+                  data-testid="farm-latitude-input"
+                />
+              </div>
+              <div>
+                <Label>Longitude</Label>
+                <Input
+                  type="number"
+                  step={0.000001}
+                  value={formData.location_longitude?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('location_longitude', value === '' ? undefined : parseFloat(value));
+                  }}
+                  placeholder="Longitude"
+                  data-testid="farm-longitude-input"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Size Information */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Size Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Size Information</h2>
+          <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <Label>Size in Acres</Label>
               <Input
@@ -267,7 +260,6 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
                 data-testid="farm-size-acres-input"
               />
             </div>
-
             <div>
               <Label>Size in Hectares</Label>
               <Input
@@ -284,30 +276,32 @@ export default function FarmForm({ farm, onSuccess, onCancel }: FarmFormProps) {
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end border-t border-gray-200 dark:border-gray-700 pt-6">
           {onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isLoading}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
           )}
-          
+
           <Button
             type="submit"
             disabled={isLoading}
             data-testid="farm-submit-button"
+            className="w-full sm:w-auto"
           >
             {isLoading ? (farm ? 'Updating...' : 'Creating...') : (farm ? 'Update Farm' : 'Create Farm')}
           </Button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

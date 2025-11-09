@@ -1,176 +1,167 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
+# FarmOrbit - Farm Management Platform
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
+FarmOrbit is a comprehensive farm management platform built with **Next.js 15**, **React 19**, **TypeScript**, and **Tailwind CSS**. It provides farmers with everything they need to manage their farms, livestock, teams, and operations in one integrated platform.
 
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
-
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website. 
-
-TailAdmin utilizes the powerful features of **Next.js 15** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
+![FarmOrbit Dashboard](./banner.png)
 
 ## Overview
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+FarmOrbit helps farmers streamline their operations by providing:
+- **Farm Management**: Create and manage multiple farms with detailed information
+- **Team Collaboration**: Invite team members, manage roles, and collaborate effectively
+- **Livestock Management**: Track animals, groups, health records, and breeding information
+- **Real-time Notifications**: Stay updated with invitation acceptances, updates, and alerts
+- **Modern UI**: Beautiful, responsive interface with dark mode support
 
-- Next.js 15.x
-- React 19
-- TypeScript
-- Tailwind CSS V4
+## Tech Stack
 
-### Quick Links
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
+FarmOrbit is built on modern, production-ready technologies:
 
-### Demos
-- [Free Version](https://nextjs-free-demo.tailadmin.com)
-- [Pro Version](https://nextjs-demo.tailadmin.com)
+- **Framework**: Next.js 15.x (App Router)
+- **UI Library**: React 19
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS V4
+- **State Management**: Redux Toolkit
+- **Backend API**: Go 1.23.6 with PostgreSQL
+- **Authentication**: JWT with refresh token rotation
+- **Testing**: Cypress for E2E, Jest for unit tests
 
-### Other Versions
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [React Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
+## Features
+
+### ✅ Core Features (Implemented)
+
+- **User Authentication**: Registration, login, logout, profile management
+- **Farm Management**: Create, view, edit, and delete farms
+- **Team Collaboration**: Invite members, manage roles, accept/decline invitations
+- **User Profile**: Update personal information, change password, email management
+- **Notifications**: Toast notification system with multiple notification types
+- **Responsive Design**: Mobile-first approach with card layouts for small screens
+- **Dark Mode**: Full dark mode support across all components
+- **Livestock Management**: Groups and animals tracking (backend complete, frontend in progress)
+
+### 🚧 Coming Soon
+
+- **Health Records**: Track vaccinations, treatments, and veterinary visits
+- **Breeding Management**: Monitor breeding cycles, pregnancies, and offspring
+- **Feeding & Nutrition**: Track feed consumption and costs
+- **Analytics & Reporting**: Comprehensive dashboards and data visualization
+- **Mobile App**: Native mobile application for field use
 
 ## Installation
 
 ### Prerequisites
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
 
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
+- Node.js 20.x or later
+- Yarn package manager
+- Go 1.23.6 or later (for backend development)
+- PostgreSQL 14+ (for database)
 
-### Cloning the Repository
-Clone the repository using the following command:
+### Getting Started
 
-```bash
-git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd farmorb
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   yarn install
+   ```
+
+3. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Start the development server**:
+   ```bash
+   yarn dev
+   ```
+
+5. **Open your browser**:
+   Navigate to `http://localhost:3000`
+
+### Backend Setup
+
+See the [Backend README](../farmorb_api/README.md) for detailed backend setup instructions.
+
+## Project Structure
+
+```
+farmorb/
+├── src/
+│   ├── app/                    # Next.js app router pages
+│   │   ├── (admin)/           # Admin pages (protected routes)
+│   │   └── (full-width-pages)/ # Auth and error pages
+│   ├── components/             # React components
+│   │   ├── animals/           # Animal management components
+│   │   ├── auth/              # Authentication components
+│   │   ├── farms/             # Farm management components
+│   │   ├── groups/            # Group management components
+│   │   └── ui/                # Reusable UI components
+│   ├── hooks/                 # Custom React hooks
+│   ├── services/              # API service layer
+│   ├── store/                 # Redux store and slices
+│   └── types/                 # TypeScript type definitions
+├── cypress/                   # E2E tests
+├── docs/                      # Documentation
+└── public/                    # Static assets
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+## Development
 
-1. Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-    > Use `--legacy-peer-deps` flag if you face peer-dependency error during installation.
+### Available Scripts
 
-2. Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+- `yarn dev` - Start development server
+- `yarn build` - Build for production
+- `yarn start` - Start production server
+- `yarn lint` - Run ESLint
+- `yarn test` - Run tests
+- `yarn test:e2e` - Run Cypress E2E tests
 
-## Components
+### Code Style
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using Next.js and Tailwind CSS. The template includes:
+- Use TypeScript for all new files
+- Follow the established typography system (see `docs/TYPOGRAPHY.md`)
+- Maintain dark mode support for all components
+- Use `data-testid` attributes for E2E testing
+- Follow the component architecture guidelines
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Profile management and custom 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+## Testing
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+FarmOrbit includes comprehensive testing:
 
-## Feature Comparison
+- **E2E Tests**: Cypress tests for critical user flows
+- **Integration Tests**: Real API integration tests (no mocking)
+- **Unit Tests**: Component and utility function tests
 
-### Free Version
-- 1 Unique Dashboard
-- 30+ dashboard components
-- 50+ UI elements
-- Basic Figma design files
-- Community support
+See `cypress/README.md` for testing guidelines.
 
-### Pro Version
-- 5 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, Stocks (more coming soon)
-- 400+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
+## Documentation
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
+- [Features Implementation Status](./docs/FEATURES.md)
+- [Product Features](./docs/PRODUCT_FEATURES.md)
+- [Product Roadmap](./docs/PRODUCT_ROADMAP.md)
+- [Typography System](./docs/TYPOGRAPHY.md)
+- [Backend API Documentation](../farmorb_api/README.md)
 
-## Changelog
+## Contributing
 
-### Version 2.0.2 - [March 25, 2025]
-
-- Upgraded to Next v15.2.3 for [CVE-2025-29927](https://nextjs.org/blog/cve-2025-29927) concerns
-- Included overrides vectormap for packages to prevent peer dependency errors during installation.
-- Migrated from react-flatpickr to flatpickr package for React 19 support
-
-### Version 2.0.1 - [February 27, 2025]
-
-#### Update Overview
-
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
-
-#### Next Steps
-
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
-
-### v2.0.0 (February 2025)
-A major update focused on Next.js 15 implementation and comprehensive redesign.
-
-#### Major Improvements
-- Complete redesign using Next.js 15 App Router and React Server Components
-- Enhanced user interface with Next.js-optimized components
-- Improved responsiveness and accessibility
-- New features including collapsible sidebar, chat screens, and calendar
-- Redesigned authentication using Next.js App Router and server actions
-- Updated data visualization using ApexCharts for React
-
-#### Breaking Changes
-
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
-
-[Read more](https://tailadmin.com/docs/update-logs/nextjs) on this release.
-
-#### Breaking Changes
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
-
-### v1.3.4 (July 01, 2024)
-- Fixed JSvectormap rendering issues
-
-### v1.3.3 (June 20, 2024)
-- Fixed build error related to Loader component
-
-### v1.3.2 (June 19, 2024)
-- Added ClickOutside component for dropdown menus
-- Refactored sidebar components
-- Updated Jsvectormap package
-
-### v1.3.1 (Feb 12, 2024)
-- Fixed layout naming consistency
-- Updated styles
-
-### v1.3.0 (Feb 05, 2024)
-- Upgraded to Next.js 14
-- Added Flatpickr integration
-- Improved form elements
-- Enhanced multiselect functionality
-- Added default layout component
+1. Follow the coding standards and conventions
+2. Write tests for new features
+3. Update documentation as needed
+4. Ensure all tests pass before submitting
 
 ## License
 
-TailAdmin Next.js Free Version is released under the MIT License.
+FarmOrbit is released under the MIT License.
 
 ## Support
 
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing and maintaining this template.
+For issues, questions, or contributions, please open an issue on GitHub.
 
+---
 
-lsof -ti:3000 | xargs -r kill -9
+**FarmOrbit** - Modern farm management for the digital age 🌾

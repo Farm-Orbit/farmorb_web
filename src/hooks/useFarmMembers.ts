@@ -10,14 +10,20 @@ import {
   clearMemberError,
 } from '@/store/slices/farmMemberSlice';
 import { InviteMemberRequest } from '@/types/farmMember';
+import { ListOptions } from '@/types/list';
 
 export const useFarmMembers = () => {
   const dispatch = useAppDispatch();
-  const { members, invitations, isLoading, error } = useAppSelector((state) => state.farmMembers);
+  const {
+    members,
+    invitations,
+    isLoading,
+    error,
+  } = useAppSelector((state) => state.farmMembers);
 
   const getFarmMembers = useCallback(
-    (farmId: string) => {
-      return dispatch(fetchFarmMembers(farmId)).unwrap();
+    (farmId: string, params?: ListOptions) => {
+      return dispatch(fetchFarmMembers({ farmId, params })).unwrap();
     },
     [dispatch]
   );
@@ -43,8 +49,8 @@ export const useFarmMembers = () => {
     [dispatch]
   );
 
-  const getMyInvitations = useCallback((email?: string, phone?: string) => {
-    return dispatch(fetchMyInvitations(email || phone ? { email, phone } : undefined)).unwrap();
+  const getMyInvitations = useCallback((params?: (ListOptions & { email?: string; phone?: string })) => {
+    return dispatch(fetchMyInvitations(params)).unwrap();
   }, [dispatch]);
 
   const acceptInvitation = useCallback(

@@ -1,19 +1,27 @@
 import { apiClient } from './api';
+import { ApiResponse } from '@/types/api';
 import {
   Group,
   CreateGroupRequest,
   UpdateGroupRequest,
   GroupResponse,
-  GroupListResponse,
   AddAnimalToGroupRequest,
   BulkAddAnimalsRequest,
 } from '@/types/group';
+import { ListOptions, PaginatedList } from '@/types/list';
+import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
 
 export const GroupService = {
   // Group CRUD operations
-  async getFarmGroups(farmId: string): Promise<Group[]> {
-    const response = await apiClient.get<GroupListResponse>(`/farms/${farmId}/groups`);
-    return response.data.data;
+  async getFarmGroups(farmId: string, params?: ListOptions): Promise<PaginatedList<Group>> {
+    const searchParams = createListSearchParams(params);
+    const queryString = searchParams.toString();
+    const url = queryString ? `/farms/${farmId}/groups?${queryString}` : `/farms/${farmId}/groups`;
+
+    const { data } = await apiClient.get<ApiResponse<PaginatedList<Group>> | PaginatedList<Group>>(url);
+    const payload = 'data' in data && data.data ? data.data : data;
+
+    return normalizePaginatedResponse<Group>(payload, params);
   },
 
   async getGroup(farmId: string, groupId: string): Promise<Group> {
@@ -44,14 +52,24 @@ export const GroupService = {
     await apiClient.delete(`/groups/${groupId}/animals/${animalId}`);
   },
 
-  async getGroupAnimals(groupId: string): Promise<any[]> {
-    const response = await apiClient.get(`/groups/${groupId}/animals`);
-    return response.data.data;
+  async getGroupAnimals(groupId: string, params?: ListOptions): Promise<PaginatedList<any>> {
+    const searchParams = createListSearchParams(params);
+    const queryString = searchParams.toString();
+    const url = queryString ? `/groups/${groupId}/animals?${queryString}` : `/groups/${groupId}/animals`;
+    const { data } = await apiClient.get<ApiResponse<PaginatedList<any>> | PaginatedList<any>>(url);
+    const payload = 'data' in data && data.data ? data.data : data;
+
+    return normalizePaginatedResponse<any>(payload, params);
   },
 
-  async getAnimalGroups(animalId: string): Promise<Group[]> {
-    const response = await apiClient.get<GroupListResponse>(`/animals/${animalId}/groups`);
-    return response.data.data;
+  async getAnimalGroups(animalId: string, params?: ListOptions): Promise<PaginatedList<Group>> {
+    const searchParams = createListSearchParams(params);
+    const queryString = searchParams.toString();
+    const url = queryString ? `/animals/${animalId}/groups?${queryString}` : `/animals/${animalId}/groups`;
+    const { data } = await apiClient.get<ApiResponse<PaginatedList<Group>> | PaginatedList<Group>>(url);
+    const payload = 'data' in data && data.data ? data.data : data;
+
+    return normalizePaginatedResponse<Group>(payload, params);
   },
 
   async bulkAddAnimalsToGroup(groupId: string, data: BulkAddAnimalsRequest): Promise<void> {

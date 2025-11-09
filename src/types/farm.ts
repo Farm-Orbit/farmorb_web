@@ -1,3 +1,5 @@
+import { SortOrder } from '@/types/list';
+
 export interface Farm {
     id: string;
     name: string;
@@ -32,6 +34,12 @@ export interface UpdateFarmData extends Partial<CreateFarmData> {
 
 export interface FarmState {
     farms: Farm[];
+    page: number;
+    pageSize: number;
+    total: number;
+    sortBy?: string;
+    sortOrder?: SortOrder;
+    filters?: Record<string, string | string[]>;
     currentFarm: Farm | null;
     isLoading: boolean;
     error: string | null;

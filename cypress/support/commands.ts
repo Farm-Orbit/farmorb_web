@@ -52,6 +52,22 @@ declare global {
              * @example cy.setAuthCookies('access-token', 'refresh-token')
              */
             setAuthCookies(accessToken: string, refreshToken?: string): Chainable<void>;
+            /**
+             * Create an animal via the UI
+             */
+            createAnimal(tagId: string, options?: {
+                name?: string;
+                sex?: 'male' | 'female';
+                breed?: string;
+                trackingType?: 'individual' | 'batch';
+            }): Chainable<void>;
+            editAnimal(tagId: string, options?: {
+                name?: string;
+                sex?: 'male' | 'female';
+                breed?: string;
+                trackingType?: 'individual' | 'batch';
+            }): Chainable<void>;
+            deleteAnimal(tagId: string): Chainable<void>;
 
             /**
              * Custom command to wait for API response
@@ -164,6 +180,92 @@ Cypress.Commands.add('setAuthCookies', (accessToken: string, refreshToken?: stri
     if (refreshToken) {
         cy.setCookie('refresh_token', refreshToken);
     }
+});
+
+Cypress.Commands.add('createAnimal', (tagId: string, options: {
+  name?: string;
+  sex?: 'male' | 'female';
+  breed?: string;
+  trackingType?: 'individual' | 'batch';
+} = {}) => {
+  const { name, sex = 'female', breed, trackingType = 'individual' } = options;
+
+  cy.get('[data-testid="tab-animals"]').click();
+  cy.get('[data-testid="create-animal-button"]').click();
+
+  cy.get('[data-testid="animal-tag-id-input"]').clear().type(tagId);
+
+  if (name) {
+    cy.get('[data-testid="animal-name-input"]').clear().type(name);
+  } else {
+    cy.get('[data-testid="animal-name-input"]').clear();
+  }
+
+  cy.get('[data-testid="animal-sex-select"]').select(sex);
+
+  if (breed) {
+    cy.get('[data-testid="animal-breed-input"]').clear().type(breed);
+  } else {
+    cy.get('[data-testid="animal-breed-input"]').clear();
+  }
+
+  cy.get('[data-testid="animal-tracking-type-select"]').select(trackingType);
+  cy.get('[data-testid="create-animal-submit-button"]').click();
+  cy.wait(1000);
+  cy.contains('td', tagId).should('exist');
+});
+
+Cypress.Commands.add('editAnimal', (tagId: string, options: {
+  name?: string;
+  sex?: 'male' | 'female';
+  breed?: string;
+  trackingType?: 'individual' | 'batch';
+} = {}) => {
+  const { name, sex, breed, trackingType } = options;
+
+  cy.get('[data-testid="tab-animals"]').click();
+  cy.contains('td', tagId).should('exist');
+  cy.get(`[data-testid="edit-animal-button-${tagId}"]`).click();
+
+  if (name !== undefined) {
+    cy.get('[data-testid="edit-animal-name-input"]').clear();
+    if (name) {
+      cy.get('[data-testid="edit-animal-name-input"]').type(name);
+    }
+  }
+
+  if (sex) {
+    cy.get('[data-testid="edit-animal-sex-select"]').select(sex);
+  }
+
+  if (breed !== undefined) {
+    cy.get('[data-testid="edit-animal-breed-input"]').clear();
+    if (breed) {
+      cy.get('[data-testid="edit-animal-breed-input"]').type(breed);
+    }
+  }
+
+  if (trackingType) {
+    cy.get('[data-testid="edit-animal-tracking-type-select"]').select(trackingType);
+  }
+
+  cy.get('[data-testid="update-animal-submit-button"]').click();
+  cy.wait(1000);
+
+  if (name) {
+    cy.contains('td', name).should('exist');
+  }
+});
+
+Cypress.Commands.add('deleteAnimal', (tagId: string) => {
+  cy.get('[data-testid="tab-animals"]').click();
+  cy.contains('td', tagId).should('exist');
+
+  cy.once('window:confirm', () => true);
+  cy.get(`[data-testid="delete-animal-button-${tagId}"]`).click();
+
+  cy.wait(1000);
+  cy.contains('td', tagId).should('not.exist');
 });
 
 // Custom command to wait for API calls
@@ -289,6 +391,7 @@ Cypress.Commands.add('createFarm', (name: string, description: string, type: str
 // Custom command to navigate to farms page
 Cypress.Commands.add('navigateToFarms', () => {
     cy.get('[data-testid="farms-sidebar-button"]').click();
+    cy.get('[data-testid="all-farms-sidebar-button"]').should('be.visible').click();
     cy.url().should('include', '/farms');
     cy.get('[data-testid="farms-page"]').should('be.visible');
 });

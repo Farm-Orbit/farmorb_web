@@ -57,23 +57,7 @@ export interface InviteMemberRequest {
   role: 'member';
 }
 
-export interface AcceptInvitationRequest {
-  token: string;
-}
-
 // API Response Types
-export interface GetFarmMembersResponse {
-  success: boolean;
-  data: FarmMemberResponse[];
-  message?: string;
-}
-
-export interface GetUserInvitationsResponse {
-  success: boolean;
-  data: FarmInvitationResponse[];
-  message?: string;
-}
-
 export interface InviteMemberResponse {
   success: boolean;
   data: FarmInvitationResponse;

@@ -10,13 +10,14 @@ import {
 } from '@/store/slices/farmSlice';
 import { CreateFarmData, UpdateFarmData, Farm } from '@/types/farm';
 import { useCallback } from 'react';
+import type { ListOptions } from '@/types/list';
 
 export const useFarms = () => {
     const dispatch = useAppDispatch();
-    const { farms, currentFarm, isLoading, error } = useAppSelector((state) => state.farms);
+    const { farms, currentFarm, isLoading, error, page, pageSize, total, sortBy, sortOrder, filters } = useAppSelector((state) => state.farms);
 
-    const getFarms = useCallback(() => {
-        dispatch(fetchFarms());
+    const getFarms = useCallback((params?: ListOptions) => {
+        dispatch(fetchFarms(params));
     }, [dispatch]);
 
     const getFarmById = useCallback(
@@ -63,6 +64,12 @@ export const useFarms = () => {
         currentFarm,
         isLoading,
         error,
+        page,
+        pageSize,
+        total,
+        sortBy,
+        sortOrder,
+        filters,
         getFarms,
         getFarmById,
         addFarm,

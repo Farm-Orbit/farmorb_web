@@ -34,11 +34,6 @@ export interface UpdateAnimalData extends Partial<CreateAnimalData> {
   status?: 'active' | 'sold' | 'deceased' | 'culled';
 }
 
-export interface AnimalListResponse {
-  animals: Animal[];
-  total: number;
-}
-
 export interface AnimalState {
   animals: Animal[];
   currentAnimal: Animal | null;

@@ -1,6 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AnimalService } from '@/services/animalService';
 import { Animal, CreateAnimalData } from '@/types/animal';
+import { ListOptions, PaginatedList, SortOrder } from '@/types/list';
+
+type AnimalListPayload = PaginatedList<Animal> & {
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  filters?: Record<string, string | string[]>;
+};
 
 interface AnimalState {
   animals: Animal[];
@@ -16,7 +23,30 @@ const initialState: AnimalState = {
   error: null,
 };
 
-// Async thunks
+export const fetchFarmAnimals = createAsyncThunk<
+  AnimalListPayload,
+  { farmId: string; params?: ListOptions },
+  { rejectValue: string }
+>(
+  'animals/fetchFarmAnimals',
+  async (
+    { farmId, params },
+    { rejectWithValue }
+  ) => {
+    try {
+      const result = await AnimalService.getFarmAnimals(farmId, params);
+      return {
+        ...result,
+        sortBy: params?.sortBy,
+        sortOrder: params?.sortOrder,
+        filters: params?.filters,
+      };
+    } catch (error: any) {
+      return rejectWithValue(error?.error || 'Failed to load animals');
+    }
+  }
+);
+
 export const fetchAnimalById = createAsyncThunk(
   'animals/fetchAnimalById',
   async ({ farmId, animalId }: { farmId: string; animalId: string }, { rejectWithValue }) => {
@@ -75,12 +105,25 @@ const animalSlice = createSlice({
     setCurrentAnimal: (state, action: PayloadAction<Animal | null>) => {
       state.currentAnimal = action.payload;
     },
-    clearAnimals: (state) => {
-      state.animals = [];
+    clearAnimals: () => {
+      return { ...initialState };
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchFarmAnimals.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchFarmAnimals.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.animals = action.payload.items;
+      })
+      .addCase(fetchFarmAnimals.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+        state.animals = [];
+      })
       // Fetch animal by ID
       .addCase(fetchAnimalById.pending, (state) => {
         state.isLoading = true;

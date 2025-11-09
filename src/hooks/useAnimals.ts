@@ -1,5 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
+    fetchFarmAnimals,
     fetchAnimalById,
     createAnimal,
     updateAnimal,
@@ -9,15 +10,23 @@ import {
     clearAnimals,
 } from '@/store/slices/animalSlice';
 import { Animal, CreateAnimalData } from '@/types/animal';
+import { ListOptions } from '@/types/list';
 import { useCallback } from 'react';
 
 export const useAnimals = () => {
     const dispatch = useAppDispatch();
     const { animals, currentAnimal, isLoading, error } = useAppSelector((state) => state.animals);
 
+    const getFarmAnimals = useCallback(
+        (farmId: string, params?: ListOptions) => {
+            return dispatch(fetchFarmAnimals({ farmId, params })).unwrap();
+        },
+        [dispatch]
+    );
+
     const getAnimalById = useCallback(
         (farmId: string, animalId: string) => {
-            dispatch(fetchAnimalById({ farmId, animalId }));
+            return dispatch(fetchAnimalById({ farmId, animalId })).unwrap();
         },
         [dispatch]
     );
@@ -63,6 +72,7 @@ export const useAnimals = () => {
         currentAnimal,
         isLoading,
         error,
+        getFarmAnimals,
         getAnimalById,
         addAnimal,
         createAnimal: addAnimal,

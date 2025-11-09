@@ -1,21 +1,27 @@
 import { apiClient } from './api';
+import { ApiResponse } from '@/types/api';
 import {
   FarmMemberResponse,
   FarmInvitationResponse,
   InviteMemberRequest,
-  AcceptInvitationRequest,
-  GetFarmMembersResponse,
-  GetUserInvitationsResponse,
   InviteMemberResponse,
   AcceptInvitationResponse,
   RemoveMemberResponse,
 } from '../types/farmMember';
+import { ListOptions, PaginatedList } from '@/types/list';
+import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
 
 export const FarmMemberService = {
   // Get farm members
-  getFarmMembers: async (farmId: string): Promise<FarmMemberResponse[]> => {
-    const response = await apiClient.get<GetFarmMembersResponse>(`/farms/${farmId}/members`);
-    return response.data.data || [];
+  getFarmMembers: async (farmId: string, params?: ListOptions): Promise<PaginatedList<FarmMemberResponse>> => {
+    const searchParams = createListSearchParams(params);
+    const queryString = searchParams.toString();
+    const url = queryString ? `/farms/${farmId}/members?${queryString}` : `/farms/${farmId}/members`;
+
+    const { data } = await apiClient.get<ApiResponse<PaginatedList<FarmMemberResponse>> | PaginatedList<FarmMemberResponse>>(url);
+    const payload = 'data' in data && data.data ? data.data : data;
+
+    return normalizePaginatedResponse<FarmMemberResponse>(payload, params);
   },
 
   // Remove farm member
@@ -37,16 +43,19 @@ export const FarmMemberService = {
   },
 
   // Get user's invitations
-  getUserInvitations: async (email?: string, phone?: string): Promise<FarmInvitationResponse[]> => {
-    const params = new URLSearchParams();
-    if (email) params.append('email', email);
-    if (phone) params.append('phone', phone);
-    
-    const queryString = params.toString();
+  getUserInvitations: async (params?: ListOptions & { email?: string; phone?: string }): Promise<PaginatedList<FarmInvitationResponse>> => {
+    const extra: Record<string, string | number | boolean | (string | number | boolean)[] | undefined> = {
+      email: params?.email,
+      phone: params?.phone,
+    };
+    const searchParams = createListSearchParams(params, extra);
+    const queryString = searchParams.toString();
     const url = queryString ? `/invitations?${queryString}` : '/invitations';
-    
-    const response = await apiClient.get<GetUserInvitationsResponse>(url);
-    return response.data.data || [];
+
+    const { data } = await apiClient.get<ApiResponse<PaginatedList<FarmInvitationResponse>> | PaginatedList<FarmInvitationResponse>>(url);
+    const payload = 'data' in data && data.data ? data.data : data;
+
+    return normalizePaginatedResponse<FarmInvitationResponse>(payload, params);
   },
 
   // Accept invitation by ID

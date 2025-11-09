@@ -4,6 +4,7 @@ export interface Group {
   name: string;
   purpose?: string;
   description?: string;
+  location?: string;
   color?: string;
   created_at: string;
   updated_at: string;
@@ -13,6 +14,7 @@ export interface CreateGroupRequest {
   name: string;
   purpose?: string;
   description?: string;
+  location?: string;
   color?: string;
 }
 
@@ -20,6 +22,7 @@ export interface UpdateGroupRequest {
   name?: string;
   purpose?: string;
   description?: string;
+  location?: string;
   color?: string;
 }
 
@@ -27,12 +30,6 @@ export interface GroupResponse {
   success: boolean;
   message: string;
   data: Group;
-}
-
-export interface GroupListResponse {
-  success: boolean;
-  message: string;
-  data: Group[];
 }
 
 export interface AnimalGroupRelation {
