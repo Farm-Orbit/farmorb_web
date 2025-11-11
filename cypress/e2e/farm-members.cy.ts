@@ -176,18 +176,23 @@ describe('Farm Members Feature', () => {
     // Wait for the members table to load
     cy.wait(2000);
     
+    // Wait for table to be visible
+    cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
+    
     // Verify there are exactly 2 members in the table
-    cy.get('tbody tr').should('have.length', 2);
-    
-    // Verify there are two members: the owner and the invited member
-    // Check for Owner role
-    cy.contains('Owner').should('be.visible');
-    
-    // Check for Member role
-    cy.contains('Member').should('be.visible');
+    cy.get('tbody tr', { timeout: 10000 }).should('have.length', 2);
     
     // Verify both email addresses are present in the members table
-    cy.contains(testEmail).should('be.visible'); // Farm owner
-    cy.contains(inviteeEmail).should('be.visible'); // Invited member
+    cy.contains('td', testEmail, { timeout: 10000 }).should('be.visible'); // Farm owner
+    cy.contains('td', inviteeEmail, { timeout: 10000 }).should('be.visible'); // Invited member
+    
+    // Verify roles are present in the table
+    // Owner role should be visible in the table (check in table body, not dropdown)
+    cy.get('tbody').within(() => {
+        cy.contains('Owner').should('be.visible');
+        cy.contains('Member').should('be.visible');
+    });
+    
+    cy.log('✅ Verified 2 members in the table: owner and invited member');
   });
 });

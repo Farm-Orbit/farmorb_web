@@ -160,6 +160,13 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
     [router, farmId]
   );
 
+  const handleNavigateToDetail = useCallback(
+    (animal: Animal) => {
+      router.push(`/farms/${farmId}/animals/${animal.id}`);
+    },
+    [router, farmId]
+  );
+
   const handleDeleteClick = useCallback(
     async (animal: Animal) => {
       if (!farmId) return;
@@ -188,10 +195,17 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
         accessorKey: 'tag_id',
         header: 'Tag ID',
         size: 120,
-        Cell: ({ cell }) => (
-          <span className="text-sm font-mono font-medium text-gray-900 dark:text-white">
+        Cell: ({ cell, row }) => (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNavigateToDetail(row.original);
+            }}
+            className="text-sm font-mono font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
             {cell.getValue<string>()}
-          </span>
+          </button>
         ),
       },
       {
@@ -291,7 +305,7 @@ export default function AnimalsTable({ farmId }: AnimalsTableProps) {
         ),
       },
     ],
-    [handleNavigateToEdit, handleDeleteClick, isProcessing]
+    [handleNavigateToEdit, handleNavigateToDetail, handleDeleteClick, isProcessing]
   );
 
   return (

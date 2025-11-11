@@ -5,6 +5,8 @@ import animalReducer from './slices/animalSlice';
 import farmMemberReducer from './slices/farmMemberSlice';
 import groupReducer from './slices/groupSlice';
 import auditReducer from './slices/auditSlice';
+import breedingReducer from './slices/breedingSlice';
+import healthReducer from './slices/healthSlice';
 
 // Configure the Redux store
 export const store = configureStore({
@@ -15,6 +17,8 @@ export const store = configureStore({
         farmMembers: farmMemberReducer,
         groups: groupReducer,
         audit: auditReducer,
+        breeding: breedingReducer,
+        health: healthReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

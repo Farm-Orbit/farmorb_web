@@ -2,10 +2,13 @@ export interface Group {
   id: string;
   farm_id: string;
   name: string;
+  species?: string;
   purpose?: string;
   description?: string;
   location?: string;
-  color?: string;
+  capacity?: number;
+  status?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }

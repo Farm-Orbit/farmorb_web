@@ -1,23 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Button from '@/components/ui/button/Button';
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
+import { useGroups } from '@/hooks/useGroups';
+import { Group } from '@/types/group';
+import { buildListOptions } from '@/utils/listOptions';
 import {
   type MRT_ColumnDef,
+  type MRT_ColumnFiltersState,
   type MRT_PaginationState,
   type MRT_SortingState,
-  type MRT_ColumnFiltersState,
   type MRT_TableOptions,
 } from 'material-react-table';
-import { Group } from '@/types/group';
-import Button from '@/components/ui/button/Button';
-import { useGroups } from '@/hooks/useGroups';
-import { buildListOptions } from '@/utils/listOptions';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface GroupsTableProps {
   farmId: string;
-  isOwner: boolean;
 }
 
 const sortColumnMap: Record<string, string> = {
@@ -33,7 +32,7 @@ const filterColumnMap: Record<string, string> = {
   location: 'location',
 };
 
-export default function GroupsTable({ farmId, isOwner }: GroupsTableProps) {
+export default function GroupsTable({ farmId }: GroupsTableProps) {
   const router = useRouter();
   const { groups: storeGroups, getFarmGroups, removeGroup, isLoading: isStoreLoading, error, clearError } = useGroups();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -143,10 +142,14 @@ export default function GroupsTable({ farmId, isOwner }: GroupsTableProps) {
         header: 'Group Name',
         size: 220,
         filterVariant: 'text',
-        Cell: ({ cell }) => (
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
+        Cell: ({ cell, row }) => (
+          <button
+            type="button"
+            onClick={() => router.push(`/farms/${farmId}/groups/${row.original.id}`)}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
             {cell.getValue<string>()}
-          </span>
+          </button>
         ),
       },
       {
@@ -190,10 +193,6 @@ export default function GroupsTable({ farmId, isOwner }: GroupsTableProps) {
         Cell: ({ row }) => {
           const group = row.original;
 
-          if (!isOwner) {
-            return <span className="text-xs text-gray-400 dark:text-gray-500">-</span>;
-          }
-
           return (
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <Button
@@ -218,7 +217,7 @@ export default function GroupsTable({ farmId, isOwner }: GroupsTableProps) {
         },
       },
     ],
-    [handleDeleteGroup, handleEditGroup, isOwner]
+    [handleDeleteGroup, handleEditGroup]
   );
 
   return (
@@ -239,15 +238,13 @@ export default function GroupsTable({ farmId, isOwner }: GroupsTableProps) {
       )}
 
       <div className="flex justify-end items-center">
-        {isOwner && (
-          <Button
-            onClick={() => router.push(`/farms/${farmId}/groups/new`)}
-            size="sm"
-            data-testid="create-group-button"
-          >
-            Create Group
-          </Button>
-        )}
+        <Button
+          onClick={() => router.push(`/farms/${farmId}/groups/new`)}
+          size="sm"
+          data-testid="create-group-button"
+        >
+          Create Group
+        </Button>
       </div>
 
       {!isLoading && groups.length === 0 ? (

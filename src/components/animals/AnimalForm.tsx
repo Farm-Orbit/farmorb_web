@@ -10,6 +10,7 @@ export type AnimalFormMode = 'create' | 'edit';
 
 export interface AnimalFormValues {
   tag_id: string;
+  species: string;
   name: string;
   breed: string;
   sex: 'male' | 'female';
@@ -31,6 +32,7 @@ export interface AnimalFormProps {
 
 const defaultValues: AnimalFormValues = {
   tag_id: '',
+  species: 'cattle',
   name: '',
   breed: '',
   sex: 'male',
@@ -40,6 +42,17 @@ const defaultValues: AnimalFormValues = {
   tracking_type: 'individual',
   status: 'active',
 };
+
+const speciesOptions: Array<{ value: string; label: string }> = [
+  { value: 'cattle', label: 'Cattle' },
+  { value: 'goat', label: 'Goat' },
+  { value: 'sheep', label: 'Sheep' },
+  { value: 'pig', label: 'Pig' },
+  { value: 'poultry', label: 'Poultry' },
+  { value: 'horse', label: 'Horse' },
+  { value: 'camel', label: 'Camel' },
+  { value: 'other', label: 'Other' },
+];
 
 export default function AnimalForm({
   mode,
@@ -52,6 +65,7 @@ export default function AnimalForm({
   const [formData, setFormData] = useState<AnimalFormValues>(() => ({
     ...defaultValues,
     ...initialValues,
+    species: initialValues?.species ?? defaultValues.species,
     sex: (initialValues?.sex as 'male' | 'female') ?? 'male',
     tracking_type: (initialValues?.tracking_type as 'individual' | 'batch') ?? 'individual',
     status: (initialValues?.status as AnimalFormValues['status']) ?? defaultValues.status,
@@ -65,6 +79,7 @@ export default function AnimalForm({
     setFormData((prev) => ({
       ...prev,
       ...initialValues,
+      species: initialValues?.species ?? prev.species,
       sex: (initialValues?.sex as 'male' | 'female') ?? prev.sex,
       tracking_type: (initialValues?.tracking_type as 'individual' | 'batch') ?? prev.tracking_type,
       status: (initialValues?.status as AnimalFormValues['status']) ?? prev.status,
@@ -93,6 +108,10 @@ export default function AnimalForm({
       newErrors.tag_id = 'Tag ID is required';
     }
 
+    if (!formData.species.trim()) {
+      newErrors.species = 'Species is required';
+    }
+
     if (!formData.sex) {
       newErrors.sex = 'Sex is required';
     }
@@ -118,6 +137,7 @@ export default function AnimalForm({
 
     const submitData: Partial<CreateAnimalData & { status?: string }> = {
       tag_id: formData.tag_id,
+      species: formData.species,
       sex: formData.sex,
       tracking_type: formData.tracking_type,
       ...(formData.name && { name: formData.name }),
@@ -165,6 +185,24 @@ export default function AnimalForm({
             />
             {errors.tag_id && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.tag_id}</p>
+            )}
+          </div>
+          <div>
+            <Label>Species *</Label>
+            <select
+              value={formData.species}
+              onChange={(e) => handleInputChange('species', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              data-testid="animal-species-select"
+            >
+              {speciesOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {errors.species && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.species}</p>
             )}
           </div>
           <div>

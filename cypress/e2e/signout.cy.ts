@@ -9,6 +9,7 @@ describe('Signout Test', () => {
         testEmail = `testuser${timestamp}@example.com`;
 
         // First sign up a user
+        cy.clearAuth();
         cy.visit('/signup');
         cy.get('h1').should('contain', 'Sign Up');
 

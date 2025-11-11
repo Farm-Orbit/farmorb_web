@@ -9,6 +9,7 @@ describe('Signin Test', () => {
         testEmail = `testuser${timestamp}@example.com`;
 
         // First sign up a user
+        cy.clearAuth();
         cy.visit('/signup');
         cy.get('h1').should('contain', 'Sign Up');
 
@@ -23,6 +24,10 @@ describe('Signin Test', () => {
         cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
 
         // Clear auth to test signin
+        cy.clearAuth();
+    });
+
+    beforeEach(() => {
         cy.clearAuth();
     });
 
@@ -48,6 +53,7 @@ describe('Signin Test', () => {
     });
 
     it('should show error for invalid credentials', () => {
+        cy.clearAuth();
         // Visit signin page
         cy.visit('/signin');
 

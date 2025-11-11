@@ -18,7 +18,7 @@ export default function AdminLayout({
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered
-    ? "lg:ml-[290px]"
+    ? "lg:ml-[230px]"
     : "lg:ml-[90px]";
 
   return (
@@ -34,7 +34,7 @@ export default function AdminLayout({
           {/* Header */}
           <AppHeader />
           {/* Page Content */}
-          <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
+          <div className="p-2 max-w-(--breakpoint-2xl) md:p-4">{children}</div>
         </div>
       </div>
     </AuthGuard>

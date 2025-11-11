@@ -1,6 +1,6 @@
 import { apiClient } from './api';
 import { ApiResponse } from '@/types/api';
-import { Animal, CreateAnimalData, UpdateAnimalData } from '@/types/animal';
+import { Animal, AnimalMovement, CreateAnimalData, LogAnimalMovementRequest, UpdateAnimalData } from '@/types/animal';
 import { ListOptions, PaginatedList } from '@/types/list';
 import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
 
@@ -66,5 +66,25 @@ export const AnimalService = {
     deleteAnimal: async (farmId: string, animalId: string): Promise<void> => {
         await apiClient.delete(`/farms/${farmId}/animals/${animalId}`);
     },
-};
 
+    // Get animal movements
+    getAnimalMovements: async (farmId: string, animalId: string, limit?: number): Promise<AnimalMovement[]> => {
+        const url = limit 
+            ? `/farms/${farmId}/animals/${animalId}/movements?limit=${limit}`
+            : `/farms/${farmId}/animals/${animalId}/movements`;
+        const response = await apiClient.get<any>(url);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return response.data;
+    },
+
+    // Log animal movement
+    logAnimalMovement: async (farmId: string, animalId: string, data: LogAnimalMovementRequest): Promise<AnimalMovement> => {
+        const response = await apiClient.post<any>(`/farms/${farmId}/animals/${animalId}/movements`, data);
+        if (response.data.success && response.data.data) {
+            return response.data.data;
+        }
+        return response.data;
+    },
+};

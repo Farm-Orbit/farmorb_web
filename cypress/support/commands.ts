@@ -184,16 +184,25 @@ Cypress.Commands.add('setAuthCookies', (accessToken: string, refreshToken?: stri
 
 Cypress.Commands.add('createAnimal', (tagId: string, options: {
   name?: string;
+  species?: string;
   sex?: 'male' | 'female';
   breed?: string;
   trackingType?: 'individual' | 'batch';
 } = {}) => {
-  const { name, sex = 'female', breed, trackingType = 'individual' } = options;
+  const {
+    name,
+    species = 'cattle',
+    sex = 'female',
+    breed,
+    trackingType = 'individual',
+  } = options;
 
   cy.get('[data-testid="tab-animals"]').click();
   cy.get('[data-testid="create-animal-button"]').click();
+  cy.url({ timeout: 10000 }).should('include', '/animals/new');
 
   cy.get('[data-testid="animal-tag-id-input"]').clear().type(tagId);
+  cy.get('[data-testid="animal-species-select"]').select(species);
 
   if (name) {
     cy.get('[data-testid="animal-name-input"]').clear().type(name);
@@ -210,9 +219,10 @@ Cypress.Commands.add('createAnimal', (tagId: string, options: {
   }
 
   cy.get('[data-testid="animal-tracking-type-select"]').select(trackingType);
-  cy.get('[data-testid="create-animal-submit-button"]').click();
-  cy.wait(1000);
-  cy.contains('td', tagId).should('exist');
+  cy.get('[data-testid="submit-animal-button"]').click();
+
+  cy.url({ timeout: 10000 }).should('include', '?tab=animals');
+  cy.contains('tbody tr', tagId, { timeout: 10000 }).should('exist');
 });
 
 Cypress.Commands.add('editAnimal', (tagId: string, options: {
@@ -227,33 +237,35 @@ Cypress.Commands.add('editAnimal', (tagId: string, options: {
   cy.contains('td', tagId).should('exist');
   cy.get(`[data-testid="edit-animal-button-${tagId}"]`).click();
 
+  cy.url({ timeout: 10000 }).should('include', `/animals/`);
+
   if (name !== undefined) {
-    cy.get('[data-testid="edit-animal-name-input"]').clear();
+    cy.get('[data-testid="animal-name-input"]').clear();
     if (name) {
-      cy.get('[data-testid="edit-animal-name-input"]').type(name);
+      cy.get('[data-testid="animal-name-input"]').type(name);
     }
   }
 
   if (sex) {
-    cy.get('[data-testid="edit-animal-sex-select"]').select(sex);
+    cy.get('[data-testid="animal-sex-select"]').select(sex);
   }
 
   if (breed !== undefined) {
-    cy.get('[data-testid="edit-animal-breed-input"]').clear();
+    cy.get('[data-testid="animal-breed-input"]').clear();
     if (breed) {
-      cy.get('[data-testid="edit-animal-breed-input"]').type(breed);
+      cy.get('[data-testid="animal-breed-input"]').type(breed);
     }
   }
 
   if (trackingType) {
-    cy.get('[data-testid="edit-animal-tracking-type-select"]').select(trackingType);
+    cy.get('[data-testid="animal-tracking-type-select"]').select(trackingType);
   }
 
-  cy.get('[data-testid="update-animal-submit-button"]').click();
-  cy.wait(1000);
+  cy.get('[data-testid="submit-animal-button"]').click();
+  cy.url({ timeout: 10000 }).should('include', '?tab=animals');
 
   if (name) {
-    cy.contains('td', name).should('exist');
+    cy.contains('tbody tr', name, { timeout: 10000 }).should('exist');
   }
 });
 
@@ -264,7 +276,6 @@ Cypress.Commands.add('deleteAnimal', (tagId: string) => {
   cy.once('window:confirm', () => true);
   cy.get(`[data-testid="delete-animal-button-${tagId}"]`).click();
 
-  cy.wait(1000);
   cy.contains('td', tagId).should('not.exist');
 });
 
@@ -276,6 +287,9 @@ Cypress.Commands.add('waitForApi', (method: string, url: string) => {
 
 // Custom command to sign up a new user
 Cypress.Commands.add('signup', (email: string, password: string) => {
+    // Ensure no lingering auth state before attempting signup
+    cy.clearAuth();
+
     // Intercept the signup API call
     cy.intercept('POST', '**/auth/register').as('signupRequest');
     
@@ -390,9 +404,8 @@ Cypress.Commands.add('createFarm', (name: string, description: string, type: str
 
 // Custom command to navigate to farms page
 Cypress.Commands.add('navigateToFarms', () => {
-    cy.get('[data-testid="farms-sidebar-button"]').click();
-    cy.get('[data-testid="all-farms-sidebar-button"]').should('be.visible').click();
-    cy.url().should('include', '/farms');
+    cy.visit('/farms');
+    cy.url({ timeout: 10000 }).should('include', '/farms');
     cy.get('[data-testid="farms-page"]').should('be.visible');
 });
 

@@ -18,7 +18,6 @@ import { buildListOptions } from '@/utils/listOptions';
 
 interface MembersTableProps {
   farmId: string;
-  isOwner: boolean;
 }
 
 const sortColumnMap: Record<string, string> = {
@@ -36,7 +35,7 @@ const filterColumnMap: Record<string, string> = {
   role: 'role',
 };
 
-export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
+export default function MembersTable({ farmId }: MembersTableProps) {
   const router = useRouter();
   const {
     members,
@@ -233,7 +232,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
         enableSorting: false,
         Cell: ({ row }) => {
           const member = row.original;
-          const canEdit = isOwner && member.role !== 'owner';
+          const canEdit = member.role !== 'owner';
 
           if (!canEdit) {
             return (
@@ -291,7 +290,7 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
           );
         },
       },
-    ], [editingMember, handleRemoveMember, handleUpdateRole, isOwner, removingMember, updatingRole]);
+    ], [editingMember, handleRemoveMember, handleUpdateRole, removingMember, updatingRole]);
 
   return (
     <div className="space-y-4">
@@ -308,22 +307,20 @@ export default function MembersTable({ farmId, isOwner }: MembersTableProps) {
       )}
 
       <div className="flex justify-end items-center">
-        {isOwner && (
-          <Button
-            onClick={() => router.push(`/farms/${farmId}/invite`)}
-            size="sm"
-            data-testid="invite-member-button"
-          >
-            Invite Member
-          </Button>
-        )}
+        <Button
+          onClick={() => router.push(`/farms/${farmId}/invite`)}
+          size="sm"
+          data-testid="invite-member-button"
+        >
+          Invite Member
+        </Button>
       </div>
 
       {!isLoading && members.length === 0 ? (
         <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No members found</h3>
           <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-            {isOwner ? 'Invite members to collaborate on this farm' : 'No team members yet'}
+            Invite members to collaborate on this farm
           </p>
         </div>
       ) : (

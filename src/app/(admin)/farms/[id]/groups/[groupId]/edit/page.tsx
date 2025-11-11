@@ -106,7 +106,6 @@ export default function EditGroupPage() {
             name: currentGroup.name,
             purpose: currentGroup.purpose ?? '',
             description: currentGroup.description ?? '',
-            color: currentGroup.color ?? '#3B82F6',
             location: currentGroup.location ?? '',
           }}
           onSubmit={handleSubmit}

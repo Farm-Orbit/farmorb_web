@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import GroupForm from '@/components/groups/GroupForm';
 import Button from '@/components/ui/button/Button';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import { useGroups } from '@/hooks/useGroups';
 import { CreateGroupRequest } from '@/types/group';
 
@@ -45,6 +46,10 @@ export default function CreateGroupPage() {
 
   return (
     <div className="max-w-3xl mx-auto w-full p-6 space-y-6">
+      <div className="mb-4">
+        <Breadcrumbs farmId={farmId} />
+      </div>
+
       <div className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Create Group</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">

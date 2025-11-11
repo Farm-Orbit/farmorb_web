@@ -1,6 +1,8 @@
 /// <reference types="cypress" />
 
 describe('AuthGuard Integration Test', () => {
+    const password = 'TestPassword123!';
+
     beforeEach(() => {
         // Clear all auth data before each test
         cy.clearAuth();
@@ -16,44 +18,34 @@ describe('AuthGuard Integration Test', () => {
     });
 
     it('should allow access to home page when authenticated', () => {
-        // Set auth cookies to simulate authenticated state
-        cy.setCookie('access_token', 'mock-access-token');
-        cy.setCookie('refresh_token', 'mock-refresh-token');
+        const email = `authguard${Date.now()}@example.com`;
 
-        // Visit home page
+        cy.signup(email, password);
         cy.visit('/');
 
-        // Should stay on home page (middleware allows it)
-        cy.url().should('eq', Cypress.config().baseUrl + '/');
-
-        // Should show the home page
+        cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
         cy.get('[data-testid="home-page"]').should('be.visible');
     });
 
     it('should redirect authenticated users away from signin page', () => {
-        // Set auth cookies
-        cy.setCookie('access_token', 'mock-access-token');
-        cy.setCookie('refresh_token', 'mock-refresh-token');
+        const email = `authguard-redirect${Date.now()}@example.com`;
 
-        // Visit signin page
+        cy.signup(email, password);
         cy.visit('/signin');
 
-        // Should be redirected away from signin (middleware redirects to /admin)
-        cy.url().should('not.include', '/signin');
+        cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
+        cy.get('[data-testid="home-page"]').should('be.visible');
     });
 
     it('should show loading state when AuthGuard is checking auth', () => {
-        // Set auth cookies
-        cy.setCookie('access_token', 'mock-access-token');
-        cy.setCookie('refresh_token', 'mock-refresh-token');
+        const email = `authguard-loading${Date.now()}@example.com`;
 
-        // Visit home page
-        cy.visit('/');
+        cy.signup(email, password);
 
-        // Should show loading state briefly
-        cy.get('body').should('contain.text', 'Loading...');
+        // Reload to simulate a fresh session that needs to rehydrate from tokens
+        cy.reload();
 
-        // Eventually should show the home page
-        cy.get('[data-testid="home-page"]').should('be.visible');
+        cy.contains('Loading...', { timeout: 3000 }).should('be.visible');
+        cy.get('[data-testid="home-page"]', { timeout: 10000 }).should('be.visible');
     });
 });

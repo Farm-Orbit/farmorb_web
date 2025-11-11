@@ -7,6 +7,7 @@ describe('Signup Test', () => {
         const testEmail = `testuser${timestamp}@example.com`;
 
         // Visit signup page
+        cy.clearAuth();
         cy.visit('/signup');
 
         // Wait for page to load

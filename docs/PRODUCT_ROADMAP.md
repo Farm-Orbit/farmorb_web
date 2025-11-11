@@ -68,6 +68,7 @@ Farm (existing)
 - ✅ Set group purpose (breeding, dairy, beef, etc.)
 - ✅ View group summary statistics
 - ✅ Archive/delete groups
+- ✅ **Group Detail Page** - **COMPLETE** (Overview, Animals, Health, Breeding tabs)
 
 #### Animal Registry
 - ✅ Add individual animals to groups
@@ -75,36 +76,51 @@ Farm (existing)
 - ✅ Physical description: color, markings, photos
 - ✅ Parent tracking: sire, dam lineage
 - ✅ Identification methods: ear tags, RFID, visual markers
+- ✅ **Animal Detail Page** - **COMPLETE** (Overview, Health, Breeding, Movements, Groups tabs)
+- ✅ **Animal Movement Tracking** - **COMPLETE** (automatic logging when animals added/removed from groups)
 - ⏳ Import/export animals (CSV, spreadsheet) - **PLANNED**
 - ⏳ Search and filter animals across groups - **PLANNED**
 
-### Phase 2: Health Management (Weeks 5-8)
+### Phase 2: Health Management (Weeks 5-8) ✅ **COMPLETE**
 
 #### Medical Records
-- Vaccination schedules and history
-- Treatment records (medications, dosages, dates)
-- Veterinary visits and diagnoses
-- Injury/illness tracking
-- Health alerts and reminders
-- Vet contact information
+- ✅ Vaccination schedules and history
+- ✅ Treatment records (medications, dosages, dates)
+- ✅ Veterinary visits and diagnoses
+- ✅ Injury/illness tracking
+- ✅ Health schedules (recurring and one-time)
+- ✅ Health record creation and management
+- ✅ Health schedule completion tracking
+- ⏳ Health alerts and reminders - **PLANNED** (backend ready, UI notifications pending)
+- ✅ Vet contact information (stored in health records)
 
 #### Health Monitoring
-- Weight tracking over time
-- Body condition scoring
-- Temperature records
-- Health status indicators
-- Mortality tracking with reasons
+- ✅ Health records with outcome tracking
+- ✅ Health score (1-10 scale)
+- ✅ Follow-up date tracking
+- ✅ Cost tracking for treatments
+- ✅ Withdrawal period tracking
+- ⏳ Weight tracking over time - **PLANNED**
+- ⏳ Body condition scoring - **PLANNED**
+- ⏳ Temperature records - **PLANNED**
+- ✅ Health status indicators
+- ⏳ Mortality tracking with reasons - **PLANNED**
 
-### Phase 3: Breeding Management (Weeks 9-12)
+### Phase 3: Breeding Management (Weeks 9-12) ✅ **COMPLETE**
 
 #### Reproduction Tracking
-- Heat/estrus detection and recording
-- Breeding events (natural, AI)
-- Pregnancy tracking and confirmation
-- Calving/lambing/farrowing records
-- Offspring registration (automatic parent linking)
-- Breeding performance metrics
-- Genetic tracking and reporting
+- ✅ Heat/estrus detection and recording
+- ✅ Breeding events (natural, AI)
+- ✅ Pregnancy tracking and confirmation
+- ✅ Calving/lambing/farrowing records
+- ✅ Breeding timeline view per animal
+- ✅ Gestation period calculation
+- ✅ Expected due date tracking
+- ✅ Actual due date tracking
+- ✅ Offspring count tracking
+- ⏳ Offspring registration (automatic parent linking) - **PLANNED** (manual linking available)
+- ⏳ Breeding performance metrics - **PLANNED** (data collected, analytics pending)
+- ✅ Genetic tracking (sire/dam lineage)
 
 ### Phase 3.5: Task & Work Management (Weeks 13-16) ⭐ **NEW PRIORITY**
 
@@ -142,15 +158,17 @@ Farm (existing)
 - Nutritional analysis
 - Feed efficiency metrics (gain/feed ratio)
 
-### Phase 5: Movement & Location Tracking (Weeks 21-24)
+### Phase 5: Movement & Location Tracking (Weeks 21-24) ✅ **PARTIALLY COMPLETE**
 
 #### Animal Movements
-- Pen/pasture assignments
-- Movement history (between groups, locations)
-- Grazing rotation management
-- Sales/purchases (animal in/out)
-- Death/culling records
-- Transport logs
+- ✅ Movement history (between groups, locations) - **COMPLETE**
+- ✅ Automatic movement logging when animals added/removed from groups - **COMPLETE**
+- ✅ Manual movement logging with reason and notes - **COMPLETE**
+- ✅ Movement timeline view per animal - **COMPLETE**
+- ⏳ Grazing rotation management - **PLANNED**
+- ⏳ Sales/purchases (animal in/out) - **PLANNED** (status changes available)
+- ⏳ Death/culling records - **PLANNED** (status changes available, detailed tracking pending)
+- ⏳ Transport logs - **PLANNED**
 
 ### Phase 6: Financial Management - Livestock Focus (Weeks 25-28) ⭐ **UPDATED PRIORITY**
 
@@ -198,13 +216,15 @@ Farm (existing)
 ### Database Schema Additions
 
 #### Tables to Create:
-- ✅ `groups` (farm_id, name, purpose, location, created_at) - **COMPLETE**
-- ✅ `animals` (group_id, tag_id, name, breed, sex, birth_date, parent_ids) - **COMPLETE**
-- ⏳ `health_records` (animal_id, type, date, notes, vet_id, cost) - **PLANNED**
-- ⏳ `breeding_records` (animal_id, event_type, date, mate_id, outcome) - **PLANNED**
+- ✅ `groups` (farm_id, name, purpose, location, species, capacity, status, notes, created_at) - **COMPLETE**
+- ✅ `animals` (farm_id, group_id, tag_id, rfid, name, breed, sex, birth_date, parent_ids, species, status, etc.) - **COMPLETE**
+- ✅ `animal_groups` (animal_id, group_id, added_at, added_by, notes) - **COMPLETE**
+- ✅ `animal_movements` (animal_id, from_group_id, to_group_id, moved_at, reason, performed_by, notes) - **COMPLETE**
+- ✅ `health_records` (farm_id, animal_id, group_id, record_type, title, description, performed_at, vet_name, medication, dosage, cost, outcome, health_score, etc.) - **COMPLETE**
+- ✅ `health_schedules` (farm_id, target_type, target_id, name, description, frequency_type, frequency_interval, start_date, lead_time_days, active) - **COMPLETE**
+- ✅ `breeding_records` (farm_id, animal_id, record_type, event_date, mate_id, method, status, gestation_days, expected_due_date, actual_due_date, offspring_count, offspring_ids, notes, attachments) - **COMPLETE**
 - ⏳ `tasks` (farm_id, assigned_to, title, description, priority, status, due_date, related_entity_type, related_entity_id) - **PLANNED** ⭐ **NEW**
 - ⏳ `feeding_records` (group_id, feed_type, amount, date, cost) - **PLANNED**
-- ⏳ `movements` (animal_id, from_group, to_group, date, reason) - **PLANNED**
 - ⏳ `animal_weights` (animal_id, weight, date, body_condition_score) - **PLANNED**
 - ⏳ `transactions` (farm_id, type, category, amount, description, related_entity_type, related_entity_id, date) - **PLANNED** ⭐ **NEW**
 
@@ -213,30 +233,56 @@ Farm (existing)
 ```
 ✅ /api/farms/{farm_id}/groups (GET, POST) - COMPLETE
 ✅ /api/farms/{farm_id}/groups/{group_id} (GET, PUT, DELETE) - COMPLETE
+✅ /api/groups/{group_id}/animals (GET, POST) - COMPLETE
+✅ /api/groups/{group_id}/animals/{animal_id} (POST, DELETE) - COMPLETE
+✅ /api/animals/{animal_id}/groups (GET) - COMPLETE
 ✅ /api/farms/{farm_id}/animals (GET, POST) - COMPLETE
 ✅ /api/farms/{farm_id}/animals/{animal_id} (GET, PUT, DELETE) - COMPLETE
-⏳ /api/farms/{farm_id}/animals/{animal_id}/health (GET, POST) - PLANNED
-⏳ /api/farms/{farm_id}/animals/{animal_id}/breeding (GET, POST) - PLANNED
+✅ /api/farms/{farm_id}/animals/{animal_id}/movements (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/health-records (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/health-records/{id} (GET, PUT, DELETE) - COMPLETE
+✅ /api/farms/{farm_id}/health-schedules (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/health-schedules/{id} (GET, PUT, DELETE) - COMPLETE
+✅ /api/farms/{farm_id}/health-schedules/{id}/status (PATCH) - COMPLETE
+✅ /api/farms/{farm_id}/health-schedules/{id}/complete (POST) - COMPLETE
+✅ /api/farms/{farm_id}/breeding-records (GET, POST) - COMPLETE
+✅ /api/farms/{farm_id}/breeding-records/{id} (GET, PUT, DELETE) - COMPLETE
+✅ /api/farms/{farm_id}/animals/{animal_id}/breeding-timeline (GET) - COMPLETE
 ⏳ /api/farms/{farm_id}/tasks (GET, POST) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/tasks/{task_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/groups/{group_id}/feeding (GET, POST) - PLANNED
 ⏳ /api/farms/{farm_id}/transactions (GET, POST) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/financial/summary (GET) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/dashboards/livestock-overview (GET) - PLANNED
+⏳ /api/farms/{farm_id}/reports/health-compliance (GET) - PLANNED
+⏳ /api/farms/{farm_id}/reports/breeding-performance (GET) - PLANNED
 ⏳ /api/farms/{farm_id}/analytics/dashboard - PLANNED
 ```
 
 ### Frontend Pages Structure
 
 ```
-✅ /farms/{id} - Farm details with groups & animals tabs - COMPLETE
-⏳ /farms/{id}/groups/{group_id} - Group detail page - PLANNED
-⏳ /farms/{id}/animals/{animal_id} - Individual animal profile - PLANNED
-⏳ /farms/{id}/animals/{animal_id}/health - Health records - PLANNED
-⏳ /farms/{id}/animals/{animal_id}/breeding - Breeding history - PLANNED
+✅ /farms/{id} - Farm details with groups, animals, breeding, health tabs - COMPLETE
+✅ /farms/{id}/groups/{group_id} - Group detail page (Overview, Animals, Health, Breeding) - COMPLETE
+✅ /farms/{id}/groups/{group_id}/edit - Edit group page - COMPLETE
+✅ /farms/{id}/groups/new - Create group page - COMPLETE
+✅ /farms/{id}/animals/{animal_id} - Individual animal profile (Overview, Health, Breeding, Movements, Groups) - COMPLETE
+✅ /farms/{id}/animals/{animal_id}/edit - Edit animal page - COMPLETE
+✅ /farms/{id}/animals/new - Create animal page - COMPLETE
+✅ /farms/{id}/health/records - Health records list - COMPLETE
+✅ /farms/{id}/health/records/new - Create health record - COMPLETE
+✅ /farms/{id}/health/records/{id}/edit - Edit health record - COMPLETE
+✅ /farms/{id}/health/schedules - Health schedules list - COMPLETE
+✅ /farms/{id}/health/schedules/new - Create health schedule - COMPLETE
+✅ /farms/{id}/health/schedules/{id}/edit - Edit health schedule - COMPLETE
+✅ /farms/{id}/health/schedules/{id}/record - Record schedule completion - COMPLETE
+✅ /farms/{id}/breeding - Breeding records list - COMPLETE
+✅ /farms/{id}/breeding/new - Create breeding record - COMPLETE
+✅ /farms/{id}/breeding/{id}/edit - Edit breeding record - COMPLETE
 ⏳ /farms/{id}/tasks - Task list and management - PLANNED ⭐ NEW
 ⏳ /farms/{id}/tasks/{task_id} - Task detail page - PLANNED ⭐ NEW
 ⏳ /farms/{id}/financial - Financial dashboard - PLANNED ⭐ NEW
-⏳ /farms/{id}/analytics - Farm dashboard - PLANNED
+⏳ /farms/{id}/analytics - Farm dashboard with livestock overview - PLANNED
 ```
 
 ---
@@ -322,14 +368,18 @@ Farm (existing)
 2. ✅ Build group management backend APIs - **COMPLETE**
 3. ✅ Create animal registry backend APIs - **COMPLETE**
 4. ✅ Implement group listing UI - **COMPLETE**
-5. Build animal profile pages
+5. ✅ Build animal profile pages - **COMPLETE**
+6. ✅ Build group profile pages - **COMPLETE**
+7. ✅ Animal movement tracking - **COMPLETE**
 
-### Short-term (Weeks 5-16)
-6. Health records system (Weeks 5-8)
-7. Breeding management (Weeks 9-12)
-8. Task & work management system (Weeks 13-16) ⭐ **NEW PRIORITY**
-9. Mobile responsive design
-10. Basic analytics dashboard
+### Short-term (Weeks 5-16) ✅ **MOSTLY COMPLETE**
+8. ✅ Health records system (Weeks 5-8) - **COMPLETE**
+9. ✅ Breeding management (Weeks 9-12) - **COMPLETE**
+10. ✅ Mobile responsive design - **COMPLETE**
+11. ✅ Breadcrumb navigation - **COMPLETE**
+12. ✅ Typography system - **COMPLETE**
+13. ⏳ Task & work management system (Weeks 13-16) - **PLANNED** ⭐ **NEXT PRIORITY**
+14. ⏳ Basic analytics dashboard - **PLANNED**
 
 ### Medium-term (Weeks 17-32)
 11. Feeding management (Weeks 17-20)
@@ -415,22 +465,28 @@ animals (
 - Modern UI with dark mode support
 - Notification system
 - Comprehensive testing framework
+- Breadcrumb navigation system
+- Typography system standardization
 
-### 🚧 In Progress
-- Farm member management
-- Invitation acceptance workflow
-- Farm detail pages
-
-### 📋 Planned (Next 32 Weeks)
+### ✅ Completed (Livestock Management - Phase 1-3)
 - ✅ Group management system - **COMPLETE**
-- Animal registry and tracking
-- Health records management
-- Breeding management
-- Feeding and nutrition tracking
-- Movement and location tracking
-- Financial management
-- Analytics and reporting
-- Mobile application
+- ✅ Animal registry and tracking - **COMPLETE**
+- ✅ Group detail page (Overview, Animals, Health, Breeding) - **COMPLETE**
+- ✅ Animal detail page (Overview, Health, Breeding, Movements, Groups) - **COMPLETE**
+- ✅ Health records management - **COMPLETE**
+- ✅ Health schedules management - **COMPLETE**
+- ✅ Breeding management - **COMPLETE**
+- ✅ Animal movement tracking - **COMPLETE**
+- ✅ Mobile-responsive design - **COMPLETE**
+
+### 🚧 In Progress / Planned (Next Phases)
+- ⏳ Task & work management system - **PLANNED** (Phase 3.5)
+- ⏳ Farm dashboards and analytics - **PLANNED** (Phase 7)
+- ⏳ Feeding and nutrition tracking - **PLANNED** (Phase 4)
+- ⏳ Movement and location enhancements - **PLANNED** (Phase 5)
+- ⏳ Financial management - **PLANNED** (Phase 6)
+- ⏳ Advanced analytics and reporting - **PLANNED** (Phase 7)
+- ⏳ Mobile application - **PLANNED** (Phase 8)
 
 ---
 
@@ -460,25 +516,44 @@ animals (
 - [x] Animal registry with basic CRUD operations
 - [x] Integration with existing farm system
 - [x] Mobile-responsive UI
+- [x] Group detail page with tabs
+- [x] Animal detail page with tabs
+- [x] Animal movement tracking
 
-### Phase 2 Success (Weeks 5-8)
-- [ ] Health records system operational
-- [ ] Health monitoring dashboards
-- [ ] Veterinary integration ready
+### Phase 2 Success (Weeks 5-8) ✅ **COMPLETE**
+- [x] Health records system operational
+- [x] Health schedules system operational
+- [x] Health record creation and management UI
+- [x] Health schedule creation and management UI
+- [x] Health schedule completion tracking
+- [x] Veterinary information tracking
+- [x] Cost and outcome tracking
+- [ ] Health monitoring dashboards - **PLANNED**
+- [x] Veterinary integration ready (data model complete)
 
-### Phase 3 Success (Weeks 9-12)
-- [ ] Breeding management system
-- [ ] Genetic tracking capabilities
-- [ ] Reproduction analytics
+### Phase 3 Success (Weeks 9-12) ✅ **COMPLETE**
+- [x] Breeding management system
+- [x] Breeding records creation and management
+- [x] Breeding timeline view per animal
+- [x] Genetic tracking capabilities (sire/dam)
+- [x] Gestation period calculation
+- [x] Expected due date tracking
+- [ ] Reproduction analytics - **PLANNED** (data collected, dashboards pending)
 
-### Overall Success (32 Weeks) 🚧 **IN PROGRESS**
+### Overall Success (32 Weeks) 🚧 **IN PROGRESS - 60% COMPLETE**
 - [x] Group and animal management platform (MVP)
-- [ ] Health records system
-- [ ] Breeding management
-- [ ] Mobile application launched
-- [ ] 100+ active farms
-- [ ] 1000+ animals tracked
-- [ ] 90%+ user satisfaction
+- [x] Health records system
+- [x] Breeding management
+- [x] Animal movement tracking
+- [x] Group and animal detail pages
+- [x] Breadcrumb navigation
+- [x] Mobile-responsive design
+- [ ] Task & work management system - **PLANNED**
+- [ ] Farm dashboards and analytics - **PLANNED**
+- [ ] Mobile application launched - **PLANNED**
+- [ ] 100+ active farms - **TARGET**
+- [ ] 1000+ animals tracked - **TARGET**
+- [ ] 90%+ user satisfaction - **TARGET**
 
 ---
 

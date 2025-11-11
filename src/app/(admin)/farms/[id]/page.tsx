@@ -10,7 +10,12 @@ import { FarmActivity } from '@/components/farms';
 import GroupsTable from '@/components/groups/GroupsTable';
 import AnimalsTable from '@/components/animals/AnimalsTable';
 import MembersTable from '@/components/farms/MembersTable';
+import BreedingRecordsTable from '@/components/breeding/BreedingRecordsTable';
+import HealthRecordsTable from '@/components/health/HealthRecordsTable';
+import HealthSchedulesTable from '@/components/health/HealthSchedulesTable';
 import Button from '@/components/ui/button/Button';
+import SidebarNav, { SidebarNavItem } from '@/components/layout/SidebarNav';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
 const farmTypeLabels: Record<string, string> = {
   crop: 'Crop Farm',
@@ -27,6 +32,8 @@ const getStatusColor = (isActive: boolean) => {
     : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
 };
 
+type FarmTab = 'animals' | 'groups' | 'breeding' | 'health' | 'details' | 'members' | 'activity';
+
 export default function FarmDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -35,7 +42,7 @@ export default function FarmDetailPage() {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
   const [farm, setFarm] = useState<Farm | null>(null);
-  const [activeTab, setActiveTab] = useState<'animals' | 'groups' | 'details' | 'members' | 'activity'>('animals');
+  const [activeTab, setActiveTab] = useState<FarmTab>('animals');
 
   const farmId = params.id as string;
   
@@ -69,8 +76,16 @@ export default function FarmDetailPage() {
       router.replace(url.pathname + url.search);
     }
 
-    if (tab === 'animals' || tab === 'details' || tab === 'groups' || tab === 'members' || tab === 'activity') {
-      setActiveTab(tab);
+    if (
+      tab === 'animals' ||
+      tab === 'details' ||
+      tab === 'groups' ||
+      tab === 'members' ||
+      tab === 'activity' ||
+      tab === 'breeding' ||
+      tab === 'health'
+    ) {
+      setActiveTab(tab as FarmTab);
     }
   }, [searchParams, router, addNotification]);
 
@@ -180,37 +195,59 @@ export default function FarmDetailPage() {
     );
   }
 
+  const tabs: SidebarNavItem<FarmTab>[] = [
+    { id: 'animals', label: 'Animals', testId: 'tab-animals' },
+    { id: 'groups', label: 'Groups', testId: 'tab-groups' },
+    { id: 'breeding', label: 'Breeding', testId: 'tab-breeding' },
+    { id: 'health', label: 'Health', testId: 'tab-health' },
+    { id: 'details', label: 'Details', testId: 'tab-details' },
+    { id: 'members', label: 'Members', testId: 'tab-members' },
+    { id: 'activity', label: 'Activity', testId: 'tab-activity' },
+  ];
+
   return (
-    <div className="w-full p-6" data-testid="farm-detail-page">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+    <div className="w-full p-4 md:p-6" data-testid="farm-detail-page">
+      <div className="mb-4">
+        <Breadcrumbs farmId={farmId} />
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
+        <div className="md:w-32 lg:w-38 flex-shrink-0">
+          <SidebarNav
+            items={tabs}
+            value={activeTab}
+            onChange={(nextTab) => setActiveTab(nextTab)}
+            selectLabel="Select farm section"
+            selectId="farm-tab-select"
+            selectTestId="farm-tab-select"
+          />
+        </div>
+
+        <div className="flex-1 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
             {farm && (
-              <span
-                className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(farm.is_active)}`}
-              >
+                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}>
                 {farm.is_active ? 'Active' : 'Inactive'}
               </span>
             )}
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {farm?.description || 'No description provided'}
-          </p>
         </div>
         
-        {farm && (
-          <div className="flex gap-2 mt-4 sm:mt-0">
+            {isOwner && (
+              <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => router.push(`/farms/${farm.id}/edit`)}
+                  size="sm" 
+                  onClick={() => router.push(`/farms/${farmId}/edit`)}
               data-testid="edit-farm-button"
             >
               Edit Farm
             </Button>
             <Button
               variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-300 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
               onClick={handleDeleteFarm}
               data-testid="delete-farm-button"
             >
@@ -220,76 +257,40 @@ export default function FarmDetailPage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="mt-6">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-6" aria-label="Tabs">
-            <button
-              type="button"
-              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
-                activeTab === 'animals'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              onClick={() => setActiveTab('animals')}
-              data-testid="tab-animals"
-            >
-              Animals
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
-                activeTab === 'groups'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              onClick={() => setActiveTab('groups')}
-              data-testid="tab-groups"
-            >
-              Groups
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
-                activeTab === 'details'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              onClick={() => setActiveTab('details')}
-              data-testid="tab-details"
-            >
-              Details
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
-                activeTab === 'members'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              onClick={() => setActiveTab('members')}
-              data-testid="tab-members"
-            >
-              Members
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium ${
-                activeTab === 'activity'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              onClick={() => setActiveTab('activity')}
-              data-testid="tab-activity"
-            >
-              Activity
-            </button>
-          </nav>
-        </div>
-
-        <div className="mt-6">
           {activeTab === 'animals' && (
             <AnimalsTable farmId={farmId} />
+          )}
+
+          {activeTab === 'groups' && (
+            <GroupsTable farmId={farmId} />
+          )}
+
+          {activeTab === 'breeding' && (
+            <BreedingRecordsTable farmId={farmId} />
+          )}
+
+          {activeTab === 'health' && (
+            <div className="space-y-12">
+              <section className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Health Records</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Review and log animal health events, treatments, and inspections.
+                  </p>
+                </div>
+                <HealthRecordsTable farmId={farmId} />
+              </section>
+
+              <section className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Health Schedules</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Manage upcoming health routines and automate reminders for your farm.
+                  </p>
+                </div>
+                <HealthSchedulesTable farmId={farmId} />
+              </section>
+            </div>
           )}
 
           {activeTab === 'details' && farm && (
@@ -313,6 +314,12 @@ export default function FarmDetailPage() {
                         {farm.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
+                    {farm.description && (
+                      <div>
+                        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
+                        <span className="text-sm text-gray-900 dark:text-white">{farm.description}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -337,7 +344,7 @@ export default function FarmDetailPage() {
               {/* Additional Information */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Created</span>
                     <span className="text-sm text-gray-900 dark:text-white">{formatDate(farm.created_at)}</span>
@@ -351,12 +358,8 @@ export default function FarmDetailPage() {
             </div>
           )}
 
-          {activeTab === 'groups' && (
-            <GroupsTable farmId={farmId} isOwner={isOwner} />
-          )}
-
-          {activeTab === 'members' && isOwner && (
-            <MembersTable farmId={farmId} isOwner={isOwner} />
+          {activeTab === 'members' && (
+            <MembersTable farmId={farmId} />
           )}
 
           {activeTab === 'activity' && (
@@ -364,18 +367,6 @@ export default function FarmDetailPage() {
           )}
         </div>
       </div>
-
-      {/* Back Button */}
-      <div className="mt-6">
-        <Button
-          variant="outline"
-          onClick={() => router.push('/farms')}
-          data-testid="back-to-farms-button"
-        >
-          Back to Farms
-        </Button>
-      </div>
-
     </div>
   );
 }

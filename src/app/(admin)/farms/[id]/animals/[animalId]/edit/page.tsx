@@ -100,6 +100,7 @@ export default function EditAnimalPage() {
           mode="edit"
           initialValues={{
             tag_id: currentAnimal.tag_id,
+            species: currentAnimal.species,
             name: currentAnimal.name ?? '',
             breed: currentAnimal.breed ?? '',
             sex: currentAnimal.sex,
