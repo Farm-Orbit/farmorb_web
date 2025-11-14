@@ -173,8 +173,96 @@ Animal 1─* Movement
 | `attachments` | jsonb |
 | `created_at/updated_at` | timestamptz |
 
+#### `inventory_items` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `name` | text | Item name |
+| `category` | text | feed, medication, equipment, supplies, etc. |
+| `quantity` | numeric | Current stock level |
+| `unit` | text | kg, lbs, liters, bags, etc. |
+| `cost_per_unit` | numeric | Purchase cost per unit |
+| `supplier_id` (FK) | UUID | nullable, reference to suppliers table |
+| `expiry_date` | date | nullable, for perishable items |
+| `low_stock_threshold` | numeric | Alert when stock falls below this |
+| `notes` | text | Optional notes |
+| `created_at/updated_at` | timestamptz | |
+
+#### `suppliers` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `name` | text | Supplier name |
+| `contact_info` | jsonb | Phone, email, address |
+| `address` | text | Optional physical address |
+| `notes` | text | Optional notes |
+| `created_at/updated_at` | timestamptz | |
+
+#### `inventory_transactions` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `inventory_item_id` (FK) | UUID | |
+| `transaction_type` | text | purchase, usage, restock, adjustment, loss |
+| `quantity` | numeric | Positive for additions, negative for deductions |
+| `cost` | numeric | Transaction cost |
+| `notes` | text | Optional notes |
+| `performed_by` | UUID | User who performed the transaction |
+| `created_at` | timestamptz | |
+
+#### `feeding_records` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `group_id` (FK) | UUID | Group being fed |
+| `inventory_item_id` (FK) | UUID | nullable, link to inventory item |
+| `feed_type` | text | Type of feed |
+| `amount` | numeric | Amount fed |
+| `unit` | text | kg, lbs, etc. |
+| `date` | date | Feeding date |
+| `cost` | numeric | Cost of this feeding |
+| `notes` | text | Optional notes |
+| `performed_by` | UUID | User who performed the feeding |
+| `created_at/updated_at` | timestamptz | |
+
+#### `feeding_schedules` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `group_id` (FK) | UUID | Group to feed |
+| `feed_type` | text | Type of feed |
+| `amount` | numeric | Amount to feed |
+| `unit` | text | kg, lbs, etc. |
+| `frequency_type` | text | daily, weekly, custom |
+| `frequency_interval` | interval | e.g., 1 day, 1 week |
+| `start_date` | date | When to start |
+| `active` | boolean | Is schedule active |
+| `created_at/updated_at` | timestamptz | |
+
+#### `animal_measurements` ⭐ **NEW**
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` (PK) | UUID | |
+| `farm_id` (FK) | UUID | |
+| `animal_id` (FK) | UUID | |
+| `measurement_type` | text | weight, temperature, bcs, height, length, girth, milk_production, wool_production, custom |
+| `value` | numeric | Measurement value |
+| `unit` | text | kg, lbs, celsius, fahrenheit, score, cm, inches, liters, etc. |
+| `measured_at` | timestamptz | When measurement was taken |
+| `measured_by` | UUID | User who took the measurement |
+| `notes` | text | Optional notes |
+| `created_at/updated_at` | timestamptz | |
+
 #### `notifications` (extend existing or add linking fields)
 - Capture event → user delivery, supporting health/breeding alerts and reminders.
+- Inventory low stock alerts
+- Feeding schedule reminders
+- Measurement alerts (weight loss, temperature spikes)
 
 ## 6. API Design Overview
 
@@ -218,18 +306,65 @@ Animal 1─* Movement
 | PUT | same |
 | GET | `/api/farms/{farm_id}/animals/{animal_id}/breeding-timeline` | Animal-specific view |
 
+### Inventory ⭐ **NEW**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/farms/{farm_id}/inventory` | List inventory items |
+| POST | `/api/farms/{farm_id}/inventory` | Create inventory item |
+| GET | `/api/farms/{farm_id}/inventory/{item_id}` | Get inventory item |
+| PUT | `/api/farms/{farm_id}/inventory/{item_id}` | Update inventory item |
+| DELETE | `/api/farms/{farm_id}/inventory/{item_id}` | Delete inventory item |
+| GET | `/api/farms/{farm_id}/inventory/{item_id}/transactions` | Get transaction history |
+| POST | `/api/farms/{farm_id}/inventory/{item_id}/transactions` | Create transaction |
+| GET | `/api/farms/{farm_id}/inventory/low-stock` | Get low stock items |
+| GET | `/api/farms/{farm_id}/suppliers` | List suppliers |
+| POST | `/api/farms/{farm_id}/suppliers` | Create supplier |
+| GET | `/api/farms/{farm_id}/suppliers/{supplier_id}` | Get supplier |
+| PUT | `/api/farms/{farm_id}/suppliers/{supplier_id}` | Update supplier |
+| DELETE | `/api/farms/{farm_id}/suppliers/{supplier_id}` | Delete supplier |
+
+### Feeding ⭐ **NEW**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/farms/{farm_id}/groups/{group_id}/feeding` | List feeding records |
+| POST | `/api/farms/{farm_id}/groups/{group_id}/feeding` | Create feeding record |
+| GET | `/api/farms/{farm_id}/groups/{group_id}/feeding/{record_id}` | Get feeding record |
+| PUT | `/api/farms/{farm_id}/groups/{group_id}/feeding/{record_id}` | Update feeding record |
+| DELETE | `/api/farms/{farm_id}/groups/{group_id}/feeding/{record_id}` | Delete feeding record |
+| GET | `/api/farms/{farm_id}/groups/{group_id}/feeding-schedules` | List feeding schedules |
+| POST | `/api/farms/{farm_id}/groups/{group_id}/feeding-schedules` | Create feeding schedule |
+| GET | `/api/farms/{farm_id}/groups/{group_id}/feeding-schedules/{schedule_id}` | Get feeding schedule |
+| PUT | `/api/farms/{farm_id}/groups/{group_id}/feeding-schedules/{schedule_id}` | Update feeding schedule |
+| DELETE | `/api/farms/{farm_id}/groups/{group_id}/feeding-schedules/{schedule_id}` | Delete feeding schedule |
+
+### Animal Measurements ⭐ **NEW**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/farms/{farm_id}/animals/{animal_id}/measurements` | List measurements |
+| POST | `/api/farms/{farm_id}/animals/{animal_id}/measurements` | Record measurement |
+| GET | `/api/farms/{farm_id}/animals/{animal_id}/measurements/{measurement_id}` | Get measurement |
+| PUT | `/api/farms/{farm_id}/animals/{animal_id}/measurements/{measurement_id}` | Update measurement |
+| DELETE | `/api/farms/{farm_id}/animals/{animal_id}/measurements/{measurement_id}` | Delete measurement |
+| GET | `/api/farms/{farm_id}/animals/{animal_id}/weights` | Get weight history (legacy, use measurements) |
+| GET | `/api/farms/{farm_id}/animals/{animal_id}/body-condition-scores` | Get BCS history (legacy, use measurements) |
+
 ### Dashboards & Reports (read-only endpoints)
 - `/api/farms/{farm_id}/dashboards/livestock-overview`
 - `/api/farms/{farm_id}/reports/health-compliance`
 - `/api/farms/{farm_id}/reports/breeding-performance`
+- `/api/farms/{farm_id}/reports/inventory` ⭐ **NEW**
+- `/api/farms/{farm_id}/reports/feeding` ⭐ **NEW**
 
 ## 7. UI & Workflow Architecture
-1. **Farm Dashboard Enhancements**: Add livestock summary cards (total animals, groups, overdue health events, breeding statuses).
-2. **Group Detail Page**: Tabs for overview, animals, health schedules, breeding snapshot.
-3. **Animal Detail Page**: Timeline (movements, health, breeding), quick log actions.
+1. **Farm Dashboard Enhancements**: Add livestock summary cards (total animals, groups, overdue health events, breeding statuses, low stock alerts).
+2. **Group Detail Page**: Tabs for overview, animals, health schedules, breeding snapshot, feeding records.
+3. **Animal Detail Page**: Timeline (movements, health, breeding, measurements), quick log actions.
 4. **Health Scheduler**: Calendar/list view with filters, create schedule wizard, reminder configuration.
 5. **Breeding Planner**: Calendar with cycle predictions, timeline view, quick log forms.
-6. **Report Dashboards**: Charts (bar for compliance, line for success rate) and summary tables.
+6. **Inventory Management**: Inventory list with filters (category, low stock), item detail pages, transaction history, supplier management.
+7. **Feeding Management**: Feeding records table, feeding schedule management, feed consumption analytics, inventory integration.
+8. **Animal Measurements**: Measurement history timeline, measurement charts (weight trends, BCS trends), quick measurement entry forms.
+9. **Report Dashboards**: Charts (bar for compliance, line for success rate, inventory usage, feed consumption) and summary tables.
 
 ## 8. Notifications & Automation
 - Email & in-app notifications for upcoming health events, overdue logs, breeding milestones.
@@ -253,10 +388,12 @@ Animal 1─* Movement
 | **Phase 2** | Weeks 5-8 | Health schedules & records (backend + UI), dashboards MVP | ✅ **COMPLETE** (dashboards pending) |
 | **Phase 3** | Weeks 9-12 | Breeding records & timelines, offspring quick-add | ✅ **COMPLETE** (offspring quick-add pending) |
 | **Phase 3.5** | Weeks 13-16 | Task & work management system | ⏳ **PLANNED** |
-| **Phase 4** | Weeks 17-20 | Buffer for polish, feeding management groundwork, usability iterations | ⏳ **PLANNED** |
-| **Phase 5** | Weeks 21-24 | Movement/location enhancements, optimization | ✅ **PARTIALLY COMPLETE** (movement tracking done, enhancements pending) |
-| **Phase 6** | Weeks 25-28 | Financial tracking (basic) | ⏳ **PLANNED** |
-| **Phase 7** | Weeks 29-32 | Advanced analytics/reporting, farm dashboards | ⏳ **PLANNED** |
+| **Phase 4** | Weeks 17-20 | Inventory management system | ⏳ **PLANNED** ⭐ **NEW** |
+| **Phase 4.5** | Weeks 21-24 | Feeding & nutrition tracking | ⏳ **PLANNED** ⭐ **UPDATED** |
+| **Phase 4.6** | Weeks 21-24 | Animal measurements tracking | ⏳ **PLANNED** ⭐ **NEW** |
+| **Phase 5** | Weeks 25-28 | Movement/location enhancements, optimization | ✅ **PARTIALLY COMPLETE** (movement tracking done, enhancements pending) |
+| **Phase 6** | Weeks 29-32 | Financial tracking (basic) | ⏳ **PLANNED** |
+| **Phase 7** | Weeks 33-36 | Advanced analytics/reporting, farm dashboards | ⏳ **PLANNED** |
 
 _Actual execution can adapt but ensures dependencies resolved in order._
 
@@ -270,6 +407,10 @@ _Actual execution can adapt but ensures dependencies resolved in order._
 - ✅ Group and animal detail pages with comprehensive information. - **COMPLETE**
 - ✅ Breadcrumb navigation for better UX. - **COMPLETE**
 - ✅ Mobile-responsive design for all livestock management features. - **COMPLETE**
+- ⏳ Inventory items tracked with stock levels and low stock alerts. - **PLANNED** ⭐ **NEW**
+- ⏳ Feeding records automatically deduct from inventory. - **PLANNED** ⭐ **NEW**
+- ⏳ Animal measurements (weight, BCS, temperature) tracked over time. - **PLANNED** ⭐ **NEW**
+- ⏳ Measurement trends and charts available for analysis. - **PLANNED** ⭐ **NEW**
 
 ## 12. Risks & Mitigations
 | Risk | Impact | Mitigation |

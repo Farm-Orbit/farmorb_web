@@ -221,12 +221,35 @@ This document tracks the implementation status of all features across the FarmOr
 13. ⏳ **Farm Dashboards** - Livestock overview, health compliance, breeding performance - **PLANNED**
 14. ⏳ **Task & Work Management** - Create/assign tasks, task templates, integrate with health/breeding - **PLANNED**
 
-### **Phase 4: Optional Features (LOW PRIORITY)**
-15. **Password Management** - Forgot/reset password flows (backend ready)
-16. **Phone Authentication** - Alternative login method
-17. **Public Invitation Links** - Shareable invitation system
-18. **Activity Logs** - User and farm activity tracking
-19. **Data Export** - Export farm data to CSV/JSON
+### **Phase 4: Inventory Management (HIGH PRIORITY)** ⭐ **NEW**
+15. ⏳ **Inventory Management** - Track feed, medications, and supplies with stock levels - **PLANNED**
+16. ⏳ **Supplier Management** - Manage supplier contacts and information - **PLANNED**
+17. ⏳ **Low Stock Alerts** - Automated notifications when inventory runs low - **PLANNED**
+18. ⏳ **Inventory Transactions** - Track inventory usage, restocking, and purchases - **PLANNED**
+19. ⏳ **Inventory Reports** - View inventory history, usage trends, and cost analysis - **PLANNED**
+
+### **Phase 4.5: Feeding & Nutrition (HIGH PRIORITY)** ⭐ **UPDATED**
+20. ⏳ **Feeding Records** - Record feed consumption by group with cost tracking - **PLANNED**
+21. ⏳ **Feeding Schedules** - Create and manage recurring feeding schedules - **PLANNED**
+22. ⏳ **Feed Inventory Integration** - Automatically deduct feed from inventory when feeding - **PLANNED**
+23. ⏳ **Feed Cost Allocation** - Track feed costs per animal/group - **PLANNED**
+24. ⏳ **Feed Efficiency Metrics** - Calculate gain/feed ratio and feed conversion efficiency - **PLANNED**
+25. ⏳ **Nutritional Analysis** - Track nutritional content and requirements - **PLANNED**
+
+### **Phase 4.6: Animal Measurements (HIGH PRIORITY)** ⭐ **NEW**
+26. ⏳ **Weight Tracking** - Record and track animal weight over time with growth charts - **PLANNED**
+27. ⏳ **Body Condition Scoring** - Record BCS with history and trends - **PLANNED**
+28. ⏳ **Temperature Tracking** - Monitor animal temperature for health assessment - **PLANNED**
+29. ⏳ **Custom Measurements** - Record height, length, girth, and other custom measurements - **PLANNED**
+30. ⏳ **Measurement Analytics** - View measurement trends, charts, and alerts - **PLANNED**
+31. ⏳ **Production Tracking** - Track milk production, wool/fiber production - **PLANNED**
+
+### **Phase 5: Optional Features (LOW PRIORITY)**
+32. **Password Management** - Forgot/reset password flows (backend ready)
+33. **Phone Authentication** - Alternative login method
+34. **Public Invitation Links** - Shareable invitation system
+35. **Activity Logs** - User and farm activity tracking
+36. **Data Export** - Export farm data to CSV/JSON
 
 ---
 
@@ -241,11 +264,14 @@ This document tracks the implementation status of all features across the FarmOr
 | **Health Management** | ✅ Complete | ✅ Complete | **100%** |
 | **Breeding Management** | ✅ Complete | ✅ Complete | **100%** |
 | **Movement Tracking** | ✅ Complete | ✅ Complete | **100%** |
+| **Inventory Management** | ❌ Not Started | ❌ Not Started | **0%** ⭐ **NEW** |
+| **Feeding & Nutrition** | ❌ Not Started | ❌ Not Started | **0%** ⭐ **NEW** |
+| **Animal Measurements** | ❌ Not Started | ❌ Not Started | **0%** ⭐ **NEW** |
 | Notifications | ✅ Complete | ✅ Complete | 100% |
 | Testing | ✅ Complete | ✅ Complete | 100% |
 | UI/UX | N/A | ✅ Complete | 100% |
 
-**Overall Progress: 92% Complete (38/41 major features implemented)**
+**Overall Progress: 85% Complete (38/45 major features implemented)**
 
 ---
 

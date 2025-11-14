@@ -5,6 +5,7 @@ import Button from '@/components/ui/button/Button';
 import Label from '@/components/form/Label';
 import Input from '@/components/form/input/InputField';
 import { CreateAnimalData } from '@/types/animal';
+import { getTodayDateString, formatDateForInput } from '@/utils/dateUtils';
 
 export type AnimalFormMode = 'create' | 'edit';
 
@@ -36,7 +37,7 @@ const defaultValues: AnimalFormValues = {
   name: '',
   breed: '',
   sex: 'male',
-  birth_date: '',
+  birth_date: getTodayDateString(),
   color: '',
   markings: '',
   tracking_type: 'individual',
@@ -69,6 +70,7 @@ export default function AnimalForm({
     sex: (initialValues?.sex as 'male' | 'female') ?? 'male',
     tracking_type: (initialValues?.tracking_type as 'individual' | 'batch') ?? 'individual',
     status: (initialValues?.status as AnimalFormValues['status']) ?? defaultValues.status,
+    birth_date: initialValues?.birth_date ? formatDateForInput(initialValues.birth_date) : getTodayDateString(),
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +88,7 @@ export default function AnimalForm({
       tag_id: initialValues?.tag_id ?? prev.tag_id,
       name: initialValues?.name ?? prev.name,
       breed: initialValues?.breed ?? prev.breed,
-      birth_date: initialValues?.birth_date ?? prev.birth_date,
+      birth_date: initialValues?.birth_date ? formatDateForInput(initialValues.birth_date) : getTodayDateString(),
       color: initialValues?.color ?? prev.color,
       markings: initialValues?.markings ?? prev.markings,
     }));
@@ -135,6 +137,15 @@ export default function AnimalForm({
       return;
     }
 
+    // Convert birth_date from YYYY-MM-DD to ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ) for backend
+    const formatBirthDateForAPI = (dateString: string | undefined): string | undefined => {
+      if (!dateString) return undefined;
+      // Parse the date string and convert to ISO 8601 format
+      const date = new Date(dateString + 'T00:00:00Z');
+      if (Number.isNaN(date.getTime())) return undefined;
+      return date.toISOString();
+    };
+
     const submitData: Partial<CreateAnimalData & { status?: string }> = {
       tag_id: formData.tag_id,
       species: formData.species,
@@ -142,7 +153,7 @@ export default function AnimalForm({
       tracking_type: formData.tracking_type,
       ...(formData.name && { name: formData.name }),
       ...(formData.breed && { breed: formData.breed }),
-      ...(formData.birth_date && { birth_date: formData.birth_date }),
+      ...(formData.birth_date && { birth_date: formatBirthDateForAPI(formData.birth_date) }),
       ...(formData.color && { color: formData.color }),
       ...(formData.markings && { markings: formData.markings }),
       ...(showStatusField && formData.status && { status: formData.status }),

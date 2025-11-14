@@ -12,6 +12,7 @@ import {
   CreateBreedingRecordRequest,
   UpdateBreedingRecordRequest,
 } from '@/types/breeding';
+import { getTodayDateString, formatDateForInput } from '@/utils/dateUtils';
 
 export type BreedingFormMode = 'create' | 'edit';
 
@@ -45,7 +46,7 @@ interface BreedingRecordFormValues {
 const defaultFormValues: BreedingRecordFormValues = {
   animal_id: '',
   record_type: 'breeding',
-  event_date: '',
+  event_date: getTodayDateString(),
   mate_id: '',
   method: 'natural',
   status: 'planned',
@@ -101,9 +102,10 @@ export default function BreedingRecordForm({
   submitLabel = mode === 'edit' ? 'Save Changes' : 'Create Record',
   cancelLabel = 'Cancel',
 }: BreedingRecordFormProps) {
-  const { getFarmAnimals } = useAnimals();
+  const { getFarmAnimals, getAnimalById } = useAnimals();
   const [formValues, setFormValues] = useState<BreedingRecordFormValues>(defaultFormValues);
   const [animalOptions, setAnimalOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [preSelectedAnimalName, setPreSelectedAnimalName] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,21 +115,39 @@ export default function BreedingRecordForm({
   );
 
   const loadAnimals = useCallback(async () => {
+    const hasPreSelectedAnimal = !!(initialValues?.animal_id);
+    
     try {
-      const result = await getFarmAnimals(farmId, { page: 1, pageSize: 200 });
-      const options = result.items.map((animal) => ({
-        value: animal.id,
-        label: animal.name || animal.tag_id || animal.id,
-      }));
-      setAnimalOptions(options);
+      // If animal is pre-selected, fetch animal details to show name
+      if (hasPreSelectedAnimal && initialValues.animal_id) {
+        try {
+          const animal = await getAnimalById(farmId, initialValues.animal_id);
+          setPreSelectedAnimalName(animal.name || animal.tag_id || animal.id);
+        } catch (error) {
+          console.error('Failed to load pre-selected animal:', error);
+        }
+      } else {
+        // Load all animals for dropdown
+        const result = await getFarmAnimals(farmId, { page: 1, pageSize: 200 });
+        const options = result.items.map((animal) => ({
+          value: animal.id,
+          label: animal.name || animal.tag_id || animal.id,
+        }));
+        setAnimalOptions(options);
+      }
     } catch (error) {
       console.error('Failed to load animals:', error);
     }
-  }, [farmId, getFarmAnimals]);
+  }, [farmId, getFarmAnimals, getAnimalById, initialValues]);
 
   useEffect(() => {
     loadAnimals();
   }, [loadAnimals]);
+
+  // Determine if animal is pre-selected (from context)
+  const isAnimalPreSelected = useMemo(() => {
+    return !!(initialValues?.animal_id);
+  }, [initialValues]);
 
   useEffect(() => {
     if (!initialValues) {
@@ -138,7 +158,7 @@ export default function BreedingRecordForm({
       ...prev,
       animal_id: initialValues.animal_id || '',
       record_type: (initialValues.record_type as BreedingRecordType) || prev.record_type,
-      event_date: initialValues.event_date ? initialValues.event_date.split('T')[0] : '',
+      event_date: initialValues.event_date ? formatDateForInput(initialValues.event_date) : getTodayDateString(),
       mate_id: initialValues.mate_id || '',
       method: (initialValues.method as BreedingRecordFormValues['method']) || prev.method,
       status: (initialValues.status as BreedingStatus) || prev.status,
@@ -147,10 +167,10 @@ export default function BreedingRecordForm({
           ? String(initialValues.gestation_days)
           : '',
       expected_due_date: initialValues.expected_due_date
-        ? initialValues.expected_due_date.split('T')[0]
+        ? formatDateForInput(initialValues.expected_due_date)
         : '',
       actual_due_date: initialValues.actual_due_date
-        ? initialValues.actual_due_date.split('T')[0]
+        ? formatDateForInput(initialValues.actual_due_date)
         : '',
       offspring_count:
         typeof initialValues.offspring_count === 'number'
@@ -173,7 +193,8 @@ export default function BreedingRecordForm({
   const validate = () => {
     const nextErrors: Record<string, string> = {};
 
-    if (!formValues.animal_id) {
+    // Only validate animal selection if it's not pre-selected
+    if (!isAnimalPreSelected && !formValues.animal_id) {
       nextErrors.animal_id = 'Animal is required';
     }
 
@@ -194,8 +215,13 @@ export default function BreedingRecordForm({
   };
 
   const buildPayload = (): CreateBreedingRecordRequest | UpdateBreedingRecordRequest => {
+    // Use pre-selected animal_id from initialValues if available, otherwise use formValues
+    const animalId = isAnimalPreSelected && initialValues?.animal_id 
+      ? initialValues.animal_id 
+      : formValues.animal_id;
+
     const basePayload: CreateBreedingRecordRequest = {
-      animal_id: formValues.animal_id,
+      animal_id: animalId,
       record_type: formValues.record_type,
       event_date: toStartOfDayISOString(formValues.event_date) ?? formValues.event_date,
       status: formValues.status,
@@ -284,25 +310,34 @@ export default function BreedingRecordForm({
         )}
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="sm:col-span-1">
-            <Label>Animal *</Label>
-            <select
-              value={formValues.animal_id}
-              onChange={(event) => handleInputChange('animal_id', event.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              data-testid="breeding-animal-select"
-            >
-              <option value="">Select animal</option>
-              {animalOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {errors.animal_id && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.animal_id}</p>
-            )}
-          </div>
+          {isAnimalPreSelected ? (
+            <div className="sm:col-span-1">
+              <Label>Animal *</Label>
+              <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700/50">
+                {preSelectedAnimalName || 'Loading...'}
+              </div>
+            </div>
+          ) : (
+            <div className="sm:col-span-1">
+              <Label>Animal *</Label>
+              <select
+                value={formValues.animal_id}
+                onChange={(event) => handleInputChange('animal_id', event.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                data-testid="breeding-animal-select"
+              >
+                <option value="">Select animal</option>
+                {animalOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors.animal_id && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.animal_id}</p>
+              )}
+            </div>
+          )}
 
           <div className="sm:col-span-1">
             <Label>Record Type *</Label>

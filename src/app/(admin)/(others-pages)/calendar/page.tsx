@@ -12,7 +12,7 @@ export default function page() {
     <div>
       <PageBreadcrumb pageTitle="Calendar" />
       <Suspense fallback={<div>Loading calendar...</div>}>
-        <Calendar />
+      <Calendar />
       </Suspense>
     </div>
   );

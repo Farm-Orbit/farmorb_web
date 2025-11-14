@@ -6,12 +6,15 @@ import Input from '@/components/form/input/InputField';
 import Button from '@/components/ui/button/Button';
 import { useAnimals } from '@/hooks/useAnimals';
 import { useGroups } from '@/hooks/useGroups';
+import { useFarmMembers } from '@/hooks/useFarmMembers';
 import {
   CreateHealthRecordRequest,
   HealthRecord,
   HealthRecordType,
   UpdateHealthRecordRequest,
 } from '@/types/health';
+import { FarmMemberResponse } from '@/types/farmMember';
+import { getTodayDateString, formatDateForInput } from '@/utils/dateUtils';
 
 export type HealthRecordFormMode = 'create' | 'edit';
 
@@ -50,7 +53,7 @@ const defaultFormValues: HealthRecordFormValues = {
   record_type: 'treatment',
   title: '',
   description: '',
-  performed_at: '',
+  performed_at: getTodayDateString(),
   performed_by: '',
   vet_name: '',
   medication: '',
@@ -94,12 +97,14 @@ export default function HealthRecordForm({
   submitLabel = mode === 'edit' ? 'Save Changes' : 'Create Health Record',
   cancelLabel = 'Cancel',
 }: HealthRecordFormProps) {
-  const { getFarmAnimals } = useAnimals();
-  const { getFarmGroups } = useGroups();
+  const { getAnimalById } = useAnimals();
+  const { getGroupById } = useGroups();
+  const { getFarmMembers } = useFarmMembers();
 
   const [formValues, setFormValues] = useState<HealthRecordFormValues>(defaultFormValues);
-  const [animalOptions, setAnimalOptions] = useState<Array<{ value: string; label: string }>>([]);
-  const [groupOptions, setGroupOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [preSelectedAnimalName, setPreSelectedAnimalName] = useState<string>('');
+  const [preSelectedGroupName, setPreSelectedGroupName] = useState<string>('');
+  const [memberOptions, setMemberOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -108,33 +113,83 @@ export default function HealthRecordForm({
     [mode]
   );
 
-  const loadAnimalsAndGroups = useCallback(async () => {
-    try {
-      const [animals, groups] = await Promise.all([
-        getFarmAnimals(farmId, { page: 1, pageSize: 200 }),
-        getFarmGroups(farmId, { page: 1, pageSize: 200 }),
-      ]);
-
-      setAnimalOptions(
-        animals.items.map((animal) => ({
-          value: animal.id,
-          label: animal.name || animal.tag_id || animal.id,
-        }))
-      );
-      setGroupOptions(
-        groups.items.map((group) => ({
-          value: group.id,
-          label: group.name || group.id,
-        }))
-      );
-    } catch (error) {
-      console.error('Failed to load animals/groups for health record form:', error);
+  // Helper function to format member display name
+  const getMemberDisplayName = useCallback((member: FarmMemberResponse): string => {
+    if (member.first_name && member.last_name) {
+      return `${member.first_name} ${member.last_name}`;
     }
-  }, [farmId, getFarmAnimals, getFarmGroups]);
+    if (member.first_name) {
+      return member.first_name;
+    }
+    if (member.last_name) {
+      return member.last_name;
+    }
+    if (member.email) {
+      return member.email;
+    }
+    return 'Member';
+  }, []);
+
+  // Load farm members for the performed_by dropdown
+  const loadFarmMembers = useCallback(async () => {
+    try {
+      const result = await getFarmMembers(farmId, { page: 1, pageSize: 200 });
+      const options = result.items.map((member) => ({
+        value: member.user_id,
+        label: getMemberDisplayName(member),
+      }));
+      setMemberOptions(options);
+    } catch (error) {
+      console.error('Failed to load farm members:', error);
+    }
+  }, [farmId, getFarmMembers, getMemberDisplayName]);
+
+  // Load pre-selected animal/group details - health records must be created from animal or group context
+  const loadAnimalsAndGroups = useCallback(async () => {
+    const hasPreSelectedAnimal = !!(initialValues?.animal_id);
+    const hasPreSelectedGroup = !!(initialValues?.group_id);
+
+    try {
+      // If animal is pre-selected, fetch animal details to show name
+      if (hasPreSelectedAnimal && initialValues.animal_id) {
+        try {
+          const animal = await getAnimalById(farmId, initialValues.animal_id);
+          setPreSelectedAnimalName(animal.name || animal.tag_id || animal.id);
+        } catch (error) {
+          console.error('Failed to load pre-selected animal:', error);
+        }
+      }
+
+      // If group is pre-selected, fetch group details to show name
+      if (hasPreSelectedGroup && initialValues.group_id) {
+        try {
+          const group = await getGroupById(farmId, initialValues.group_id);
+          setPreSelectedGroupName(group.name || initialValues.group_id);
+        } catch (error) {
+          console.error('Failed to load pre-selected group:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load pre-selected animal/group for health record form:', error);
+    }
+  }, [farmId, getAnimalById, getGroupById, initialValues]);
+
+  useEffect(() => {
+    loadFarmMembers();
+  }, [loadFarmMembers]);
 
   useEffect(() => {
     loadAnimalsAndGroups();
   }, [loadAnimalsAndGroups]);
+
+  // Determine if animal or group is pre-selected (from context)
+  const isAnimalPreSelected = useMemo(() => {
+    return !!(initialValues?.animal_id);
+  }, [initialValues]);
+
+  const isGroupPreSelected = useMemo(() => {
+    return !!(initialValues?.group_id);
+  }, [initialValues]);
 
   useEffect(() => {
     if (!initialValues) {
@@ -148,7 +203,7 @@ export default function HealthRecordForm({
       record_type: (initialValues.record_type as HealthRecordType) || prev.record_type,
       title: initialValues.title || '',
       description: initialValues.description || '',
-      performed_at: initialValues.performed_at ? initialValues.performed_at.split('T')[0] : '',
+      performed_at: initialValues.performed_at ? formatDateForInput(initialValues.performed_at) : getTodayDateString(),
       performed_by: initialValues.performed_by || '',
       vet_name: initialValues.vet_name || '',
       medication: initialValues.medication || '',
@@ -158,7 +213,7 @@ export default function HealthRecordForm({
           ? String(initialValues.withdrawal_period_days)
           : '',
       cost: typeof initialValues.cost === 'number' ? String(initialValues.cost) : '',
-      follow_up_date: initialValues.follow_up_date ? initialValues.follow_up_date.split('T')[0] : '',
+      follow_up_date: initialValues.follow_up_date ? formatDateForInput(initialValues.follow_up_date) : '',
       outcome: initialValues.outcome || '',
       health_score:
         typeof initialValues.health_score === 'number'
@@ -192,9 +247,9 @@ export default function HealthRecordForm({
       nextErrors.performed_at = 'Performed date is required';
     }
 
-    if (!formValues.animal_id && !formValues.group_id) {
-      nextErrors.animal_id = 'Select an animal or group';
-      nextErrors.group_id = 'Select an animal or group';
+    // Health records must be created from animal or group context
+    if (!isAnimalPreSelected && !isGroupPreSelected) {
+      nextErrors.submit = 'Health records must be created from an animal or group page';
     }
 
     setErrors(nextErrors);
@@ -208,36 +263,43 @@ export default function HealthRecordForm({
       performed_at: toStartOfDayISOString(formValues.performed_at) ?? formValues.performed_at,
     };
 
-    if (formValues.animal_id) {
-      payload.animal_id = formValues.animal_id;
-    } else {
+    // Health records must be created from animal or group context (no dropdowns)
+    // Use pre-selected animal_id or group_id from initialValues
+    if (isAnimalPreSelected && initialValues?.animal_id) {
+      payload.animal_id = initialValues.animal_id;
+      payload.group_id = null;
+    } else if (isGroupPreSelected && initialValues?.group_id) {
+      payload.group_id = initialValues.group_id;
       payload.animal_id = null;
-    }
-
-    if (formValues.group_id) {
-      payload.group_id = formValues.group_id;
     } else {
+      // This should not happen if form is accessed correctly
+      payload.animal_id = null;
       payload.group_id = null;
     }
 
-    if (formValues.description) {
-      payload.description = formValues.description;
+    if (formValues.description && formValues.description.trim() !== '') {
+      payload.description = formValues.description.trim();
     }
 
-    if (formValues.performed_by) {
-      payload.performed_by = formValues.performed_by;
+    // Only include performed_by if it's a non-empty string (it should be a UUID)
+    // If empty or whitespace, omit it entirely so the backend can auto-set it to the current user
+    // Backend validation requires performed_by to be either omitted or a valid UUID4
+    const performedBy = formValues.performed_by?.trim();
+    if (performedBy && performedBy !== '') {
+      payload.performed_by = performedBy;
     }
 
-    if (formValues.vet_name) {
-      payload.vet_name = formValues.vet_name;
+    // Only include optional string fields if they have non-empty values
+    if (formValues.vet_name && formValues.vet_name.trim() !== '') {
+      payload.vet_name = formValues.vet_name.trim();
     }
 
-    if (formValues.medication) {
-      payload.medication = formValues.medication;
+    if (formValues.medication && formValues.medication.trim() !== '') {
+      payload.medication = formValues.medication.trim();
     }
 
-    if (formValues.dosage) {
-      payload.dosage = formValues.dosage;
+    if (formValues.dosage && formValues.dosage.trim() !== '') {
+      payload.dosage = formValues.dosage.trim();
     }
 
     if (formValues.withdrawal_period_days) {
@@ -258,8 +320,8 @@ export default function HealthRecordForm({
       payload.follow_up_date = toStartOfDayISOString(formValues.follow_up_date) ?? formValues.follow_up_date;
     }
 
-    if (formValues.outcome) {
-      payload.outcome = formValues.outcome;
+    if (formValues.outcome && formValues.outcome.trim() !== '') {
+      payload.outcome = formValues.outcome.trim();
     }
 
     if (formValues.health_score) {
@@ -269,8 +331,8 @@ export default function HealthRecordForm({
       }
     }
 
-    if (formValues.notes) {
-      payload.notes = formValues.notes;
+    if (formValues.notes && formValues.notes.trim() !== '') {
+      payload.notes = formValues.notes.trim();
     }
 
     return payload;
@@ -313,45 +375,23 @@ export default function HealthRecordForm({
         )}
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <Label>Animal</Label>
-            <select
-              value={formValues.animal_id}
-              onChange={(event) => handleInputChange('animal_id', event.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              data-testid="health-record-animal-select"
-            >
-              <option value="">Select animal</option>
-              {animalOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {errors.animal_id && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.animal_id}</p>
-            )}
-          </div>
+          {isAnimalPreSelected && (
+            <div>
+              <Label>Animal</Label>
+              <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700/50">
+                {preSelectedAnimalName || 'Loading...'}
+              </div>
+            </div>
+          )}
 
-          <div>
-            <Label>Group</Label>
-            <select
-              value={formValues.group_id}
-              onChange={(event) => handleInputChange('group_id', event.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              data-testid="health-record-group-select"
-            >
-              <option value="">Select group</option>
-              {groupOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {errors.group_id && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.group_id}</p>
-            )}
-          </div>
+          {isGroupPreSelected && (
+            <div>
+              <Label>Group</Label>
+              <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700/50">
+                {preSelectedGroupName || 'Loading...'}
+              </div>
+            </div>
+          )}
 
           <div>
             <Label>Record Type *</Label>
@@ -405,13 +445,19 @@ export default function HealthRecordForm({
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <Label>Performed By</Label>
-            <Input
-              type="text"
+            <select
               value={formValues.performed_by ?? ''}
               onChange={(event) => handleInputChange('performed_by', event.target.value)}
-              placeholder="Staff ID or Name"
-              data-testid="health-record-performed-by-input"
-            />
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              data-testid="health-record-performed-by-select"
+            >
+              <option value="">Select member (optional)</option>
+              {memberOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <Label>Vet Name</Label>

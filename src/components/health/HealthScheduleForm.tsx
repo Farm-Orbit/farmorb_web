@@ -13,6 +13,7 @@ import {
   HealthScheduleTargetType,
   UpdateHealthScheduleRequest,
 } from '@/types/health';
+import { getTodayDateString, formatDateForInput } from '@/utils/dateUtils';
 
 export type HealthScheduleFormMode = 'create' | 'edit';
 
@@ -44,7 +45,7 @@ const defaultValues: HealthScheduleFormValues = {
   description: '',
   frequency_type: 'once',
   frequency_interval_days: '',
-  start_date: '',
+  start_date: getTodayDateString(),
   lead_time_days: '0',
 };
 
@@ -139,7 +140,7 @@ export default function HealthScheduleForm({
         typeof initialValues.frequency_interval_days === 'number'
           ? String(initialValues.frequency_interval_days)
           : '',
-      start_date: initialValues.start_date ? initialValues.start_date.split('T')[0] : '',
+      start_date: initialValues.start_date ? formatDateForInput(initialValues.start_date) : getTodayDateString(),
       lead_time_days:
         typeof initialValues.lead_time_days === 'number'
           ? String(initialValues.lead_time_days)

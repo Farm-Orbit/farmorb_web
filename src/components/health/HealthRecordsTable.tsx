@@ -175,9 +175,6 @@ export default function HealthRecordsTable({ farmId }: HealthRecordsTableProps) 
     loadAnimalsAndGroups();
   }, [loadAnimalsAndGroups]);
 
-  const handleNavigateToCreate = useCallback(() => {
-    router.push(`/farms/${farmId}/health/records/new`);
-  }, [router, farmId]);
 
   const handleNavigateToEdit = useCallback(
     (record: HealthRecord) => {
@@ -320,14 +317,6 @@ export default function HealthRecordsTable({ farmId }: HealthRecordsTableProps) 
           ))}
         </select>
 
-        <Button
-          onClick={handleNavigateToCreate}
-          size="sm"
-          data-testid="create-health-record-button"
-          disabled={isProcessing}
-        >
-          Add Health Record
-        </Button>
       </div>
 
       {!isLoading && records.length === 0 ? (

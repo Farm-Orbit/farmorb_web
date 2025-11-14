@@ -1,26 +1,49 @@
 "use client";
 
 import { Metadata } from 'next';
-import { useParams, useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 import BreedingRecordForm from '@/components/breeding/BreedingRecordForm';
 import Button from '@/components/ui/button/Button';
 import { useBreeding } from '@/hooks/useBreeding';
-import { CreateBreedingRecordRequest } from '@/types/breeding';
+import { CreateBreedingRecordRequest, BreedingRecord } from '@/types/breeding';
 
 export default function CreateBreedingRecordPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const farmId = params.id as string | undefined;
+  const animalId = searchParams.get('animal_id') || undefined;
+  const groupId = searchParams.get('group_id') || undefined;
   const { addBreedingRecord, clearError } = useBreeding();
+
+  // Determine redirect URL based on context
+  const redirectUrl = useMemo(() => {
+    if (animalId) {
+      return `/farms/${farmId}/animals/${animalId}?tab=breeding`;
+    }
+    if (groupId) {
+      return `/farms/${farmId}/groups/${groupId}?tab=breeding`;
+    }
+    return `/farms/${farmId}?tab=breeding`;
+  }, [farmId, animalId, groupId]);
+
+  const initialValues = useMemo<Partial<BreedingRecord>>(() => {
+    const values: Partial<BreedingRecord> = {};
+    if (animalId) {
+      values.animal_id = animalId;
+    }
+    // Note: BreedingRecord type doesn't support group_id, only animal_id
+    return values;
+  }, [animalId]);
 
   const handleSubmit = useCallback(
     async (data: CreateBreedingRecordRequest) => {
       if (!farmId) return;
       await addBreedingRecord(farmId, data);
-      router.push(`/farms/${farmId}?tab=breeding`);
+      router.push(redirectUrl);
     },
-    [addBreedingRecord, farmId, router]
+    [addBreedingRecord, farmId, router, redirectUrl]
   );
 
   const handleCancel = useCallback(() => {
@@ -55,6 +78,7 @@ export default function CreateBreedingRecordPage() {
         <BreedingRecordForm
           mode="create"
           farmId={farmId}
+          initialValues={initialValues}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           submitLabel="Create Breeding Record"

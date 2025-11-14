@@ -13,6 +13,9 @@ import MembersTable from '@/components/farms/MembersTable';
 import BreedingRecordsTable from '@/components/breeding/BreedingRecordsTable';
 import HealthRecordsTable from '@/components/health/HealthRecordsTable';
 import HealthSchedulesTable from '@/components/health/HealthSchedulesTable';
+import { InventoryItemsTable } from '@/components/inventory';
+import SuppliersTable from '@/components/inventory/SuppliersTable';
+import FeedingRecordsTable from '@/components/feeding/FeedingRecordsTable';
 import Button from '@/components/ui/button/Button';
 import SidebarNav, { SidebarNavItem } from '@/components/layout/SidebarNav';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
@@ -27,12 +30,12 @@ const farmTypeLabels: Record<string, string> = {
 };
 
 const getStatusColor = (isActive: boolean) => {
-  return isActive 
+  return isActive
     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
     : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
 };
 
-type FarmTab = 'animals' | 'groups' | 'breeding' | 'health' | 'details' | 'members' | 'activity';
+type FarmTab = 'animals' | 'groups' | 'breeding' | 'health' | 'feeding' | 'inventory' | 'suppliers' | 'details' | 'members' | 'activity';
 
 export default function FarmDetailPage() {
   const params = useParams();
@@ -45,11 +48,11 @@ export default function FarmDetailPage() {
   const [activeTab, setActiveTab] = useState<FarmTab>('animals');
 
   const farmId = params.id as string;
-  
+
   // Check if current user is the owner of the farm
   // For testing purposes, always show farm members section
   const isOwner = true; // farm?.created_by === user?.id;
-  
+
   useEffect(() => {
     if (farmId) {
       getFarmById(farmId);
@@ -61,14 +64,14 @@ export default function FarmDetailPage() {
     const invitation = searchParams.get('invitation');
     const email = searchParams.get('email');
     const tab = searchParams.get('tab');
-    
+
     if (invitation === 'success' && email) {
       addNotification({
         type: 'success',
         title: 'Invitation Sent!',
         message: `Invitation sent successfully.`
       });
-      
+
       // Clear the URL parameters after showing notification
       const url = new URL(window.location.href);
       url.searchParams.delete('invitation');
@@ -83,7 +86,10 @@ export default function FarmDetailPage() {
       tab === 'members' ||
       tab === 'activity' ||
       tab === 'breeding' ||
-      tab === 'health'
+      tab === 'health' ||
+      tab === 'feeding' ||
+      tab === 'inventory' ||
+      tab === 'suppliers'
     ) {
       setActiveTab(tab as FarmTab);
     }
@@ -200,6 +206,9 @@ export default function FarmDetailPage() {
     { id: 'groups', label: 'Groups', testId: 'tab-groups' },
     { id: 'breeding', label: 'Breeding', testId: 'tab-breeding' },
     { id: 'health', label: 'Health', testId: 'tab-health' },
+    { id: 'feeding', label: 'Feeding', testId: 'tab-feeding' },
+    { id: 'inventory', label: 'Inventory', testId: 'tab-inventory' },
+    { id: 'suppliers', label: 'Suppliers', testId: 'tab-suppliers' },
     { id: 'details', label: 'Details', testId: 'tab-details' },
     { id: 'members', label: 'Members', testId: 'tab-members' },
     { id: 'activity', label: 'Activity', testId: 'tab-activity' },
@@ -226,36 +235,36 @@ export default function FarmDetailPage() {
         <div className="flex-1 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
-            {farm && (
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{farm?.name || 'Loading...'}</h1>
+              {farm && (
                 <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(farm.is_active)}`}>
-                {farm.is_active ? 'Active' : 'Inactive'}
-              </span>
-            )}
-        </div>
-        
+                  {farm.is_active ? 'Active' : 'Inactive'}
+                </span>
+              )}
+            </div>
+
             {isOwner && (
               <div className="flex gap-2">
-            <Button
-              variant="outline"
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => router.push(`/farms/${farmId}/edit`)}
-              data-testid="edit-farm-button"
-            >
-              Edit Farm
-            </Button>
-            <Button
-              variant="outline"
+                  data-testid="edit-farm-button"
+                >
+                  Edit Farm
+                </Button>
+                <Button
+                  variant="outline"
                   size="sm"
                   className="text-red-600 border-red-300 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
-              onClick={handleDeleteFarm}
-              data-testid="delete-farm-button"
-            >
-              Delete Farm
-            </Button>
+                  onClick={handleDeleteFarm}
+                  data-testid="delete-farm-button"
+                >
+                  Delete Farm
+                </Button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
           {activeTab === 'animals' && (
             <AnimalsTable farmId={farmId} />
@@ -290,6 +299,43 @@ export default function FarmDetailPage() {
                 </div>
                 <HealthSchedulesTable farmId={farmId} />
               </section>
+            </div>
+          )}
+
+          {activeTab === 'feeding' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Feeding Records</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Record and track feeding events to monitor nutrition and feed consumption for your livestock.
+                  Create feeding records from animal or group pages.
+                </p>
+              </div>
+              <FeedingRecordsTable farmId={farmId} />
+            </div>
+          )}
+
+          {activeTab === 'inventory' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Inventory Items</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Track feed, medication, equipment, and supplies to manage your farm inventory.
+                </p>
+              </div>
+              <InventoryItemsTable farmId={farmId} />
+            </div>
+          )}
+
+          {activeTab === 'suppliers' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Suppliers</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Manage your suppliers and vendor relationships.
+                </p>
+              </div>
+              <SuppliersTable farmId={farmId} />
             </div>
           )}
 

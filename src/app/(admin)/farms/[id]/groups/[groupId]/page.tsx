@@ -9,10 +9,11 @@ import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import GroupOverview from '@/components/groups/GroupOverview';
 import GroupAnimalsTable from '@/components/groups/GroupAnimalsTable';
 import GroupHealthSchedules from '@/components/groups/GroupHealthSchedules';
+import GroupFeedingRecords from '@/components/groups/GroupFeedingRecords';
 import GroupBreedingSnapshot from '@/components/groups/GroupBreedingSnapshot';
 import Button from '@/components/ui/button/Button';
 
-type GroupTab = 'overview' | 'animals' | 'health' | 'breeding';
+type GroupTab = 'overview' | 'animals' | 'health' | 'feeding' | 'breeding';
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -43,7 +44,7 @@ export default function GroupDetailPage() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'overview' || tab === 'animals' || tab === 'health' || tab === 'breeding') {
+    if (tab === 'overview' || tab === 'animals' || tab === 'health' || tab === 'feeding' || tab === 'breeding') {
       setActiveTab(tab as GroupTab);
     }
   }, [searchParams]);
@@ -58,6 +59,7 @@ export default function GroupDetailPage() {
     { id: 'overview', label: 'Overview', testId: 'tab-overview' },
     { id: 'animals', label: 'Animals', testId: 'tab-animals' },
     { id: 'health', label: 'Health', testId: 'tab-health' },
+    { id: 'feeding', label: 'Feeding', testId: 'tab-feeding' },
     { id: 'breeding', label: 'Breeding', testId: 'tab-breeding' },
   ];
 
@@ -168,6 +170,7 @@ export default function GroupDetailPage() {
           {activeTab === 'overview' && <GroupOverview farmId={farmId} group={group} />}
           {activeTab === 'animals' && <GroupAnimalsTable farmId={farmId} groupId={groupId} />}
           {activeTab === 'health' && <GroupHealthSchedules farmId={farmId} groupId={groupId} />}
+          {activeTab === 'feeding' && <GroupFeedingRecords farmId={farmId} groupId={groupId} />}
           {activeTab === 'breeding' && <GroupBreedingSnapshot farmId={farmId} groupId={groupId} />}
         </div>
       </div>

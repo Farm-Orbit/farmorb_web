@@ -9,11 +9,12 @@ import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import AnimalOverview from '@/components/animals/AnimalOverview';
 import AnimalHealthRecords from '@/components/animals/AnimalHealthRecords';
 import AnimalBreedingTimeline from '@/components/animals/AnimalBreedingTimeline';
+import AnimalFeedingRecords from '@/components/animals/AnimalFeedingRecords';
 import AnimalMovementsTable from '@/components/animals/AnimalMovementsTable';
 import AnimalGroupsTable from '@/components/animals/AnimalGroupsTable';
 import Button from '@/components/ui/button/Button';
 
-type AnimalTab = 'overview' | 'health' | 'breeding' | 'movements' | 'groups';
+type AnimalTab = 'overview' | 'health' | 'breeding' | 'feeding' | 'movements' | 'groups';
 
 export default function AnimalDetailPage() {
   const params = useParams();
@@ -48,6 +49,7 @@ export default function AnimalDetailPage() {
       tab === 'overview' ||
       tab === 'health' ||
       tab === 'breeding' ||
+      tab === 'feeding' ||
       tab === 'movements' ||
       tab === 'groups'
     ) {
@@ -65,6 +67,7 @@ export default function AnimalDetailPage() {
     { id: 'overview', label: 'Overview', testId: 'tab-overview' },
     { id: 'health', label: 'Health', testId: 'tab-health' },
     { id: 'breeding', label: 'Breeding', testId: 'tab-breeding' },
+    { id: 'feeding', label: 'Feeding', testId: 'tab-feeding' },
     { id: 'movements', label: 'Movements', testId: 'tab-movements' },
     { id: 'groups', label: 'Groups', testId: 'tab-groups' },
   ];
@@ -169,6 +172,7 @@ export default function AnimalDetailPage() {
           {activeTab === 'overview' && <AnimalOverview farmId={farmId} animal={animal} />}
           {activeTab === 'health' && <AnimalHealthRecords farmId={farmId} animalId={animalId} />}
           {activeTab === 'breeding' && <AnimalBreedingTimeline farmId={farmId} animalId={animalId} />}
+          {activeTab === 'feeding' && <AnimalFeedingRecords farmId={farmId} animalId={animalId} />}
           {activeTab === 'movements' && <AnimalMovementsTable farmId={farmId} animalId={animalId} />}
           {activeTab === 'groups' && <AnimalGroupsTable farmId={farmId} animalId={animalId} />}
         </div>

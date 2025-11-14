@@ -147,16 +147,87 @@ Farm (existing)
 
 **Rationale**: Based on Farmbrite analysis, task management is essential for operational efficiency. Farmers need to organize daily work, assign tasks to team members, and track completion. This integrates seamlessly with livestock management (health check reminders, breeding schedules, etc.).
 
-### Phase 4: Feeding & Nutrition (Weeks 17-20)
+### Phase 4: Inventory Management (Weeks 17-20) ⭐ **NEW PRIORITY**
+
+#### Inventory Tracking
+- Inventory item management (feed, medications, supplies)
+- Stock levels and quantities
+- Unit of measurement (kg, lbs, liters, bags, etc.)
+- Low stock alerts and notifications
+- Supplier management
+- Purchase tracking
+- Cost per unit tracking
+- Expiration date tracking
+- Category organization (feed, medication, equipment, supplies)
+- Inventory history and audit trail
+
+#### Inventory Features
+- Add/edit/delete inventory items
+- Track inventory usage (deduct when used)
+- Restock inventory (add to stock)
+- View inventory reports
+- Filter by category, supplier, low stock
+- Export inventory data
+- Integration with feeding records (deduct feed from inventory)
+- Integration with health records (deduct medications from inventory)
+
+### Phase 4.5: Feeding & Nutrition (Weeks 21-24) ⭐ **UPDATED PRIORITY**
 
 #### Feed Management
-- Feed types and inventory
+- Feed types and inventory integration
 - Feeding schedules by group
 - Ration planning and calculations
 - Feed consumption tracking
 - Cost per animal/group
 - Nutritional analysis
 - Feed efficiency metrics (gain/feed ratio)
+- Automatic inventory deduction when feeding
+- Feeding history and reports
+- Feed cost allocation to groups/animals
+
+#### Feeding Records
+- Record feed consumption by group
+- Track feed type, quantity, and date
+- Link to inventory items
+- Cost tracking per feeding
+- Feeding schedule management
+- Feeding reminders and notifications
+- Feed consumption analytics
+
+### Phase 4.6: Animal Measurements (Weeks 21-24) ⭐ **NEW PRIORITY**
+
+#### Weight Tracking
+- Record animal weight measurements
+- Weight history over time
+- Weight trends and growth charts
+- Average daily gain (ADG) calculations
+- Weight-based feeding recommendations
+- Weight at birth, weaning, and maturity
+- Body weight monitoring for health assessment
+
+#### Body Condition Scoring (BCS)
+- Record body condition scores (1-5 or 1-9 scale)
+- BCS history tracking
+- BCS trends over time
+- BCS-based health and nutrition insights
+- Visual BCS guides and references
+
+#### Additional Measurements
+- Temperature tracking
+- Height/length measurements (for certain species)
+- Girth measurements
+- Milk production (for dairy animals)
+- Wool/fiber production (for sheep/goats)
+- Custom measurement fields
+
+#### Measurement Features
+- Quick measurement entry forms
+- Measurement history timeline
+- Measurement charts and graphs
+- Measurement alerts (weight loss, temperature spikes)
+- Export measurement data
+- Integration with health records
+- Integration with breeding records (pregnancy weight tracking)
 
 ### Phase 5: Movement & Location Tracking (Weeks 21-24) ✅ **PARTIALLY COMPLETE**
 
@@ -224,8 +295,14 @@ Farm (existing)
 - ✅ `health_schedules` (farm_id, target_type, target_id, name, description, frequency_type, frequency_interval, start_date, lead_time_days, active) - **COMPLETE**
 - ✅ `breeding_records` (farm_id, animal_id, record_type, event_date, mate_id, method, status, gestation_days, expected_due_date, actual_due_date, offspring_count, offspring_ids, notes, attachments) - **COMPLETE**
 - ⏳ `tasks` (farm_id, assigned_to, title, description, priority, status, due_date, related_entity_type, related_entity_id) - **PLANNED** ⭐ **NEW**
-- ⏳ `feeding_records` (group_id, feed_type, amount, date, cost) - **PLANNED**
-- ⏳ `animal_weights` (animal_id, weight, date, body_condition_score) - **PLANNED**
+- ⏳ `inventory_items` (farm_id, name, category, quantity, unit, cost_per_unit, supplier, expiry_date, low_stock_threshold, created_at, updated_at) - **PLANNED** ⭐ **NEW**
+- ⏳ `inventory_transactions` (farm_id, inventory_item_id, transaction_type, quantity, cost, notes, performed_by, created_at) - **PLANNED** ⭐ **NEW**
+- ⏳ `suppliers` (farm_id, name, contact_info, address, notes, created_at) - **PLANNED** ⭐ **NEW**
+- ⏳ `feeding_records` (farm_id, group_id, inventory_item_id, feed_type, amount, unit, date, cost, notes, performed_by, created_at) - **PLANNED** ⭐ **UPDATED**
+- ⏳ `feeding_schedules` (farm_id, group_id, feed_type, amount, frequency_type, frequency_interval, start_date, active, created_at) - **PLANNED** ⭐ **NEW**
+- ⏳ `animal_measurements` (farm_id, animal_id, measurement_type, value, unit, measured_at, measured_by, notes, created_at) - **PLANNED** ⭐ **NEW**
+- ⏳ `animal_weights` (animal_id, weight, unit, measured_at, measured_by, notes, created_at) - **PLANNED** ⭐ **NEW** (deprecated, use animal_measurements)
+- ⏳ `body_condition_scores` (animal_id, score, scale, measured_at, measured_by, notes, created_at) - **PLANNED** ⭐ **NEW** (deprecated, use animal_measurements)
 - ⏳ `transactions` (farm_id, type, category, amount, description, related_entity_type, related_entity_id, date) - **PLANNED** ⭐ **NEW**
 
 ### API Endpoints Structure
@@ -250,12 +327,27 @@ Farm (existing)
 ✅ /api/farms/{farm_id}/animals/{animal_id}/breeding-timeline (GET) - COMPLETE
 ⏳ /api/farms/{farm_id}/tasks (GET, POST) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/tasks/{task_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
-⏳ /api/farms/{farm_id}/groups/{group_id}/feeding (GET, POST) - PLANNED
+⏳ /api/farms/{farm_id}/inventory (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/inventory/{item_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/inventory/{item_id}/transactions (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/inventory/low-stock (GET) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/suppliers (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/suppliers/{supplier_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/groups/{group_id}/feeding (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/groups/{group_id}/feeding/{record_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/groups/{group_id}/feeding-schedules (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/groups/{group_id}/feeding-schedules/{schedule_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/animals/{animal_id}/measurements (GET, POST) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/animals/{animal_id}/measurements/{measurement_id} (GET, PUT, DELETE) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/animals/{animal_id}/weights (GET, POST) - PLANNED ⭐ NEW (legacy, use measurements)
+⏳ /api/farms/{farm_id}/animals/{animal_id}/body-condition-scores (GET, POST) - PLANNED ⭐ NEW (legacy, use measurements)
 ⏳ /api/farms/{farm_id}/transactions (GET, POST) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/financial/summary (GET) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/dashboards/livestock-overview (GET) - PLANNED
 ⏳ /api/farms/{farm_id}/reports/health-compliance (GET) - PLANNED
 ⏳ /api/farms/{farm_id}/reports/breeding-performance (GET) - PLANNED
+⏳ /api/farms/{farm_id}/reports/inventory (GET) - PLANNED ⭐ NEW
+⏳ /api/farms/{farm_id}/reports/feeding (GET) - PLANNED ⭐ NEW
 ⏳ /api/farms/{farm_id}/analytics/dashboard - PLANNED
 ```
 
@@ -281,6 +373,18 @@ Farm (existing)
 ✅ /farms/{id}/breeding/{id}/edit - Edit breeding record - COMPLETE
 ⏳ /farms/{id}/tasks - Task list and management - PLANNED ⭐ NEW
 ⏳ /farms/{id}/tasks/{task_id} - Task detail page - PLANNED ⭐ NEW
+⏳ /farms/{id}/inventory - Inventory list and management - PLANNED ⭐ NEW
+⏳ /farms/{id}/inventory/new - Create inventory item - PLANNED ⭐ NEW
+⏳ /farms/{id}/inventory/{item_id} - Inventory item detail - PLANNED ⭐ NEW
+⏳ /farms/{id}/inventory/{item_id}/edit - Edit inventory item - PLANNED ⭐ NEW
+⏳ /farms/{id}/suppliers - Supplier list - PLANNED ⭐ NEW
+⏳ /farms/{id}/suppliers/new - Create supplier - PLANNED ⭐ NEW
+⏳ /farms/{id}/suppliers/{supplier_id} - Supplier detail - PLANNED ⭐ NEW
+⏳ /farms/{id}/groups/{group_id}/feeding - Feeding records for group - PLANNED ⭐ NEW
+⏳ /farms/{id}/groups/{group_id}/feeding/new - Create feeding record - PLANNED ⭐ NEW
+⏳ /farms/{id}/groups/{group_id}/feeding-schedules - Feeding schedules for group - PLANNED ⭐ NEW
+⏳ /farms/{id}/animals/{animal_id}/measurements - Animal measurements - PLANNED ⭐ NEW
+⏳ /farms/{id}/animals/{animal_id}/measurements/new - Record measurement - PLANNED ⭐ NEW
 ⏳ /farms/{id}/financial - Financial dashboard - PLANNED ⭐ NEW
 ⏳ /farms/{id}/analytics - Farm dashboard with livestock overview - PLANNED
 ```
@@ -381,11 +485,13 @@ Farm (existing)
 13. ⏳ Task & work management system (Weeks 13-16) - **PLANNED** ⭐ **NEXT PRIORITY**
 14. ⏳ Basic analytics dashboard - **PLANNED**
 
-### Medium-term (Weeks 17-32)
-11. Feeding management (Weeks 17-20)
-12. Movement & location tracking (Weeks 21-24)
-13. Financial tracking (Weeks 25-28) ⭐ **UPDATED PRIORITY**
-14. Advanced analytics and reporting (Weeks 29-32)
+### Medium-term (Weeks 17-32) ⭐ **UPDATED PRIORITIES**
+15. ⏳ Inventory management system (Weeks 17-20) - **PLANNED** ⭐ **NEW PRIORITY**
+16. ⏳ Feeding & nutrition tracking (Weeks 21-24) - **PLANNED** ⭐ **UPDATED PRIORITY**
+17. ⏳ Animal measurements tracking (Weeks 21-24) - **PLANNED** ⭐ **NEW PRIORITY**
+18. ⏳ Movement & location enhancements (Weeks 21-24) - **PLANNED**
+19. ⏳ Financial tracking (Weeks 25-28) - **PLANNED** ⭐ **UPDATED PRIORITY**
+20. ⏳ Advanced analytics and reporting (Weeks 29-32) - **PLANNED**
 
 ### Long-term (Weeks 33+)
 15. Mobile application (Weeks 33-36)
@@ -481,8 +587,10 @@ animals (
 
 ### 🚧 In Progress / Planned (Next Phases)
 - ⏳ Task & work management system - **PLANNED** (Phase 3.5)
+- ⏳ Inventory management system - **PLANNED** (Phase 4) ⭐ **NEW PRIORITY**
+- ⏳ Feeding & nutrition tracking - **PLANNED** (Phase 4.5) ⭐ **UPDATED PRIORITY**
+- ⏳ Animal measurements tracking - **PLANNED** (Phase 4.6) ⭐ **NEW PRIORITY**
 - ⏳ Farm dashboards and analytics - **PLANNED** (Phase 7)
-- ⏳ Feeding and nutrition tracking - **PLANNED** (Phase 4)
 - ⏳ Movement and location enhancements - **PLANNED** (Phase 5)
 - ⏳ Financial management - **PLANNED** (Phase 6)
 - ⏳ Advanced analytics and reporting - **PLANNED** (Phase 7)
