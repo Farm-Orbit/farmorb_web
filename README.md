@@ -22,89 +22,97 @@ FarmOrbit is built on modern, production-ready technologies:
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS V4
 - **State Management**: Redux Toolkit
-- **Backend API**: Go 1.23.6 with PostgreSQL
-- **Authentication**: JWT with refresh token rotation
+- **Backend**: Supabase (Auth + Postgres + RLS) — the only backend; there is no application server
+- **Legacy API**: `farmorb_api` (Go) — retired. The last Axios integration is preserved on branch `legacy/go-api-integration`
 - **Testing**: Cypress for E2E, Jest for unit tests
 
 ## Features
 
 ### ✅ Core Features (Implemented)
 
-- **User Authentication**: Registration, login, logout, profile management
-- **Farm Management**: Create, view, edit, and delete farms
-- **Team Collaboration**: Invite members, manage roles, accept/decline invitations
-- **User Profile**: Update personal information, change password, email management
+- **User Authentication**: Supabase Auth (registration, login, logout, profile)
+- **Farm Management**: Create, view, edit, and archive farms (RLS + `create_farm` RPC)
+- **Crop Farming**: Crop library, grow locations, plantings (with mother cycle), harvests
+- **Livestock Management**: Animals, groups and membership, health records and schedules, breeding, feeding, inventory and suppliers
+- **Team Collaboration**: Invite members, manage roles
+- **Activity / Audit Trail**: Farm activity is recorded by database triggers on every audited table
+- **User Profile**: Update personal information, change password
 - **Notifications**: Toast notification system with multiple notification types
 - **Responsive Design**: Mobile-first approach with card layouts for small screens
 - **Dark Mode**: Full dark mode support across all components
-- **Livestock Management**: Groups and animals tracking (backend complete, frontend in progress)
 
 ### 🚧 Coming Soon
 
-- **Health Records**: Track vaccinations, treatments, and veterinary visits
-- **Breeding Management**: Monitor breeding cycles, pregnancies, and offspring
-- **Feeding & Nutrition**: Track feed consumption and costs
 - **Analytics & Reporting**: Comprehensive dashboards and data visualization
-- **Mobile App**: Native mobile application for field use
 
 ## Installation
 
 ### Prerequisites
 
 - Node.js 20.x or later
-- Yarn package manager
-- Go 1.23.6 or later (for backend development)
-- PostgreSQL 14+ (for database)
+- npm or Yarn
+- A Supabase project (cloud or local CLI)
 
 ### Getting Started
 
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd farmorb
+   cd farmorb_web
    ```
 
 2. **Install dependencies**:
    ```bash
-   yarn install
+   npm install
    ```
 
 3. **Set up environment variables**:
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   cp .env.example .env.local
+   # Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
    ```
 
-4. **Start the development server**:
+4. **Apply database migrations** (Supabase SQL editor or CLI):
    ```bash
-   yarn dev
+   # With Supabase CLI linked to your project:
+   npx supabase db push
+   # Or paste supabase/migrations/20260307140000_profiles_farms_crops.sql into the SQL editor
    ```
 
-5. **Open your browser**:
+5. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**:
    Navigate to `http://localhost:3000`
 
-### Backend Setup
+### Retired Go API
 
-See the [Backend README](../farmorb_api/README.md) for detailed backend setup instructions.
+The dedicated Go backend (`farmorb_api`) is **no longer used at all**. Every service now talks
+to Supabase directly; `axios`, the shared `apiClient`, and `TokenManager` have been removed.
+If you need the previous Axios + JWT integration, use git branch `legacy/go-api-integration`.
 
 ## Project Structure
 
 ```
-farmorb/
+farmorb_web/
 ├── src/
 │   ├── app/                    # Next.js app router pages
 │   │   ├── (admin)/           # Admin pages (protected routes)
 │   │   └── (full-width-pages)/ # Auth and error pages
 │   ├── components/             # React components
-│   │   ├── animals/           # Animal management components
+│   │   ├── crops/             # Crop library, locations, plantings, harvests
+│   │   ├── animals/           # Animal management (legacy API)
 │   │   ├── auth/              # Authentication components
 │   │   ├── farms/             # Farm management components
-│   │   ├── groups/            # Group management components
 │   │   └── ui/                # Reusable UI components
+│   ├── lib/supabase/          # Supabase browser/server/middleware clients
 │   ├── hooks/                 # Custom React hooks
-│   ├── services/              # API service layer
+│   ├── services/              # Data services (Supabase + legacy Axios)
 │   ├── store/                 # Redux store and slices
 │   └── types/                 # TypeScript type definitions
+├── supabase/                  # Migrations + config
 ├── cypress/                   # E2E tests
 ├── docs/                      # Documentation
 └── public/                    # Static assets
@@ -141,11 +149,12 @@ See `cypress/README.md` for testing guidelines.
 
 ## Documentation
 
+- [Supabase setup (auth + crops)](./docs/SUPABASE_SETUP.md)
 - [Features Implementation Status](./docs/FEATURES.md)
 - [Product Features](./docs/PRODUCT_FEATURES.md)
 - [Product Roadmap](./docs/PRODUCT_ROADMAP.md)
 - [Typography System](./docs/TYPOGRAPHY.md)
-- [Backend API Documentation](../farmorb_api/README.md)
+- Legacy Go API (deprecated): [../farmorb_api/README.md](../farmorb_api/README.md)
 
 ## Contributing
 

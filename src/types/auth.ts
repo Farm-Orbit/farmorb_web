@@ -44,6 +44,12 @@ export interface AuthState {
     isLoading: boolean;
     error: string | null;
     lastActivity: number | null;
+    /**
+     * Whether the initial Supabase session lookup has finished. Distinct from
+     * `isLoading`, which is false both before the lookup starts and after it
+     * ends — guards must not treat "not started" as "no session".
+     */
+    isSessionResolved: boolean;
 }
 
 export interface TokenPayload {

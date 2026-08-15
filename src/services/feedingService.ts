@@ -1,5 +1,4 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
+import { createClient } from '@/lib/supabase/client';
 import {
   CreateFeedingRecordRequest,
   FeedingRecord,
@@ -7,44 +6,53 @@ import {
   UpdateFeedingRecordRequest,
 } from '@/types/feeding';
 import { ListOptions } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+import { currentUserId, definedFields, fetchList, throwIfError } from './supabaseList';
+
+const TEXT_FILTERS = ['feed_type', 'notes'];
 
 export const FeedingService = {
   getFeedingRecords: async (farmId: string, params?: ListOptions): Promise<FeedingRecordList> => {
-    const searchParams = createListSearchParams(params);
-    const query = searchParams.toString();
-    const url = query ? `/farms/${farmId}/feeding-records?${query}` : `/farms/${farmId}/feeding-records`;
+    const supabase = createClient();
+    const query = supabase
+      .from('feeding_records')
+      .select('*', { count: 'exact' })
+      .eq('farm_id', farmId);
 
-    const { data } = await apiClient.get<ApiResponse<FeedingRecordList> | FeedingRecordList>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
-
-    return normalizePaginatedResponse<FeedingRecord>(payload, params);
+    return fetchList<FeedingRecord>(query, params, {
+      textFilters: TEXT_FILTERS,
+      defaultSort: { column: 'date', ascending: false },
+    });
   },
 
   getFeedingRecordById: async (farmId: string, recordId: string): Promise<FeedingRecord> => {
-    const response = await apiClient.get<ApiResponse<FeedingRecord> | FeedingRecord>(
-      `/farms/${farmId}/feeding-records/${recordId}`
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as FeedingRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('feeding_records')
+      .select('*')
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .single();
+    throwIfError(error);
+    return data as FeedingRecord;
   },
 
   createFeedingRecord: async (
     farmId: string,
     payload: CreateFeedingRecordRequest
   ): Promise<FeedingRecord> => {
-    const response = await apiClient.post<ApiResponse<FeedingRecord> | FeedingRecord>(
-      `/farms/${farmId}/feeding-records`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as FeedingRecord;
+    const supabase = createClient();
+    const userId = await currentUserId(supabase);
+    const { data, error } = await supabase
+      .from('feeding_records')
+      .insert({
+        ...definedFields(payload as unknown as Record<string, unknown>),
+        farm_id: farmId,
+        performed_by: userId,
+      })
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as FeedingRecord;
   },
 
   updateFeedingRecord: async (
@@ -52,19 +60,25 @@ export const FeedingService = {
     recordId: string,
     payload: UpdateFeedingRecordRequest
   ): Promise<FeedingRecord> => {
-    const response = await apiClient.put<ApiResponse<FeedingRecord> | FeedingRecord>(
-      `/farms/${farmId}/feeding-records/${recordId}`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as FeedingRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('feeding_records')
+      .update(definedFields(payload as Record<string, unknown>))
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as FeedingRecord;
   },
 
   deleteFeedingRecord: async (farmId: string, recordId: string): Promise<void> => {
-    await apiClient.delete(`/farms/${farmId}/feeding-records/${recordId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('feeding_records')
+      .delete()
+      .eq('farm_id', farmId)
+      .eq('id', recordId);
+    throwIfError(error);
   },
 };
-

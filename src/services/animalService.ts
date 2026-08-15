@@ -1,90 +1,143 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
-import { Animal, AnimalMovement, CreateAnimalData, LogAnimalMovementRequest, UpdateAnimalData } from '@/types/animal';
+import { createClient } from '@/lib/supabase/client';
+import {
+    Animal,
+    AnimalMovement,
+    CreateAnimalData,
+    LogAnimalMovementRequest,
+} from '@/types/animal';
 import { ListOptions, PaginatedList } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+import {
+    currentUserId,
+    definedFields,
+    fetchList,
+    throwIfError,
+} from './supabaseList';
+
+const TEXT_FILTERS = ['tag_id', 'name', 'breed', 'rfid'];
 
 export const AnimalService = {
     // Get all animals for a farm
     getFarmAnimals: async (farmId: string, params?: ListOptions): Promise<PaginatedList<Animal>> => {
         try {
-            const searchParams = createListSearchParams(params);
-            const queryString = searchParams.toString();
-            const url = queryString ? `/farms/${farmId}/animals?${queryString}` : `/farms/${farmId}/animals`;
+            const supabase = createClient();
+            const query = supabase
+                .from('animals')
+                .select('*', { count: 'exact' })
+                .eq('farm_id', farmId);
 
-            const { data } = await apiClient.get<ApiResponse<PaginatedList<Animal>> | PaginatedList<Animal>>(url);
-            const payload = 'data' in data && data.data ? data.data : data;
-
-            return normalizePaginatedResponse<Animal>(payload, params);
+            return await fetchList<Animal>(query, params, {
+                textFilters: TEXT_FILTERS,
+                defaultSort: { column: 'created_at', ascending: false },
+            });
         } catch (error: any) {
-            const errorMessage = error?.error || error?.message || error?.response?.data?.message || 'Failed to load animals';
-            const statusCode = error?.statusCode || error?.response?.status;
-            
-            const apiError = new Error(errorMessage);
-            (apiError as any).error = error?.error || errorMessage;
-            (apiError as any).message = errorMessage;
-            (apiError as any).statusCode = statusCode;
-            (apiError as any).details = error?.details || error?.response?.data;
+            // AnimalsTable reads .farmId off the error to render a farm-scoped
+            // empty state, so keep decorating it the way the Axios path did.
+            const apiError = new Error(error?.message ?? 'Failed to load animals');
+            (apiError as any).error = error?.message ?? 'Failed to load animals';
             (apiError as any).farmId = farmId;
-            
             throw apiError;
         }
     },
 
     // Get a single animal
     getAnimalById: async (farmId: string, animalId: string): Promise<Animal> => {
-        const response = await apiClient.get<any>(`/farms/${farmId}/animals/${animalId}`);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('animals')
+            .select('*')
+            .eq('farm_id', farmId)
+            .eq('id', animalId)
+            .single();
+        throwIfError(error);
+        return data as Animal;
     },
 
     // Create a new animal
     createAnimal: async (farmId: string, data: CreateAnimalData): Promise<Animal> => {
-        console.log('🐮 Creating animal with data:', data);
-        const response = await apiClient.post<any>(`/farms/${farmId}/animals`, data);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data: created, error } = await supabase
+            .from('animals')
+            .insert({ ...definedFields(data as unknown as Record<string, unknown>), farm_id: farmId })
+            .select('*')
+            .single();
+        throwIfError(error);
+        return created as Animal;
     },
 
     // Update an existing animal
-    updateAnimal: async (farmId: string, animalId: string, data: Partial<CreateAnimalData & { status?: string }>): Promise<Animal> => {
-        const response = await apiClient.put<any>(`/farms/${farmId}/animals/${animalId}`, data);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+    updateAnimal: async (
+        farmId: string,
+        animalId: string,
+        data: Partial<CreateAnimalData & { status?: string }>
+    ): Promise<Animal> => {
+        const supabase = createClient();
+        const { data: updated, error } = await supabase
+            .from('animals')
+            .update(definedFields(data as Record<string, unknown>))
+            .eq('farm_id', farmId)
+            .eq('id', animalId)
+            .select('*')
+            .single();
+        throwIfError(error);
+        return updated as Animal;
     },
 
     // Delete an animal
     deleteAnimal: async (farmId: string, animalId: string): Promise<void> => {
-        await apiClient.delete(`/farms/${farmId}/animals/${animalId}`);
+        const supabase = createClient();
+        const { error } = await supabase
+            .from('animals')
+            .delete()
+            .eq('farm_id', farmId)
+            .eq('id', animalId);
+        throwIfError(error);
     },
 
     // Get animal movements
-    getAnimalMovements: async (farmId: string, animalId: string, limit?: number): Promise<AnimalMovement[]> => {
-        const url = limit 
-            ? `/farms/${farmId}/animals/${animalId}/movements?limit=${limit}`
-            : `/farms/${farmId}/animals/${animalId}/movements`;
-        const response = await apiClient.get<any>(url);
-        if (response.data.success && response.data.data) {
-            return response.data.data;
+    getAnimalMovements: async (
+        _farmId: string,
+        animalId: string,
+        limit?: number
+    ): Promise<AnimalMovement[]> => {
+        const supabase = createClient();
+        let query = supabase
+            .from('animal_movements')
+            .select('*')
+            .eq('animal_id', animalId)
+            .order('moved_at', { ascending: false });
+
+        if (limit && limit > 0) {
+            query = query.limit(limit);
         }
-        return response.data;
+
+        const { data, error } = await query;
+        throwIfError(error);
+        return (data ?? []) as AnimalMovement[];
     },
 
     // Log animal movement
-    logAnimalMovement: async (farmId: string, animalId: string, data: LogAnimalMovementRequest): Promise<AnimalMovement> => {
-        const response = await apiClient.post<any>(`/farms/${farmId}/animals/${animalId}/movements`, data);
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+    logAnimalMovement: async (
+        _farmId: string,
+        animalId: string,
+        data: LogAnimalMovementRequest
+    ): Promise<AnimalMovement> => {
+        const supabase = createClient();
+        const userId = await currentUserId(supabase);
+
+        const { data: movement, error } = await supabase
+            .from('animal_movements')
+            .insert({
+                animal_id: animalId,
+                from_group_id: data.from_group_id ?? null,
+                to_group_id: data.to_group_id ?? null,
+                reason: data.reason,
+                notes: data.notes ?? null,
+                moved_at: data.moved_at ?? new Date().toISOString(),
+                performed_by: userId,
+            })
+            .select('*')
+            .single();
+        throwIfError(error);
+        return movement as AnimalMovement;
     },
 };

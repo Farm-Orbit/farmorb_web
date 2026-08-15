@@ -16,8 +16,18 @@ import HealthSchedulesTable from '@/components/health/HealthSchedulesTable';
 import { InventoryItemsTable } from '@/components/inventory';
 import SuppliersTable from '@/components/inventory/SuppliersTable';
 import FeedingRecordsTable from '@/components/feeding/FeedingRecordsTable';
+import {
+  CropLibraryPanel,
+  GrowLocationsPanel,
+  PlantingsPanel,
+  HarvestsPanel,
+} from '@/components/crops';
 import Button from '@/components/ui/button/Button';
-import SidebarNav, { SidebarNavItem } from '@/components/layout/SidebarNav';
+import {
+  defaultFarmTab,
+  isFarmTab,
+  type FarmTab,
+} from '@/layout/navigation/farmNav';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
 const farmTypeLabels: Record<string, string> = {
@@ -35,8 +45,6 @@ const getStatusColor = (isActive: boolean) => {
     : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
 };
 
-type FarmTab = 'animals' | 'groups' | 'breeding' | 'health' | 'feeding' | 'inventory' | 'suppliers' | 'details' | 'members' | 'activity';
-
 export default function FarmDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -45,7 +53,8 @@ export default function FarmDetailPage() {
   const { user } = useAuth();
   const { addNotification } = useNotificationContext();
   const [farm, setFarm] = useState<Farm | null>(null);
-  const [activeTab, setActiveTab] = useState<FarmTab>('animals');
+  const [activeTab, setActiveTab] = useState<FarmTab>('crops');
+  const [tabInitialized, setTabInitialized] = useState(false);
 
   const farmId = params.id as string;
 
@@ -79,27 +88,21 @@ export default function FarmDetailPage() {
       router.replace(url.pathname + url.search);
     }
 
-    if (
-      tab === 'animals' ||
-      tab === 'details' ||
-      tab === 'groups' ||
-      tab === 'members' ||
-      tab === 'activity' ||
-      tab === 'breeding' ||
-      tab === 'health' ||
-      tab === 'feeding' ||
-      tab === 'inventory' ||
-      tab === 'suppliers'
-    ) {
-      setActiveTab(tab as FarmTab);
+    if (tab && isFarmTab(tab)) {
+      setActiveTab(tab);
+      setTabInitialized(true);
     }
   }, [searchParams, router, addNotification]);
 
   useEffect(() => {
     if (currentFarm) {
       setFarm(currentFarm);
+      if (!tabInitialized && !searchParams.get('tab')) {
+        setActiveTab(defaultFarmTab(currentFarm.farm_type));
+        setTabInitialized(true);
+      }
     }
-  }, [currentFarm]);
+  }, [currentFarm, tabInitialized, searchParams]);
 
 
   const handleDeleteFarm = async () => {
@@ -201,37 +204,15 @@ export default function FarmDetailPage() {
     );
   }
 
-  const tabs: SidebarNavItem<FarmTab>[] = [
-    { id: 'animals', label: 'Animals', testId: 'tab-animals' },
-    { id: 'groups', label: 'Groups', testId: 'tab-groups' },
-    { id: 'breeding', label: 'Breeding', testId: 'tab-breeding' },
-    { id: 'health', label: 'Health', testId: 'tab-health' },
-    { id: 'feeding', label: 'Feeding', testId: 'tab-feeding' },
-    { id: 'inventory', label: 'Inventory', testId: 'tab-inventory' },
-    { id: 'suppliers', label: 'Suppliers', testId: 'tab-suppliers' },
-    { id: 'details', label: 'Details', testId: 'tab-details' },
-    { id: 'members', label: 'Members', testId: 'tab-members' },
-    { id: 'activity', label: 'Activity', testId: 'tab-activity' },
-  ];
-
   return (
     <div className="w-full p-4 md:p-6" data-testid="farm-detail-page">
       <div className="mb-4">
         <Breadcrumbs farmId={farmId} />
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
-        <div className="md:w-32 lg:w-38 flex-shrink-0">
-          <SidebarNav
-            items={tabs}
-            value={activeTab}
-            onChange={(nextTab) => setActiveTab(nextTab)}
-            selectLabel="Select farm section"
-            selectId="farm-tab-select"
-            selectTestId="farm-tab-select"
-          />
-        </div>
-
+      {/* Sections are navigated from the global sidebar, which is driven by the
+          same `?tab=` param this page reads. */}
+      <div className="flex flex-col gap-4">
         <div className="flex-1 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
@@ -265,6 +246,11 @@ export default function FarmDetailPage() {
               </div>
             )}
           </div>
+
+          {activeTab === 'crops' && <CropLibraryPanel farmId={farmId} />}
+          {activeTab === 'locations' && <GrowLocationsPanel farmId={farmId} />}
+          {activeTab === 'plantings' && <PlantingsPanel farmId={farmId} />}
+          {activeTab === 'harvests' && <HarvestsPanel farmId={farmId} />}
 
           {activeTab === 'animals' && (
             <AnimalsTable farmId={farmId} />

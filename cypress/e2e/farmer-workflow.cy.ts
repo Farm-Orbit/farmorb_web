@@ -437,7 +437,7 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
     //         cy.get('h1').should('contain', farmName);
 
     //         // Verify groups
-    //         cy.get('[data-testid="tab-groups"]').click();
+    //         cy.get('[data-testid="nav-groups"]').click();
     //         cy.wait(2000);
     //         cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
     //         cy.contains('Breeding Cows').should('be.visible');
@@ -446,14 +446,14 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
     //         cy.log('✅ All groups are visible');
 
     //         // Verify animals (should have at least 20)
-    //         cy.get('[data-testid="tab-animals"]').click();
+    //         cy.get('[data-testid="nav-animals"]').click();
     //         cy.wait(2000);
     //         cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
     //         cy.get('tbody tr', { timeout: 10000 }).should('have.length.at.least', 20);
     //         cy.log('✅ All animals are visible');
 
     //         // Verify members (should have 4: farmer + 3 members)
-    //         cy.get('[data-testid="tab-members"]').click();
+    //         cy.get('[data-testid="nav-members"]').click();
     //         cy.wait(2000);
     //         cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
     //         cy.get('tbody tr', { timeout: 10000 }).should('have.length', 4);
@@ -464,13 +464,13 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
     //         cy.log('✅ All members are visible');
 
     //         // Verify health records
-    //         cy.get('[data-testid="tab-health"]').click();
+    //         cy.get('[data-testid="nav-health"]').click();
     //         cy.wait(2000);
     //         cy.get('[data-testid="health-records-table"]', { timeout: 10000 }).should('exist');
     //         cy.log('✅ Health records are visible');
 
     //         // Verify breeding records
-    //         cy.get('[data-testid="tab-breeding"]').click();
+    //         cy.get('[data-testid="nav-breeding"]').click();
     //         cy.wait(2000);
     //         cy.get('[data-testid="breeding-records-table"]', { timeout: 10000 }).should('exist');
     //         cy.log('✅ Breeding records are visible');
@@ -633,7 +633,7 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
             cy.wait(2000);
             
             // Navigate to animals tab
-            cy.get('[data-testid="tab-animals"]').click();
+            cy.get('[data-testid="nav-animals"]').click();
             cy.wait(2000);
             
             // Click on Bessie's tag_id button to navigate to animal detail page
@@ -680,14 +680,14 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
             cy.get('h1').should('contain', farmName);
 
             // Verify group
-            cy.get('[data-testid="tab-groups"]').click();
+            cy.get('[data-testid="nav-groups"]').click();
             cy.wait(2000);
             cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
             cy.contains('Breeding Cows').should('be.visible');
             cy.log('✅ Group is visible');
 
             // Verify animals (should have 2)
-            cy.get('[data-testid="tab-animals"]').click();
+            cy.get('[data-testid="nav-animals"]').click();
             cy.wait(2000);
             cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
             cy.get('tbody tr', { timeout: 10000 }).should('have.length.at.least', 2);
@@ -696,7 +696,7 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
             cy.log('✅ All animals are visible');
 
             // Verify members (should have 3: farmer + 2 members)
-            cy.get('[data-testid="tab-members"]').click();
+            cy.get('[data-testid="nav-members"]').click();
             cy.wait(2000);
             cy.get('.MuiTable-root', { timeout: 10000 }).should('be.visible');
             cy.get('tbody tr', { timeout: 10000 }).should('have.length', 3);
@@ -706,7 +706,7 @@ describe('Complete Farm Workflow - Multi-User Collaboration', () => {
             cy.log('✅ All members are visible');
 
             // Verify health records
-            cy.get('[data-testid="tab-health"]').click();
+            cy.get('[data-testid="nav-health"]').click();
             cy.wait(2000);
             cy.get('[data-testid="health-records-table"]', { timeout: 10000 }).should('exist');
             cy.contains('Annual Vaccination').should('be.visible');

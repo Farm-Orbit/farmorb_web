@@ -1,297 +1,261 @@
 "use client";
-import Image from "next/image";
+
+import React, { Suspense, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useSidebar } from "../context/SidebarContext";
+import Image from "next/image";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useSidebar } from "@/context/SidebarContext";
+import { useFarms } from "@/hooks/useFarms";
+import FarmSwitcher from "./FarmSwitcher";
+import {
+  buildFarmNav,
+  defaultFarmTab,
+  isFarmTab,
+  type FarmTab,
+} from "./navigation/farmNav";
 import {
   BoxIcon,
-  ChevronDownIcon,
+  ChevronLeftIcon,
   GridIcon,
   HorizontaLDots,
-  UserCircleIcon
-} from "../icons/index";
+  MailIcon,
+} from "@/icons";
 
-type NavItem = {
+interface GlobalNavItem {
   name: string;
+  path: string;
   icon: React.ReactNode;
-  path?: string;
-  subItems?: { name: string; path: string; icon: React.ReactNode }[];
-};
+}
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
-  {
-    icon: <BoxIcon />,
-    name: "Farms",
-    path: "/farms",
-    subItems: [
-      {
-        icon: <BoxIcon />,
-        name: "All Farms",
-        path: "/farms",
-      },
-      {
-        icon: <UserCircleIcon />,
-        name: "My Invitations",
-        path: "/invitations",
-      },
-    ],
-  },
+// Profile deliberately lives only in the header account menu. Duplicating it
+// here gives the page two links to the same href, which is both redundant
+// navigation and an ambiguous target.
+const globalNavItems: GlobalNavItem[] = [
+  { name: "Dashboard", path: "/", icon: <GridIcon /> },
+  { name: "Farms", path: "/farms", icon: <BoxIcon /> },
+  { name: "My Invitations", path: "/invitations", icon: <MailIcon /> },
 ];
 
+/** Keeps the ids the E2E suite already clicks (e.g. `farms-sidebar-button`). */
+const sidebarTestId = (name: string) =>
+  `${name.toLowerCase().replace(/\s+/g, "-")}-sidebar-button`;
+
+/** `/farms/<id>` and anything below it, but not `/farms` or `/farms/create`. */
+function farmIdFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/farms\/([^/]+)/);
+  if (!match || match[1] === "create") return null;
+  return match[1];
+}
+
+const menuItemClass = (active: boolean, showLabels: boolean) =>
+  `menu-item group ${active ? "menu-item-active" : "menu-item-inactive"} ${
+    showLabels ? "lg:justify-start" : "lg:justify-center"
+  }`;
+
+const iconClass = (active: boolean) =>
+  active ? "menu-item-icon-active" : "menu-item-icon-inactive";
+
+function SectionHeading({
+  title,
+  showLabels,
+}: {
+  title: string;
+  showLabels: boolean;
+}) {
+  return (
+    <h2
+      className={`mb-3 flex text-xs uppercase leading-[20px] text-gray-400 ${
+        showLabels ? "justify-start" : "lg:justify-center"
+      }`}
+    >
+      {showLabels ? title : <HorizontaLDots />}
+    </h2>
+  );
+}
+
+/**
+ * The farm's sections. Split out because it reads `?tab=`, and useSearchParams
+ * needs a Suspense boundary for the statically prerendered admin pages.
+ */
+function FarmSectionNav({
+  farmId,
+  farmType,
+  showLabels,
+}: {
+  farmId: string;
+  farmType?: string | null;
+  showLabels: boolean;
+}) {
+  const searchParams = useSearchParams();
+  const sections = useMemo(() => buildFarmNav(farmType), [farmType]);
+
+  const tabParam = searchParams.get("tab");
+  const activeTab: FarmTab =
+    tabParam && isFarmTab(tabParam) ? tabParam : defaultFarmTab(farmType);
+
+  return (
+    <>
+      {sections.map((section) => (
+        <div key={section.title}>
+          <SectionHeading title={section.title} showLabels={showLabels} />
+          <ul className="flex flex-col gap-1.5">
+            {section.items.map((item) => {
+              const active = item.id === activeTab;
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={`/farms/${farmId}?tab=${item.id}`}
+                    className={menuItemClass(active, showLabels)}
+                    data-testid={`nav-${item.id}`}
+                    title={item.label}
+                  >
+                    <span className={iconClass(active)}>{item.icon}</span>
+                    {showLabels && (
+                      <span className="menu-item-text">{item.label}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
-  const router = useRouter();
+  const { farms, currentFarm, getFarms } = useFarms();
 
-  const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "main" | "others";
-    index: number;
-  } | null>(null);
+  const showLabels = isExpanded || isHovered || isMobileOpen;
+  const farmId = farmIdFromPath(pathname);
 
-  const [subMenuHeight, setSubMenuHeight] = useState<{
-    [key: string]: number;
-  }>({});
-
-  const subMenuRefs = useRef<{
-    [key: string]: HTMLDivElement | null;
-  }>({});
-
-  // Generic function to generate test IDs
-  const generateTestId = (name: string, type: 'main' | 'sub' = 'main') => {
-    const normalizedName = name.toLowerCase().replace(/\s+/g, '-');
-    return type === 'main' ? `${normalizedName}-sidebar-button` : `${normalizedName}-sidebar-button`;
-  };
-
-  const handleSubmenuToggle = (index: number) => {
-    const navItem = navItems[index];
-
-    // Navigate to the main item's path if it exists
-    if (navItem.path) {
-      router.push(navItem.path);
-    }
-
-    setOpenSubmenu((prevOpenSubmenu) => {
-      if (
-        prevOpenSubmenu &&
-        prevOpenSubmenu.index === index
-      ) {
-        return null;
-      }
-      return { type: "main", index };
-    });
-  };
-
-  const renderMenuItems = (navItems: NavItem[]) => (
-    <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
-        <li key={nav.name}>
-          {nav.subItems ? (
-            <button
-              onClick={() => handleSubmenuToggle(index)}
-              className={`menu-item group  ${openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-                } cursor-pointer ${!isExpanded && !isHovered
-                  ? "lg:justify-center"
-                  : "lg:justify-start"
-                }`}
-              data-testid={generateTestId(nav.name)}
-            >
-              <span
-                className={` ${openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
-                  }`}
-              >
-                {nav.icon}
-              </span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
-              )}
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
-                    }`}
-                />
-              )}
-            </button>
-          ) : (
-            <Link
-              href={nav.path || "#"}
-              className={`menu-item group ${isActive(nav.path || "")
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-                } ${!isExpanded && !isHovered
-                  ? "lg:justify-center"
-                  : "lg:justify-start"
-                }`}
-              data-testid={generateTestId(nav.name)}
-            >
-              <span
-                className={` ${isActive(nav.path || "")
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
-                  }`}
-              >
-                {nav.icon}
-              </span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
-              )}
-            </Link>
-          )}
-          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
-            <div
-              ref={(el) => {
-                subMenuRefs.current[`main-${index}`] = el;
-              }}
-              className="overflow-hidden transition-all duration-300"
-              style={{
-                height:
-                  openSubmenu?.index === index
-                    ? `${subMenuHeight[`main-${index}`]}px`
-                    : "0px",
-              }}
-            >
-              <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
-                  <li key={subItem.name}>
-                    <Link
-                      href={subItem.path}
-                      className={`menu-dropdown-item ${isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                        }`}
-                      data-testid={generateTestId(subItem.name, 'sub')}
-                    >
-                      {subItem.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-
-  // const isActive = (path: string) => path === pathname;
-  const isActive = useCallback((path: string) => path === pathname, [pathname]);
-
+  // The switcher needs the full list, which the farms page may never have
+  // loaded if the user deep-linked straight into a farm.
   useEffect(() => {
-    // Check if the current path matches any submenu item
-    let submenuMatched = false;
-    const items = navItems;
-    items.forEach((nav, index) => {
-      if (nav.subItems) {
-        nav.subItems.forEach((subItem) => {
-          if (isActive(subItem.path)) {
-            setOpenSubmenu({
-              type: "main",
-              index,
-            });
-            submenuMatched = true;
-          }
-        });
-      }
-    });
-
-    // If no submenu item matches, close the open submenu
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
+    if (farmId && farms.length === 0) {
+      getFarms({ page: 1, pageSize: 100 });
     }
-  }, [pathname, isActive]);
+  }, [farmId, farms.length, getFarms]);
 
-  useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
-    if (openSubmenu !== null) {
-      const key = `${openSubmenu.type}-${openSubmenu.index}`;
-      if (subMenuRefs.current[key]) {
-        setSubMenuHeight((prevHeights) => ({
-          ...prevHeights,
-          [key]: subMenuRefs.current[key]?.scrollHeight || 0,
-        }));
-      }
-    }
-  }, [openSubmenu]);
+  const activeFarm = useMemo(() => {
+    if (!farmId) return null;
+    return (
+      farms.find((farm) => farm.id === farmId) ??
+      (currentFarm?.id === farmId ? currentFarm : null)
+    );
+  }, [farmId, farms, currentFarm]);
+
+  const isGlobalActive = (path: string) =>
+    path === "/" ? pathname === "/" : pathname.startsWith(path);
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${isExpanded || isMobileOpen
-          ? "w-[240px]"
-          : isHovered
-            ? "w-[240px]"
-            : "w-[90px]"
-        }
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
+        ${showLabels ? "w-[240px]" : "w-[90px]"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex  ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
+        className={`py-8 flex ${showLabels ? "justify-start" : "lg:justify-center"}`}
       >
         <Link href="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/farmorblogo.png"
-                alt="Logo"
-                width={154}
-                height={32}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/farmorblogo.png"
-                alt="Logo"
-                width={154}
-                height={32}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/logo/farmorblogo.png"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
+          <Image
+            src="/images/logo/farmorblogo.png"
+            alt="FarmOrbit"
+            width={showLabels ? 154 : 32}
+            height={32}
+          />
         </Link>
       </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(navItems)}
-            </div>
 
-          </div>
-        </nav>
+      <div className="flex flex-1 flex-col overflow-y-auto pb-6 duration-300 ease-linear no-scrollbar">
+        {farmId ? (
+          <nav className="flex flex-1 flex-col gap-6">
+            <FarmSwitcher
+              farms={farms}
+              currentFarm={activeFarm}
+              farmId={farmId}
+              showLabels={showLabels}
+            />
+
+            <Suspense
+              fallback={
+                <div className="h-40 animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.03]" />
+              }
+            >
+              <FarmSectionNav
+                farmId={farmId}
+                farmType={activeFarm?.farm_type}
+                showLabels={showLabels}
+              />
+            </Suspense>
+
+            {/* Always leave a way back out of the farm. */}
+            <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
+              <ul className="flex flex-col gap-1.5">
+                <li>
+                  <Link
+                    href="/farms"
+                    className={menuItemClass(false, showLabels)}
+                    data-testid="farms-sidebar-button"
+                    title="All farms"
+                  >
+                    <span className={iconClass(false)}>
+                      <ChevronLeftIcon />
+                    </span>
+                    {showLabels && (
+                      <span className="menu-item-text">All farms</span>
+                    )}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/invitations"
+                    className={menuItemClass(false, showLabels)}
+                    data-testid="my-invitations-sidebar-button"
+                    title="My Invitations"
+                  >
+                    <span className={iconClass(false)}>
+                      <MailIcon />
+                    </span>
+                    {showLabels && (
+                      <span className="menu-item-text">My Invitations</span>
+                    )}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        ) : (
+          <nav>
+            <SectionHeading title="Menu" showLabels={showLabels} />
+            <ul className="flex flex-col gap-1.5">
+              {globalNavItems.map((item) => {
+                const active = isGlobalActive(item.path);
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.path}
+                      className={menuItemClass(active, showLabels)}
+                      data-testid={sidebarTestId(item.name)}
+                      title={item.name}
+                    >
+                      <span className={iconClass(active)}>{item.icon}</span>
+                      {showLabels && (
+                        <span className="menu-item-text">{item.name}</span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        )}
       </div>
     </aside>
   );

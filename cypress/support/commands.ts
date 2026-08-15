@@ -296,6 +296,12 @@ Cypress.Commands.add('clearAuth', () => {
     cy.clearLocalStorage();
     cy.window().then((win) => {
         win.sessionStorage.clear();
+        // Supabase SSR may persist tokens under sb-* keys
+        Object.keys(win.localStorage).forEach((key) => {
+            if (key.startsWith('sb-')) {
+                win.localStorage.removeItem(key);
+            }
+        });
     });
 });
 
@@ -324,7 +330,7 @@ Cypress.Commands.add('createAnimal', (tagId: string, options: {
 
     // Ensure we're on the farm detail page first (should already be there when called)
     // Navigate to animals tab if not already there
-    cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).should('be.visible').click();
+    cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).should('be.visible').click();
     cy.wait(2000);
 
     // Click the "Add Animal" button to navigate to create animal page
@@ -390,7 +396,7 @@ Cypress.Commands.add('editAnimal', (tagId: string, options: {
 } = {}) => {
     const { name, sex, breed, trackingType } = options;
 
-    cy.get('[data-testid="tab-animals"]').click();
+    cy.get('[data-testid="nav-animals"]').click();
     cy.contains('td', tagId).should('exist');
     cy.get(`[data-testid="edit-animal-button-${tagId}"]`).click();
 
@@ -427,7 +433,7 @@ Cypress.Commands.add('editAnimal', (tagId: string, options: {
 });
 
 Cypress.Commands.add('deleteAnimal', (tagId: string) => {
-    cy.get('[data-testid="tab-animals"]').click();
+    cy.get('[data-testid="nav-animals"]').click();
     cy.contains('td', tagId).should('exist');
 
     cy.once('window:confirm', () => true);
@@ -447,27 +453,26 @@ Cypress.Commands.add('signup', (email: string, password: string) => {
     // Ensure no lingering auth state before attempting signup
     cy.clearAuth();
 
-    // Intercept the signup API call
-    cy.intercept('POST', '**/auth/register').as('signupRequest');
+    // Supabase Auth signup endpoint
+    cy.intercept('POST', '**/auth/v1/signup*').as('signupRequest');
 
     cy.visit('/signup');
     cy.get('h1').should('contain', 'Sign Up');
+    cy.get('[data-testid="email-input"]').should('be.visible').and('not.be.disabled');
 
     cy.get('[data-testid="email-input"]').type(email);
-    cy.get('[data-testid="password-input"]').type(password);
-    cy.get('[data-testid="confirm-password-input"]').type(password);
+    cy.get('[data-testid="password-input"]').should('not.be.disabled').type(password);
+    cy.get('[data-testid="confirm-password-input"]').should('not.be.disabled').type(password);
     cy.get('input[type="checkbox"]').check();
 
     cy.get('[data-testid="signup-submit-button"]').click();
 
     // Wait for the API call to complete
     cy.wait('@signupRequest', { timeout: 15000 }).then((interception) => {
-        // Check if signup was successful (status 200 or 201)
         if (interception.response && (interception.response.statusCode === 200 || interception.response.statusCode === 201)) {
             cy.log('Signup successful');
         } else {
             cy.log('Signup may have failed, checking for errors');
-            // Check for error messages on the page
             cy.get('body').then(($body) => {
                 if ($body.find('[data-testid="error-message"]').length > 0) {
                     cy.get('[data-testid="error-message"]').then(($error) => {
@@ -493,13 +498,18 @@ Cypress.Commands.add('signin', (email: string, password: string) => {
             cy.log('Already authenticated, skipping signin');
             cy.get('[data-testid="home-page"]').should('be.visible');
         } else {
+            cy.intercept('POST', '**/auth/v1/token*').as('signinRequest');
+
             // Not authenticated, proceed with signin
             cy.get('h1').should('contain', 'Sign In');
+            cy.get('[data-testid="email-input"]').should('be.visible').and('not.be.disabled');
 
             cy.get('[data-testid="email-input"]').type(email);
-            cy.get('[data-testid="password-input"]').type(password);
+            cy.get('[data-testid="password-input"]').should('not.be.disabled').type(password);
 
             cy.get('[data-testid="signin-submit-button"]').click();
+
+            cy.wait('@signinRequest', { timeout: 15000 });
 
             // Wait for signin to complete and redirect to home
             cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');
@@ -585,7 +595,7 @@ Cypress.Commands.add('getFarmIdFromUrl', () => {
 // Custom command to create a group (simple version - just creates, doesn't return ID)
 Cypress.Commands.add('createGroup', (name: string, purpose: string, location?: string, description?: string) => {
     // Navigate to groups tab
-    cy.get('[data-testid="tab-groups"]').click();
+    cy.get('[data-testid="nav-groups"]').click();
     cy.wait(1000);
 
     // Click create group button
@@ -618,7 +628,7 @@ Cypress.Commands.add('createGroup', (name: string, purpose: string, location?: s
 
 // Custom command to invite a member to a farm
 Cypress.Commands.add('inviteMember', (email: string, role: 'member' = 'member') => {
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
     cy.wait(1000);
     cy.get('[data-testid="invite-member-button"]', { timeout: 10000 }).click();
     cy.url({ timeout: 10000 }).should('include', '/invite');
@@ -679,7 +689,7 @@ Cypress.Commands.add('addAnimalToGroup', (farmId: string, groupId: string, anima
             cy.get('[data-testid="farm-detail-page"]', { timeout: 10000 }).should('be.visible');
             
             // Navigate to groups tab on farm detail page
-            cy.get('[data-testid="tab-groups"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-groups"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             // Wait for groups table to load
@@ -800,7 +810,7 @@ Cypress.Commands.add('createHealthRecord', (options: {
                 .click({ force: true });
         } else if (isOnFarmDetailPage) {
             // We're on farm detail page - navigate to health tab and create from there
-            cy.get('[data-testid="tab-health"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-health"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             cy.get('[data-testid="create-health-record-button"]', { timeout: 10000 })
@@ -971,7 +981,7 @@ Cypress.Commands.add('createBreedingRecord', (options: {
                 .click({ force: true });
         } else if (isOnFarmDetailPage) {
             // We're on farm detail page - navigate to breeding tab and create from there
-            cy.get('[data-testid="tab-breeding"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-breeding"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             cy.get('[data-testid="create-breeding-record-button"]', { timeout: 10000 })
@@ -1111,7 +1121,7 @@ Cypress.Commands.add('createInventoryItem', (options: {
     cy.wait(1000);
     
     // Navigate to inventory tab if not already there
-    cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).should('be.visible').click();
+    cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).should('be.visible').click();
     cy.wait(2000);
     
     // Wait for the create button to be visible (indicates tab is loaded)
@@ -1156,7 +1166,7 @@ Cypress.Commands.add('createInventoryItem', (options: {
 // Custom command to navigate to inventory item detail page
 Cypress.Commands.add('navigateToInventoryItemDetail', (itemName: string) => {
     // Navigate to inventory tab if not already there
-    cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+    cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
     cy.wait(2000);
 
     // Click on item name
@@ -1185,7 +1195,7 @@ Cypress.Commands.add('createInventoryTransaction', (options: {
     // Determine which button to click based on transaction type and location
     if (options.fromTable && options.itemName) {
         // Click top-up button from items table
-        cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
         cy.wait(2000);
         cy.contains(options.itemName, { timeout: 10000 })
             .scrollIntoView()
@@ -1264,7 +1274,7 @@ Cypress.Commands.add('verifyInventoryQuantity', (itemName: string, expectedQuant
             cy.contains(expectedQuantity, { timeout: 10000 }).should('be.visible');
         } else {
             // On items table - check quantity in table
-            cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+            cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
             cy.wait(2000);
             cy.contains(itemName, { timeout: 10000 })
                 .scrollIntoView()

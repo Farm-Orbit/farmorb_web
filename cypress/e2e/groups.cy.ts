@@ -36,7 +36,7 @@ describe('Group Management', () => {
         cy.visit(`/farms/${farmId}`);
         cy.wait(1000);
         // Navigate to Groups tab
-        cy.get('[data-testid="tab-groups"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-groups"]', { timeout: 10000 }).click();
         // Wait for the groups section to load (either empty state or table)
         cy.wait(2000);
     });

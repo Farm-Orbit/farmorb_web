@@ -132,7 +132,7 @@ describe('Farms Feature', () => {
         cy.get('h1').should('contain', originalFarmName);
         
         // Navigate to Details tab to verify farm information
-        cy.get('[data-testid="tab-details"]').click();
+        cy.get('[data-testid="nav-details"]').click();
         cy.contains('Basic Information', { timeout: 10000 }).should('be.visible');
         cy.contains('Farm Type').should('be.visible');
         cy.contains('Crop Farm').should('be.visible');
@@ -193,7 +193,7 @@ describe('Farms Feature', () => {
         verifyFarmDetailPage(updatedFarmName);
 
         // Navigate to Details tab to verify updated information
-        cy.get('[data-testid="tab-details"]').click();
+        cy.get('[data-testid="nav-details"]').click();
         cy.contains('Basic Information', { timeout: 10000 }).should('be.visible');
         cy.contains('Location Information', { timeout: 10000 }).should('be.visible');
 

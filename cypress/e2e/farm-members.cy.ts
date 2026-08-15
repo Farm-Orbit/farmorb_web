@@ -43,7 +43,7 @@ describe('Farm Members Feature', () => {
     });
 
     // Navigate to Members tab
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
 
     // Check that the invite member button is visible (owner should see it)
     cy.get('[data-testid="invite-member-button"]').should('be.visible');
@@ -62,7 +62,7 @@ describe('Farm Members Feature', () => {
     });
 
     // Navigate to Members tab
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
 
     // Check that the invite member button is visible (owner should see it)
     cy.get('[data-testid="invite-member-button"]').should('be.visible');
@@ -102,7 +102,7 @@ describe('Farm Members Feature', () => {
     cy.get('[data-testid="farm-detail-page"]').should('be.visible');
     
     // Navigate to Members tab to verify
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
     cy.get('[data-testid="invite-member-button"]').should('be.visible');
 
     // Store the farm URL for later use
@@ -157,7 +157,7 @@ describe('Farm Members Feature', () => {
     cy.wait(2000);
     
     // Navigate to Details tab to verify farm details
-    cy.get('[data-testid="tab-details"]').click();
+    cy.get('[data-testid="nav-details"]').click();
     
     // Verify farm details are visible
     cy.contains('Basic Information').should('be.visible');
@@ -171,7 +171,7 @@ describe('Farm Members Feature', () => {
     cy.contains('A test farm for inviting members').should('be.visible');
     
     // Navigate to Members tab to see the farm members section
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
     
     // Wait for the members table to load
     cy.wait(2000);

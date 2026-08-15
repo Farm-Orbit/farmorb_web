@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, User, LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
+import { AuthState, User, LoginCredentials, RegisterData } from '@/types/auth';
 import { AuthService } from '@/services/authService';
-import { TokenManager } from '@/utils/tokenManager';
 
-// Initial state
 const initialState: AuthState = {
     user: null,
     accessToken: null,
@@ -12,27 +10,16 @@ const initialState: AuthState = {
     isLoading: false,
     error: null,
     lastActivity: null,
+    isSessionResolved: false,
 };
 
-// Async thunks
 export const loginUser = createAsyncThunk(
     'auth/login',
     async (credentials: LoginCredentials, { rejectWithValue }) => {
         try {
-            const response = await AuthService.login(credentials);
-
-            // Store tokens
-            if (response.accessToken) {
-                TokenManager.setAccessToken(response.accessToken, response.expiresIn);
-            }
-
-            if (response.refreshToken) {
-                TokenManager.setRefreshToken(response.refreshToken);
-            }
-
-            return response;
+            return await AuthService.login(credentials);
         } catch (error: any) {
-            return rejectWithValue(error.error || error.message || 'Login failed');
+            return rejectWithValue(error.message || 'Login failed');
         }
     }
 );
@@ -41,35 +28,20 @@ export const registerUser = createAsyncThunk(
     'auth/register',
     async (userData: RegisterData, { rejectWithValue }) => {
         try {
-            const response = await AuthService.register(userData);
-
-            // Store tokens
-            if (response.accessToken) {
-                TokenManager.setAccessToken(response.accessToken, response.expiresIn);
-            }
-
-            if (response.refreshToken) {
-                TokenManager.setRefreshToken(response.refreshToken);
-            }
-
-            return response;
+            return await AuthService.register(userData);
         } catch (error: any) {
-            return rejectWithValue(error.error || error.message || 'Registration failed');
+            return rejectWithValue(error.message || 'Registration failed');
         }
     }
 );
 
 export const logoutUser = createAsyncThunk(
     'auth/logout',
-    async (_, { rejectWithValue }) => {
+    async () => {
         try {
             await AuthService.logout();
         } catch (error: any) {
-            // Even if logout fails on server, we should clear local state
             console.warn('Logout request failed:', error);
-        } finally {
-            // Always clear local tokens
-            TokenManager.clearTokens();
         }
     }
 );
@@ -78,19 +50,9 @@ export const refreshToken = createAsyncThunk(
     'auth/refreshToken',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await AuthService.refreshToken();
-
-            // Update tokens
-            TokenManager.setAccessToken(response.accessToken, response.expiresIn);
-            if (response.refreshToken) {
-                TokenManager.setRefreshToken(response.refreshToken);
-            }
-
-            return response;
+            return await AuthService.refreshToken();
         } catch (error: any) {
-            // If refresh fails, clear tokens
-            TokenManager.clearTokens();
-            return rejectWithValue(error.error || error.message || 'Token refresh failed');
+            return rejectWithValue(error.message || 'Token refresh failed');
         }
     }
 );
@@ -99,10 +61,9 @@ export const getCurrentUser = createAsyncThunk(
     'auth/getCurrentUser',
     async (_, { rejectWithValue }) => {
         try {
-            const user = await AuthService.getCurrentUser();
-            return user;
+            return await AuthService.getCurrentUser();
         } catch (error: any) {
-            return rejectWithValue(error.error || error.message || 'Failed to fetch user');
+            return rejectWithValue(error.message || 'Failed to fetch user');
         }
     }
 );
@@ -111,15 +72,33 @@ export const updateProfile = createAsyncThunk(
     'auth/updateProfile',
     async (userData: Partial<User>, { rejectWithValue }) => {
         try {
-            const updatedUser = await AuthService.updateProfile(userData);
-            return updatedUser;
+            return await AuthService.updateProfile(userData);
         } catch (error: any) {
-            return rejectWithValue(error.error || error.message || 'Profile update failed');
+            return rejectWithValue(error.message || 'Profile update failed');
         }
     }
 );
 
-// Auth slice
+export const initializeAuthSession = createAsyncThunk(
+    'auth/initializeAuthSession',
+    async (_, { rejectWithValue }) => {
+        try {
+            const session = await AuthService.getSession();
+            if (!session?.user) {
+                return null;
+            }
+            const user = await AuthService.getCurrentUser();
+            return {
+                user,
+                accessToken: session.access_token,
+                refreshToken: session.refresh_token,
+            };
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to initialize auth');
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -147,27 +126,12 @@ const authSlice = createSlice({
         updateLastActivity: (state) => {
             state.lastActivity = Date.now();
         },
-        initializeAuth: (state) => {
-            // Initialize auth state from stored tokens
-            const accessToken = TokenManager.getAccessToken();
-            const refreshToken = TokenManager.getRefreshToken();
-
-            if (accessToken && !TokenManager.isTokenExpired()) {
-                state.accessToken = accessToken;
-                state.refreshToken = refreshToken;
-                state.isAuthenticated = true;
-                state.lastActivity = Date.now();
-            } else {
-                // Clear invalid tokens
-                TokenManager.clearTokens();
-                state.accessToken = null;
-                state.refreshToken = null;
-                state.isAuthenticated = false;
-            }
+        /** @deprecated Prefer initializeAuthSession — kept for ReduxProvider compatibility */
+        initializeAuth: () => {
+            // No-op: session is loaded asynchronously via initializeAuthSession
         },
     },
     extraReducers: (builder) => {
-        // Login
         builder
             .addCase(loginUser.pending, (state) => {
                 state.isLoading = true;
@@ -176,9 +140,9 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.user = action.payload.user;
-                state.accessToken = action.payload.accessToken;
+                state.accessToken = action.payload.accessToken || null;
                 state.refreshToken = action.payload.refreshToken || null;
-                state.isAuthenticated = true;
+                state.isAuthenticated = !!action.payload.accessToken;
                 state.error = null;
                 state.lastActivity = Date.now();
             })
@@ -188,7 +152,6 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
             });
 
-        // Register
         builder
             .addCase(registerUser.pending, (state) => {
                 state.isLoading = true;
@@ -197,9 +160,9 @@ const authSlice = createSlice({
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.user = action.payload.user;
-                state.accessToken = action.payload.accessToken;
+                state.accessToken = action.payload.accessToken || null;
                 state.refreshToken = action.payload.refreshToken || null;
-                state.isAuthenticated = true;
+                state.isAuthenticated = !!action.payload.accessToken;
                 state.error = null;
                 state.lastActivity = Date.now();
             })
@@ -209,7 +172,6 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
             });
 
-        // Logout
         builder
             .addCase(logoutUser.pending, (state) => {
                 state.isLoading = true;
@@ -225,7 +187,6 @@ const authSlice = createSlice({
             })
             .addCase(logoutUser.rejected, (state) => {
                 state.isLoading = false;
-                // Still clear auth state even if logout request failed
                 state.user = null;
                 state.accessToken = null;
                 state.refreshToken = null;
@@ -234,7 +195,6 @@ const authSlice = createSlice({
                 state.lastActivity = null;
             });
 
-        // Refresh token
         builder
             .addCase(refreshToken.fulfilled, (state, action) => {
                 state.accessToken = action.payload.accessToken;
@@ -251,7 +211,6 @@ const authSlice = createSlice({
                 state.lastActivity = null;
             });
 
-        // Get current user
         builder
             .addCase(getCurrentUser.pending, (state) => {
                 state.isLoading = true;
@@ -265,10 +224,8 @@ const authSlice = createSlice({
             .addCase(getCurrentUser.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
-                // Don't clear auth state on user fetch failure
             });
 
-        // Update profile
         builder
             .addCase(updateProfile.pending, (state) => {
                 state.isLoading = true;
@@ -282,6 +239,33 @@ const authSlice = createSlice({
             .addCase(updateProfile.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
+            });
+
+        // Deliberately does not touch isLoading: that flag means "a submit is in
+        // flight" and drives the auth forms' disabled state. Session bootstrap
+        // reports through isSessionResolved instead.
+        builder
+            .addCase(initializeAuthSession.fulfilled, (state, action) => {
+                state.isSessionResolved = true;
+                if (action.payload) {
+                    state.user = action.payload.user;
+                    state.accessToken = action.payload.accessToken;
+                    state.refreshToken = action.payload.refreshToken;
+                    state.isAuthenticated = true;
+                    state.lastActivity = Date.now();
+                } else {
+                    state.user = null;
+                    state.accessToken = null;
+                    state.refreshToken = null;
+                    state.isAuthenticated = false;
+                }
+            })
+            .addCase(initializeAuthSession.rejected, (state) => {
+                state.isSessionResolved = true;
+                state.user = null;
+                state.accessToken = null;
+                state.refreshToken = null;
+                state.isAuthenticated = false;
             });
     },
 });

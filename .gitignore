@@ -9,6 +9,13 @@
 
 # testing
 /coverage
+/cypress/downloads
+/cypress/screenshots
+/cypress/videos
+
+# supabase local state
+/supabase/.branches
+/supabase/.temp
 
 # next.js
 /.next/

@@ -1,39 +1,32 @@
-import { apiClient } from './api';
-import { handleApiError } from './api';
+import { createClient } from '@/lib/supabase/client';
 import { AuditLogEntry, AuditLogList, AuditLogQueryParams } from '@/types/audit';
 
-interface AuditLogApiEntry {
+interface AuditLogRow {
   id: string;
-  user_id?: string | null;
-  farm_id?: string | null;
+  user_id: string | null;
+  farm_id: string | null;
   action_type: string;
   entity_type: string;
-  entity_id?: string | null;
-  old_values?: Record<string, unknown> | null;
-  new_values?: Record<string, unknown> | null;
-  changes?: Record<string, unknown> | null;
-  ip_address?: string | null;
-  user_agent?: string | null;
-  request_id?: string | null;
-  metadata?: Record<string, unknown> | null;
+  entity_id: string | null;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  changes: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  request_id: string | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
-  user?: Record<string, unknown> | null;
+  user: Record<string, unknown> | null;
 }
 
-interface AuditLogResponsePayload {
-  items?: AuditLogApiEntry[];
-  page?: number;
-  page_size?: number;
-  total?: number;
-}
+const SELECT_COLUMNS = `
+  id, user_id, farm_id, action_type, entity_type, entity_id,
+  old_values, new_values, changes, ip_address, user_agent, request_id,
+  metadata, created_at,
+  user:profiles ( id, email, first_name, last_name )
+`;
 
-interface AuditLogsApiResponse {
-  success: boolean;
-  message?: string;
-  data?: AuditLogResponsePayload;
-}
-
-const mapAuditLog = (entry: AuditLogApiEntry): AuditLogEntry => ({
+const mapAuditLog = (entry: AuditLogRow): AuditLogEntry => ({
   id: entry.id,
   userId: entry.user_id ?? null,
   farmId: entry.farm_id ?? null,
@@ -60,110 +53,77 @@ const mapAuditLog = (entry: AuditLogApiEntry): AuditLogEntry => ({
   user: entry.user ?? null,
 });
 
+const SORTABLE_COLUMNS = new Set(['created_at', 'action_type', 'entity_type']);
+
 export const AuditService = {
-  getFarmAuditLogs: async (farmId: string, params?: AuditLogQueryParams): Promise<AuditLogList> => {
-    try {
-      const searchParams = new URLSearchParams();
+  getFarmAuditLogs: async (
+    farmId: string,
+    params?: AuditLogQueryParams
+  ): Promise<AuditLogList> => {
+    const supabase = createClient();
 
-      if (params?.entityType) {
-        searchParams.append('entity_type', params.entityType);
-      }
-      if (params?.entityId) {
-        searchParams.append('entity_id', params.entityId);
-      }
-      if (params?.actions?.length) {
-        searchParams.append('actions', params.actions.join(','));
-      }
-      if (params?.userId) {
-        searchParams.append('user_id', params.userId);
-      }
-      if (params?.start) {
-        searchParams.append('start', params.start);
-      }
-      if (params?.end) {
-        searchParams.append('end', params.end);
-      }
+    let query = supabase
+      .from('audit_logs')
+      .select(SELECT_COLUMNS, { count: 'exact' })
+      .eq('farm_id', farmId);
 
-      const page = params?.page && params.page > 0 ? params.page : undefined;
-      const pageSize = params?.pageSize && params.pageSize > 0 ? params.pageSize : undefined;
-
-      if (page) {
-        searchParams.append('page', String(page));
-      }
-      if (pageSize) {
-        searchParams.append('page_size', String(pageSize));
-      }
-
-      if (params?.sortBy) {
-        searchParams.append('sort_by', params.sortBy);
-      }
-      if (params?.sortOrder) {
-        searchParams.append('sort_order', params.sortOrder);
-      }
-
-      if (params?.filters) {
-        Object.entries(params.filters).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.filter(Boolean).forEach((item) => {
-              searchParams.append(`filter[${key}]`, String(item));
-            });
-          } else if (value !== undefined && value !== null && value !== '') {
-            searchParams.append(`filter[${key}]`, String(value));
-          }
-        });
-      }
-
-      const queryString = searchParams.toString();
-      const endpoint = `/farms/${farmId}/audit-logs${queryString ? `?${queryString}` : ''}`;
-      const { data } = await apiClient.get<AuditLogsApiResponse>(endpoint);
-      const payload = data?.data;
-
-      const items = (payload?.items ?? []).map(mapAuditLog);
-      const effectivePage = payload?.page ?? page ?? 1;
-      const effectivePageSize = payload?.page_size ?? pageSize ?? 25;
-      const total = payload?.total ?? items.length;
-
-      return {
-        items,
-        page: effectivePage,
-        pageSize: effectivePageSize,
-        total,
-      };
-    } catch (error) {
-      throw new Error(handleApiError(error));
+    if (params?.entityType) {
+      query = query.eq('entity_type', params.entityType);
     }
+    if (params?.entityId) {
+      query = query.eq('entity_id', params.entityId);
+    }
+    if (params?.actions?.length) {
+      query = query.in('action_type', params.actions);
+    }
+    if (params?.userId) {
+      query = query.eq('user_id', params.userId);
+    }
+    if (params?.start) {
+      query = query.gte('created_at', params.start);
+    }
+    if (params?.end) {
+      query = query.lte('created_at', params.end);
+    }
+
+    const sortBy = params?.sortBy && SORTABLE_COLUMNS.has(params.sortBy) ? params.sortBy : 'created_at';
+    query = query.order(sortBy, { ascending: params?.sortOrder === 'asc' });
+
+    const page = params?.page && params.page > 0 ? params.page : 1;
+    const pageSize = params?.pageSize && params.pageSize > 0 ? params.pageSize : 25;
+    const from = (page - 1) * pageSize;
+
+    const { data, error, count } = await query.range(from, from + pageSize - 1);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const items = ((data ?? []) as unknown as AuditLogRow[]).map(mapAuditLog);
+
+    return {
+      items,
+      page,
+      pageSize,
+      total: count ?? items.length,
+    };
   },
 
   getFarmAuditLogById: async (farmId: string, logId: string): Promise<AuditLogEntry> => {
-    const pageSize = 50;
-    let page = 1;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select(SELECT_COLUMNS)
+      .eq('farm_id', farmId)
+      .eq('id', logId)
+      .maybeSingle();
 
-    try {
-      for (;;) {
-        const { items, total, pageSize: responsePageSize } = await AuditService.getFarmAuditLogs(farmId, {
-          page,
-          pageSize,
-        });
-
-        const match = items.find((log) => log.id === logId);
-        if (match) {
-          return match;
-        }
-
-        const effectivePageSize = responsePageSize > 0 ? responsePageSize : pageSize;
-        const totalPages = effectivePageSize > 0 && total > 0 ? Math.ceil(total / effectivePageSize) : 0;
-
-        if (items.length === 0 || totalPages === 0 || page >= totalPages) {
-          break;
-        }
-
-        page += 1;
-      }
-    } catch (error) {
-      throw new Error(handleApiError(error));
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data) {
+      throw new Error('Audit log not found');
     }
 
-    throw new Error('Audit log not found');
+    return mapAuditLog(data as unknown as AuditLogRow);
   },
 };
-

@@ -1,5 +1,4 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
+import { createClient } from '@/lib/supabase/client';
 import {
   CreateHealthRecordRequest,
   HealthRecord,
@@ -11,44 +10,54 @@ import {
   UpdateHealthScheduleRequest,
 } from '@/types/health';
 import { ListOptions } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+import { currentUserId, definedFields, fetchList, throwIfError } from './supabaseList';
+
+const RECORD_TEXT_FILTERS = ['title', 'vet_name', 'medication', 'description'];
+const SCHEDULE_TEXT_FILTERS = ['name', 'description'];
 
 export const HealthService = {
   getHealthRecords: async (farmId: string, params?: ListOptions): Promise<HealthRecordList> => {
-    const searchParams = createListSearchParams(params);
-    const query = searchParams.toString();
-    const url = query ? `/farms/${farmId}/health-records?${query}` : `/farms/${farmId}/health-records`;
+    const supabase = createClient();
+    const query = supabase
+      .from('health_records')
+      .select('*', { count: 'exact' })
+      .eq('farm_id', farmId);
 
-    const { data } = await apiClient.get<ApiResponse<HealthRecordList> | HealthRecordList>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
-
-    return normalizePaginatedResponse<HealthRecord>(payload, params);
+    return fetchList<HealthRecord>(query, params, {
+      textFilters: RECORD_TEXT_FILTERS,
+      defaultSort: { column: 'performed_at', ascending: false },
+    });
   },
 
   getHealthRecordById: async (farmId: string, recordId: string): Promise<HealthRecord> => {
-    const response = await apiClient.get<ApiResponse<HealthRecord> | HealthRecord>(
-      `/farms/${farmId}/health-records/${recordId}`
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_records')
+      .select('*')
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .single();
+    throwIfError(error);
+    return data as HealthRecord;
   },
 
   createHealthRecord: async (
     farmId: string,
     payload: CreateHealthRecordRequest
   ): Promise<HealthRecord> => {
-    const response = await apiClient.post<ApiResponse<HealthRecord> | HealthRecord>(
-      `/farms/${farmId}/health-records`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthRecord;
+    const supabase = createClient();
+    const userId = await currentUserId(supabase);
+    const { data, error } = await supabase
+      .from('health_records')
+      .insert({
+        ...definedFields(payload as unknown as Record<string, unknown>),
+        farm_id: farmId,
+        performed_by: payload.performed_by ?? userId,
+      })
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as HealthRecord;
   },
 
   updateHealthRecord: async (
@@ -56,56 +65,69 @@ export const HealthService = {
     recordId: string,
     payload: UpdateHealthRecordRequest
   ): Promise<HealthRecord> => {
-    const response = await apiClient.put<ApiResponse<HealthRecord> | HealthRecord>(
-      `/farms/${farmId}/health-records/${recordId}`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_records')
+      .update(definedFields(payload as Record<string, unknown>))
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as HealthRecord;
   },
 
   deleteHealthRecord: async (farmId: string, recordId: string): Promise<void> => {
-    await apiClient.delete(`/farms/${farmId}/health-records/${recordId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('health_records')
+      .delete()
+      .eq('farm_id', farmId)
+      .eq('id', recordId);
+    throwIfError(error);
   },
 
   getHealthSchedules: async (farmId: string, params?: ListOptions): Promise<HealthScheduleList> => {
-    const searchParams = createListSearchParams(params);
-    const query = searchParams.toString();
-    const url = query ? `/farms/${farmId}/health-schedules?${query}` : `/farms/${farmId}/health-schedules`;
+    const supabase = createClient();
+    const query = supabase
+      .from('health_schedules')
+      .select('*', { count: 'exact' })
+      .eq('farm_id', farmId);
 
-    const { data } = await apiClient.get<ApiResponse<HealthScheduleList> | HealthScheduleList>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
-
-    return normalizePaginatedResponse<HealthSchedule>(payload, params);
+    return fetchList<HealthSchedule>(query, params, {
+      textFilters: SCHEDULE_TEXT_FILTERS,
+      defaultSort: { column: 'start_date', ascending: false },
+    });
   },
 
   getHealthScheduleById: async (farmId: string, scheduleId: string): Promise<HealthSchedule> => {
-    const response = await apiClient.get<ApiResponse<HealthSchedule> | HealthSchedule>(
-      `/farms/${farmId}/health-schedules/${scheduleId}`
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthSchedule;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_schedules')
+      .select('*')
+      .eq('farm_id', farmId)
+      .eq('id', scheduleId)
+      .single();
+    throwIfError(error);
+    return data as HealthSchedule;
   },
 
   createHealthSchedule: async (
     farmId: string,
     payload: CreateHealthScheduleRequest
   ): Promise<HealthSchedule> => {
-    const response = await apiClient.post<ApiResponse<HealthSchedule> | HealthSchedule>(
-      `/farms/${farmId}/health-schedules`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthSchedule;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_schedules')
+      .insert({
+        ...definedFields(payload as unknown as Record<string, unknown>),
+        farm_id: farmId,
+        lead_time_days: payload.lead_time_days ?? 0,
+      })
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as HealthSchedule;
   },
 
   updateHealthSchedule: async (
@@ -113,19 +135,26 @@ export const HealthService = {
     scheduleId: string,
     payload: UpdateHealthScheduleRequest
   ): Promise<HealthSchedule> => {
-    const response = await apiClient.put<ApiResponse<HealthSchedule> | HealthSchedule>(
-      `/farms/${farmId}/health-schedules/${scheduleId}`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthSchedule;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_schedules')
+      .update(definedFields(payload as Record<string, unknown>))
+      .eq('farm_id', farmId)
+      .eq('id', scheduleId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as HealthSchedule;
   },
 
   deleteHealthSchedule: async (farmId: string, scheduleId: string): Promise<void> => {
-    await apiClient.delete(`/farms/${farmId}/health-schedules/${scheduleId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('health_schedules')
+      .delete()
+      .eq('farm_id', farmId)
+      .eq('id', scheduleId);
+    throwIfError(error);
   },
 
   setHealthScheduleStatus: async (
@@ -133,15 +162,16 @@ export const HealthService = {
     scheduleId: string,
     active: boolean
   ): Promise<HealthSchedule> => {
-    const response = await apiClient.patch<ApiResponse<HealthSchedule> | HealthSchedule>(
-      `/farms/${farmId}/health-schedules/${scheduleId}/status`,
-      { active }
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as HealthSchedule;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('health_schedules')
+      .update({ active })
+      .eq('farm_id', farmId)
+      .eq('id', scheduleId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as HealthSchedule;
   },
 
   recordScheduleCompletion: async (
@@ -149,14 +179,22 @@ export const HealthService = {
     scheduleId: string,
     payload: CreateHealthRecordRequest
   ): Promise<HealthRecord> => {
-    const response = await apiClient.post<ApiResponse<HealthRecord> | HealthRecord>(
-      `/farms/${farmId}/health-schedules/${scheduleId}/record`,
-      payload
-    );
+    const supabase = createClient();
+    const schedule = await HealthService.getHealthScheduleById(farmId, scheduleId);
 
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
+    // The schedule names the target; the record inherits it unless the form
+    // overrode it. A one-off schedule is spent once it has been recorded.
+    const record = await HealthService.createHealthRecord(farmId, {
+      ...payload,
+      animal_id:
+        payload.animal_id ?? (schedule.target_type === 'animal' ? schedule.target_id : null),
+      group_id: payload.group_id ?? (schedule.target_type === 'group' ? schedule.target_id : null),
+    });
+
+    if (schedule.frequency_type === 'once') {
+      await HealthService.setHealthScheduleStatus(farmId, scheduleId, false);
     }
-    return response.data as HealthRecord;
+
+    return record;
   },
 };

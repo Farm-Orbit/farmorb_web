@@ -25,7 +25,7 @@ describe('Farm Activity', () => {
       'Farm for audit log testing',
       'mixed'
     ).then((farmId) => {
-      cy.get('[data-testid="tab-activity"]').click();
+      cy.get('[data-testid="nav-activity"]').click();
 
       cy.createAnimal(animalTag, {
         name: 'Audit Bull',
@@ -41,7 +41,7 @@ describe('Farm Activity', () => {
 
       cy.deleteAnimal(animalTag);
 
-      cy.get('[data-testid="tab-activity"]').click();
+      cy.get('[data-testid="nav-activity"]').click();
 
       cy.get('[data-testid="audit-action-readable"]').should('contain.text', 'Created animal');
       cy.get('[data-testid="audit-action-readable"]').should('contain.text', 'Updated animal');

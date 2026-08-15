@@ -1,7 +1,6 @@
 "use client";
 
 import CustomMaterialTable from '@/components/ui/table/CustomMaterialTable';
-import { useAnimals } from '@/hooks/useAnimals';
 import { GroupService } from '@/services/groupService';
 import { Animal } from '@/types/animal';
 import { type MRT_ColumnDef } from 'material-react-table';
@@ -19,26 +18,8 @@ interface GroupAnimalsTableProps {
   groupId: string;
 }
 
-interface AnimalGroupRelation {
-  id: string;
-  animal_id: string;
-  group_id: string;
-  added_at: string;
-  added_by?: string;
-  notes?: string;
-  animal?: {
-    id: string;
-    tag_id: string;
-    name?: string;
-    species: string;
-    status: string;
-  };
-}
-
 export default function GroupAnimalsTable({ farmId, groupId }: GroupAnimalsTableProps) {
   const router = useRouter();
-  const { getAnimalById } = useAnimals();
-  const [animalRelations, setAnimalRelations] = useState<AnimalGroupRelation[]>([]);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [availableAnimals, setAvailableAnimals] = useState<Animal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,28 +41,14 @@ export default function GroupAnimalsTable({ farmId, groupId }: GroupAnimalsTable
         pageSize: 200, // Get all animals in the group
       });
 
-      setAnimalRelations(result.items || []);
-
-      // Fetch full animal details for each animal in the group
-      const animalPromises = (result.items || []).map(async (relation: AnimalGroupRelation) => {
-        try {
-          const animal = await getAnimalById(farmId, relation.animal_id);
-          return animal;
-        } catch (error) {
-          console.error(`Failed to load animal ${relation.animal_id}:`, error);
-          return null;
-        }
-      });
-
-      const fetchedAnimals = await Promise.all(animalPromises);
-      setAnimals(fetchedAnimals.filter((a): a is Animal => a !== null));
+      setAnimals(result.items || []);
     } catch (error) {
       console.error('Failed to load group animals:', error);
       setAnimals([]);
     } finally {
       setIsLoading(false);
     }
-  }, [farmId, groupId, getAnimalById]);
+  }, [groupId]);
 
   useEffect(() => {
     fetchAnimals();
