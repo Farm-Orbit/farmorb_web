@@ -97,3 +97,4 @@ and `ON_ERROR_STOP=1` turns that into a non-zero exit.
 |---|---|
 | `perennial_cycles.sql` | Season progression to year 12, ratoon ceiling, annuals, honest cycle closure |
 | `crop_activities.sql` | Unit conversion, stock consumption, pre-harvest intervals, batches, storage keys, observations, audit |
+| `crop_financials.sql` | Derived input and labour costs, the sale-within-harvest rule, cost per kg, and the planting and cycle rollups |
