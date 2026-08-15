@@ -139,7 +139,7 @@ export interface Planting {
         'id' | 'name' | 'growing_type' | 'supports_ratoon' | 'max_ratoon_cycles'
     > | null;
     crop_varieties?: Pick<CropVariety, 'id' | 'name'> | null;
-    grow_locations?: Pick<GrowLocation, 'id' | 'name'> | null;
+    grow_locations?: Pick<GrowLocation, 'id' | 'name' | 'size_hectares'> | null;
 }
 
 export interface CreatePlantingData {
