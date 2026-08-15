@@ -22,8 +22,8 @@ FarmOrbit is built on modern, production-ready technologies:
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS V4
 - **State Management**: Redux Toolkit
-- **Backend**: Supabase (Auth + Postgres + RLS) for auth, farms, and crop farming
-- **Legacy API**: `farmorb_api` (Go) — deprecated for new work; preserved on branch `legacy/go-api-integration` for livestock paths that still call Axios
+- **Backend**: Supabase (Auth + Postgres + RLS) — the only backend; there is no application server
+- **Legacy API**: `farmorb_api` (Go) — retired. The last Axios integration is preserved on branch `legacy/go-api-integration`
 - **Testing**: Cypress for E2E, Jest for unit tests
 
 ## Features
@@ -33,15 +33,16 @@ FarmOrbit is built on modern, production-ready technologies:
 - **User Authentication**: Supabase Auth (registration, login, logout, profile)
 - **Farm Management**: Create, view, edit, and archive farms (RLS + `create_farm` RPC)
 - **Crop Farming**: Crop library, grow locations, plantings (with mother cycle), harvests
-- **Team Collaboration**: Invite members, manage roles (livestock invite flows still legacy)
+- **Livestock Management**: Animals, groups and membership, health records and schedules, breeding, feeding, inventory and suppliers
+- **Team Collaboration**: Invite members, manage roles
+- **Activity / Audit Trail**: Farm activity is recorded by database triggers on every audited table
 - **User Profile**: Update personal information, change password
 - **Notifications**: Toast notification system with multiple notification types
 - **Responsive Design**: Mobile-first approach with card layouts for small screens
 - **Dark Mode**: Full dark mode support across all components
 
-### 🚧 Coming Soon / Legacy
+### 🚧 Coming Soon
 
-- **Livestock Management**: Animals, groups, health, breeding, feeding — UI still present; data layer still points at deprecated Go API until ported
 - **Analytics & Reporting**: Comprehensive dashboards and data visualization
 
 ## Installation
@@ -86,9 +87,10 @@ FarmOrbit is built on modern, production-ready technologies:
 6. **Open your browser**:
    Navigate to `http://localhost:3000`
 
-### Deprecated Go API
+### Retired Go API
 
-The dedicated Go backend (`farmorb_api`) is **no longer required** for auth, farms, or crop farming.  
+The dedicated Go backend (`farmorb_api`) is **no longer used at all**. Every service now talks
+to Supabase directly; `axios`, the shared `apiClient`, and `TokenManager` have been removed.
 If you need the previous Axios + JWT integration, use git branch `legacy/go-api-integration`.
 
 ## Project Structure

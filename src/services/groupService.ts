@@ -1,81 +1,153 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
+import { createClient } from '@/lib/supabase/client';
 import {
   Group,
   CreateGroupRequest,
   UpdateGroupRequest,
-  GroupResponse,
   AddAnimalToGroupRequest,
   BulkAddAnimalsRequest,
 } from '@/types/group';
+import { Animal } from '@/types/animal';
 import { ListOptions, PaginatedList } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+import { currentUserId, definedFields, fetchList, throwIfError } from './supabaseList';
+
+const TEXT_FILTERS = ['name', 'purpose', 'location', 'description'];
 
 export const GroupService = {
   // Group CRUD operations
   async getFarmGroups(farmId: string, params?: ListOptions): Promise<PaginatedList<Group>> {
-    const searchParams = createListSearchParams(params);
-    const queryString = searchParams.toString();
-    const url = queryString ? `/farms/${farmId}/groups?${queryString}` : `/farms/${farmId}/groups`;
+    const supabase = createClient();
+    const query = supabase
+      .from('groups')
+      .select('*', { count: 'exact' })
+      .eq('farm_id', farmId);
 
-    const { data } = await apiClient.get<ApiResponse<PaginatedList<Group>> | PaginatedList<Group>>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
-
-    return normalizePaginatedResponse<Group>(payload, params);
+    return fetchList<Group>(query, params, {
+      textFilters: TEXT_FILTERS,
+      defaultSort: { column: 'created_at', ascending: false },
+    });
   },
 
   async getGroup(farmId: string, groupId: string): Promise<Group> {
-    const response = await apiClient.get<GroupResponse>(`/farms/${farmId}/groups/${groupId}`);
-    return response.data.data;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('groups')
+      .select('*')
+      .eq('farm_id', farmId)
+      .eq('id', groupId)
+      .single();
+    throwIfError(error);
+    return data as Group;
   },
 
   async createGroup(farmId: string, data: CreateGroupRequest): Promise<Group> {
-    const response = await apiClient.post<GroupResponse>(`/farms/${farmId}/groups`, data);
-    return response.data.data;
+    const supabase = createClient();
+    const { color: _color, ...fields } = data as CreateGroupRequest & { color?: string };
+    const { data: created, error } = await supabase
+      .from('groups')
+      .insert({ ...definedFields(fields as Record<string, unknown>), farm_id: farmId })
+      .select('*')
+      .single();
+    throwIfError(error);
+    return created as Group;
   },
 
   async updateGroup(farmId: string, groupId: string, data: UpdateGroupRequest): Promise<Group> {
-    const response = await apiClient.put<GroupResponse>(`/farms/${farmId}/groups/${groupId}`, data);
-    return response.data.data;
+    const supabase = createClient();
+    const { color: _color, ...fields } = data as UpdateGroupRequest & { color?: string };
+    const { data: updated, error } = await supabase
+      .from('groups')
+      .update(definedFields(fields as Record<string, unknown>))
+      .eq('farm_id', farmId)
+      .eq('id', groupId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return updated as Group;
   },
 
   async deleteGroup(farmId: string, groupId: string): Promise<void> {
-    await apiClient.delete(`/farms/${farmId}/groups/${groupId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('groups')
+      .delete()
+      .eq('farm_id', farmId)
+      .eq('id', groupId);
+    throwIfError(error);
   },
 
   // Animal-Group relationship operations
-  async addAnimalToGroup(groupId: string, animalId: string, data?: AddAnimalToGroupRequest): Promise<void> {
-    await apiClient.post(`/groups/${groupId}/animals/${animalId}`, data || {});
+  async addAnimalToGroup(
+    groupId: string,
+    animalId: string,
+    data?: AddAnimalToGroupRequest
+  ): Promise<void> {
+    const supabase = createClient();
+    const userId = await currentUserId(supabase);
+    const { error } = await supabase.from('animal_groups').insert({
+      group_id: groupId,
+      animal_id: animalId,
+      notes: data?.notes ?? null,
+      added_by: userId,
+    });
+    throwIfError(error);
   },
 
   async removeAnimalFromGroup(groupId: string, animalId: string): Promise<void> {
-    await apiClient.delete(`/groups/${groupId}/animals/${animalId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('animal_groups')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('animal_id', animalId);
+    throwIfError(error);
   },
 
-  async getGroupAnimals(groupId: string, params?: ListOptions): Promise<PaginatedList<any>> {
-    const searchParams = createListSearchParams(params);
-    const queryString = searchParams.toString();
-    const url = queryString ? `/groups/${groupId}/animals?${queryString}` : `/groups/${groupId}/animals`;
-    const { data } = await apiClient.get<ApiResponse<PaginatedList<any>> | PaginatedList<any>>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
+  async getGroupAnimals(groupId: string, params?: ListOptions): Promise<PaginatedList<Animal>> {
+    const supabase = createClient();
+    // !inner turns the embed into a join filter, so this pages over animals
+    // rather than over membership rows.
+    const query = supabase
+      .from('animals')
+      .select('*, animal_groups!inner(group_id)', { count: 'exact' })
+      .eq('animal_groups.group_id', groupId);
 
-    return normalizePaginatedResponse<any>(payload, params);
+    return fetchList<Animal>(query, params, {
+      textFilters: ['tag_id', 'name', 'breed'],
+      defaultSort: { column: 'tag_id', ascending: true },
+    });
   },
 
   async getAnimalGroups(animalId: string, params?: ListOptions): Promise<PaginatedList<Group>> {
-    const searchParams = createListSearchParams(params);
-    const queryString = searchParams.toString();
-    const url = queryString ? `/animals/${animalId}/groups?${queryString}` : `/animals/${animalId}/groups`;
-    const { data } = await apiClient.get<ApiResponse<PaginatedList<Group>> | PaginatedList<Group>>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
+    const supabase = createClient();
+    const query = supabase
+      .from('groups')
+      .select('*, animal_groups!inner(animal_id)', { count: 'exact' })
+      .eq('animal_groups.animal_id', animalId);
 
-    return normalizePaginatedResponse<Group>(payload, params);
+    return fetchList<Group>(query, params, {
+      textFilters: TEXT_FILTERS,
+      defaultSort: { column: 'name', ascending: true },
+    });
   },
 
   async bulkAddAnimalsToGroup(groupId: string, data: BulkAddAnimalsRequest): Promise<void> {
-    await apiClient.post(`/groups/${groupId}/animals`, data);
+    if (data.animal_ids.length === 0) {
+      return;
+    }
+
+    const supabase = createClient();
+    const userId = await currentUserId(supabase);
+    const { error } = await supabase.from('animal_groups').upsert(
+      data.animal_ids.map((animalId) => ({
+        group_id: groupId,
+        animal_id: animalId,
+        notes: data.notes ?? null,
+        added_by: userId,
+      })),
+      { onConflict: 'animal_id,group_id', ignoreDuplicates: true }
+    );
+    throwIfError(error);
   },
 };
 
 export default GroupService;
-

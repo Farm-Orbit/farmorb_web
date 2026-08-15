@@ -1,45 +1,59 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
-import { BreedingRecord, BreedingRecordList, BreedingTimelinePayload, CreateBreedingRecordRequest, UpdateBreedingRecordRequest } from '@/types/breeding';
+import { createClient } from '@/lib/supabase/client';
+import {
+  BreedingRecord,
+  BreedingRecordList,
+  BreedingTimelinePayload,
+  CreateBreedingRecordRequest,
+  UpdateBreedingRecordRequest,
+} from '@/types/breeding';
 import { ListOptions } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+import { definedFields, fetchList, throwIfError } from './supabaseList';
+
+const TEXT_FILTERS = ['notes'];
 
 export const BreedingService = {
   getBreedingRecords: async (farmId: string, params?: ListOptions): Promise<BreedingRecordList> => {
-    const searchParams = createListSearchParams(params);
-    const query = searchParams.toString();
-    const url = query ? `/farms/${farmId}/breeding-records?${query}` : `/farms/${farmId}/breeding-records`;
+    const supabase = createClient();
+    const query = supabase
+      .from('breeding_records')
+      .select('*', { count: 'exact' })
+      .eq('farm_id', farmId);
 
-    const { data } = await apiClient.get<ApiResponse<BreedingRecordList> | BreedingRecordList>(url);
-    const payload = 'data' in data && data.data ? data.data : data;
-
-    return normalizePaginatedResponse<BreedingRecord>(payload, params);
+    return fetchList<BreedingRecord>(query, params, {
+      textFilters: TEXT_FILTERS,
+      defaultSort: { column: 'event_date', ascending: false },
+    });
   },
 
   getBreedingRecordById: async (farmId: string, recordId: string): Promise<BreedingRecord> => {
-    const response = await apiClient.get<ApiResponse<BreedingRecord> | BreedingRecord>(
-      `/farms/${farmId}/breeding-records/${recordId}`
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as BreedingRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('breeding_records')
+      .select('*')
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .single();
+    throwIfError(error);
+    return data as BreedingRecord;
   },
 
   createBreedingRecord: async (
     farmId: string,
     payload: CreateBreedingRecordRequest
   ): Promise<BreedingRecord> => {
-    const response = await apiClient.post<ApiResponse<BreedingRecord> | BreedingRecord>(
-      `/farms/${farmId}/breeding-records`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as BreedingRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('breeding_records')
+      .insert({
+        ...definedFields(payload as unknown as Record<string, unknown>),
+        farm_id: farmId,
+        offspring_ids: payload.offspring_ids ?? [],
+        attachments: payload.attachments ?? [],
+      })
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as BreedingRecord;
   },
 
   updateBreedingRecord: async (
@@ -47,19 +61,26 @@ export const BreedingService = {
     recordId: string,
     payload: UpdateBreedingRecordRequest
   ): Promise<BreedingRecord> => {
-    const response = await apiClient.put<ApiResponse<BreedingRecord> | BreedingRecord>(
-      `/farms/${farmId}/breeding-records/${recordId}`,
-      payload
-    );
-
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as BreedingRecord;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('breeding_records')
+      .update(definedFields(payload as Record<string, unknown>))
+      .eq('farm_id', farmId)
+      .eq('id', recordId)
+      .select('*')
+      .single();
+    throwIfError(error);
+    return data as BreedingRecord;
   },
 
   deleteBreedingRecord: async (farmId: string, recordId: string): Promise<void> => {
-    await apiClient.delete(`/farms/${farmId}/breeding-records/${recordId}`);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('breeding_records')
+      .delete()
+      .eq('farm_id', farmId)
+      .eq('id', recordId);
+    throwIfError(error);
   },
 
   getBreedingTimeline: async (
@@ -67,20 +88,25 @@ export const BreedingService = {
     animalId: string,
     limit?: number
   ): Promise<BreedingTimelinePayload> => {
-    const searchParams = new URLSearchParams();
+    const supabase = createClient();
+    // The timeline covers the animal as either the subject or the mate.
+    let query = supabase
+      .from('breeding_records')
+      .select('*')
+      .eq('farm_id', farmId)
+      .or(`animal_id.eq.${animalId},mate_id.eq.${animalId}`)
+      .order('event_date', { ascending: false });
+
     if (limit && limit > 0) {
-      searchParams.append('limit', String(limit));
+      query = query.limit(limit);
     }
-    const query = searchParams.toString();
-    const url = query
-      ? `/farms/${farmId}/animals/${animalId}/breeding-timeline?${query}`
-      : `/farms/${farmId}/animals/${animalId}/breeding-timeline`;
 
-    const response = await apiClient.get<ApiResponse<BreedingTimelinePayload> | BreedingTimelinePayload>(url);
+    const { data, error } = await query;
+    throwIfError(error);
 
-    if ('data' in response.data && response.data.data) {
-      return response.data.data;
-    }
-    return response.data as BreedingTimelinePayload;
+    return {
+      animal_id: animalId,
+      items: (data ?? []) as BreedingRecord[],
+    };
   },
 };
