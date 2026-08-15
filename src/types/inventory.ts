@@ -34,6 +34,12 @@ export interface InventoryItem {
   supplier_id?: string | null;
   expiry_date?: string | null;
   low_stock_threshold?: number | null;
+  /** Product facts used to prefill an application, rather than asking for them. */
+  active_ingredient?: string | null;
+  default_rate?: number | null;
+  default_rate_unit?: string | null;
+  phi_days?: number | null;
+  rei_hours?: number | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;

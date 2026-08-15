@@ -8,6 +8,7 @@ import {
   GridIcon,
   GroupIcon,
   ListIcon,
+  PencilIcon,
   PaperPlaneIcon,
   PieChartIcon,
   ShootingStarIcon,
@@ -28,6 +29,7 @@ export type FarmTab =
   | "locations"
   | "plantings"
   | "harvests"
+  | "activities"
   | "animals"
   | "groups"
   | "breeding"
@@ -69,6 +71,7 @@ const CROP_SECTION: FarmNavSection = {
     { id: "locations", label: "Locations", icon: <GridIcon /> },
     { id: "plantings", label: "Plantings", icon: <BoxCubeIcon /> },
     { id: "harvests", label: "Harvests", icon: <TaskIcon /> },
+    { id: "activities", label: "Activities", icon: <PencilIcon /> },
   ],
 };
 
@@ -129,6 +132,7 @@ export const isFarmTab = (value: string): value is FarmTab =>
     "locations",
     "plantings",
     "harvests",
+    "activities",
     "animals",
     "groups",
     "breeding",

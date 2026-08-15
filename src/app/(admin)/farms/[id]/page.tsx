@@ -17,6 +17,7 @@ import { InventoryItemsTable } from '@/components/inventory';
 import SuppliersTable from '@/components/inventory/SuppliersTable';
 import FeedingRecordsTable from '@/components/feeding/FeedingRecordsTable';
 import {
+  ActivitiesPanel,
   CropLibraryPanel,
   GrowLocationsPanel,
   PlantingsPanel,
@@ -251,6 +252,7 @@ export default function FarmDetailPage() {
           {activeTab === 'locations' && <GrowLocationsPanel farmId={farmId} />}
           {activeTab === 'plantings' && <PlantingsPanel farmId={farmId} />}
           {activeTab === 'harvests' && <HarvestsPanel farmId={farmId} />}
+          {activeTab === 'activities' && <ActivitiesPanel farmId={farmId} />}
 
           {activeTab === 'animals' && (
             <AnimalsTable farmId={farmId} />
