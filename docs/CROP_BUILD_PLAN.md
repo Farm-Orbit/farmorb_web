@@ -211,7 +211,7 @@ scale with words, never a free number.
 | CR-2.10 | Type-driven activity form with progressive disclosure and remembered expansion (UX-5) | 1.5 | CR-2.9 |
 | CR-2.11 | Multi-select target chips with "select all in farm", writing N rows from one submission (UX-3) | 1 | CR-2.10 |
 | CR-2.12 | Product picker sourcing rate/PHI/REI from inventory; auto-computed quantity with live stock impact (UX-6) | 1 | CR-2.10 |
-| CR-2.13 | "Repeat" action on any activity, and saved spray programme templates (UX-4) | 1 | CR-2.10 |
+| CR-2.13 | "Repeat" action on any activity (UX-4). **Done.** Saved spray programme templates **deferred** — without scheduling (not in scope) a template is a saved prefill, and repeat already provides that from history with no setup. Revisit alongside tasks. | 1 | CR-2.10 |
 | CR-2.14 | Activity timeline per farm and per planting — grouped by day, filterable by type, showing batch entries as one action not six (UX-3) | 1.5 | CR-2.10 |
 | CR-2.15 | Scouting form with photo upload and worded severity scale | 1 | CR-2.0, CR-2.8 |
 | CR-2.16 | Tests: SQL for PHI and the stock trigger; E2E logging one spray across three blocks then being blocked from harvesting inside the interval | 1 | CR-2.14 |
