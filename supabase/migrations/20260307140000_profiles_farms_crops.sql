@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS public.plantings (
     crop_type_id UUID NOT NULL REFERENCES public.crop_types(id) ON DELETE CASCADE,
     variety_id UUID REFERENCES public.crop_varieties(id) ON DELETE SET NULL,
     planting_date DATE NOT NULL,
-    planting_method VARCHAR(50) CHECK (planting_method IN ('direct_seed', 'transplant', 'crown', 'slip', 'sucker', 'cutting', 'bulb', 'tuber', 'other')),
+    planting_method VARCHAR(50) CHECK (planting_method IN ('direct_seed', 'transplant', 'graft', 'crown', 'slip', 'sucker', 'cutting', 'bulb', 'tuber', 'other')),
     status VARCHAR(50) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'planted', 'establishing', 'vegetative', 'flowering', 'fruiting', 'harvesting', 'harvested', 'terminated')),
     area_hectares NUMERIC(10, 2),
     plant_count INTEGER,
@@ -183,18 +183,31 @@ CREATE TABLE IF NOT EXISTS public.planting_cycles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     planting_id UUID NOT NULL REFERENCES public.plantings(id) ON DELETE CASCADE,
     cycle_number INTEGER NOT NULL,
-    cycle_type VARCHAR(50) NOT NULL CHECK (cycle_type IN ('mother', 'ratoon')),
+    -- 'mother'/'ratoon' model a ratoon crop (pineapple, sugarcane, banana):
+    -- one planting regrows a bounded number of times. 'season' models a
+    -- perennial tree bearing annually and effectively indefinitely, so the
+    -- number of cycles is not capped and each carries the year it belongs to.
+    cycle_type VARCHAR(50) NOT NULL CHECK (cycle_type IN ('mother', 'ratoon', 'season')),
+    season_year INTEGER CHECK (season_year IS NULL OR season_year BETWEEN 1900 AND 2200),
     start_date DATE NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'harvested', 'terminated')),
     expected_yield NUMERIC(10, 2),
     actual_yield NUMERIC(10, 2),
+    -- Ratoon-only: each regrowth typically yields less, and at some point
+    -- replanting beats another cycle. Unused for perennial seasons.
     yield_decline_percent NUMERIC(5, 2),
     continue_ratoon BOOLEAN,
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (planting_id, cycle_number)
+    UNIQUE (planting_id, cycle_number),
+    CONSTRAINT planting_cycle_season_year_required CHECK (
+        cycle_type <> 'season' OR season_year IS NOT NULL
+    )
 );
+
+CREATE INDEX IF NOT EXISTS idx_planting_cycles_planting
+    ON public.planting_cycles(planting_id, cycle_number);
 
 -- ---------------------------------------------------------------------------
 -- Harvests
@@ -205,7 +218,10 @@ CREATE TABLE IF NOT EXISTS public.harvests (
     planting_id UUID NOT NULL REFERENCES public.plantings(id) ON DELETE CASCADE,
     cycle_id UUID NOT NULL REFERENCES public.planting_cycles(id) ON DELETE CASCADE,
     harvest_date DATE NOT NULL,
-    harvest_type VARCHAR(50) NOT NULL CHECK (harvest_type IN ('mother', 'ratoon_1', 'ratoon_2', 'ratoon_3', 'ratoon_4', 'partial', 'final')),
+    -- Describes THIS pick only. Which season or ratoon it belongs to comes
+    -- from cycle_id — encoding it here as well is what capped the old model
+    -- at ratoon_4 and left a perennial's twelfth year unrecordable.
+    harvest_type VARCHAR(50) NOT NULL DEFAULT 'partial' CHECK (harvest_type IN ('partial', 'final')),
     quantity NUMERIC(10, 2) NOT NULL,
     quantity_unit VARCHAR(50) NOT NULL,
     average_fruit_weight_kg NUMERIC(10, 2),
@@ -329,6 +345,7 @@ AS $$
 DECLARE
     v_user_id UUID := auth.uid();
     v_planting public.plantings;
+    v_growing_type TEXT;
 BEGIN
     IF v_user_id IS NULL THEN
         RAISE EXCEPTION 'Not authenticated';
@@ -350,14 +367,124 @@ BEGIN
     )
     RETURNING * INTO v_planting;
 
+    -- The first cycle's kind follows the crop: a perennial bears seasons, and
+    -- anything else starts as a mother crop.
+    SELECT growing_type INTO v_growing_type
+    FROM public.crop_types
+    WHERE id = p_crop_type_id;
+
     INSERT INTO public.planting_cycles (
-        planting_id, cycle_number, cycle_type, start_date, status
+        planting_id, cycle_number, cycle_type, season_year, start_date, status
     )
     VALUES (
-        v_planting.id, 1, 'mother', p_planting_date, 'active'
+        v_planting.id,
+        1,
+        CASE WHEN v_growing_type = 'perennial' THEN 'season' ELSE 'mother' END,
+        CASE WHEN v_growing_type = 'perennial'
+             THEN EXTRACT(YEAR FROM p_planting_date)::INTEGER END,
+        p_planting_date,
+        'active'
     );
 
     RETURN v_planting;
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RPC: advance a planting to its next cycle
+--
+-- Perennials bear a new season each year with no ceiling. Ratoon crops are
+-- bounded by the crop's max_ratoon_cycles, and an annual has nothing to
+-- advance to. Closes the current cycle so exactly one is ever active.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.start_next_cycle(
+    p_planting_id UUID,
+    p_start_date DATE DEFAULT NULL
+)
+RETURNS public.planting_cycles
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_planting public.plantings;
+    v_growing_type TEXT;
+    v_max_ratoons INTEGER;
+    v_current public.planting_cycles;
+    v_start DATE := COALESCE(p_start_date, CURRENT_DATE);
+    v_next public.planting_cycles;
+    v_ratoon_count INTEGER;
+BEGIN
+    SELECT * INTO v_planting FROM public.plantings WHERE id = p_planting_id;
+    IF v_planting.id IS NULL THEN
+        RAISE EXCEPTION 'Planting not found';
+    END IF;
+
+    IF NOT public.is_farm_member(v_planting.farm_id) THEN
+        RAISE EXCEPTION 'Not a farm member';
+    END IF;
+
+    SELECT growing_type, max_ratoon_cycles
+    INTO v_growing_type, v_max_ratoons
+    FROM public.crop_types
+    WHERE id = v_planting.crop_type_id;
+
+    SELECT * INTO v_current
+    FROM public.planting_cycles
+    WHERE planting_id = p_planting_id
+    ORDER BY cycle_number DESC
+    LIMIT 1;
+
+    IF v_current.id IS NULL THEN
+        RAISE EXCEPTION 'Planting has no cycles to advance from';
+    END IF;
+
+    IF v_growing_type = 'perennial' THEN
+        INSERT INTO public.planting_cycles (
+            planting_id, cycle_number, cycle_type, season_year, start_date, status
+        )
+        VALUES (
+            p_planting_id,
+            v_current.cycle_number + 1,
+            'season',
+            EXTRACT(YEAR FROM v_start)::INTEGER,
+            v_start,
+            'active'
+        )
+        RETURNING * INTO v_next;
+    ELSIF v_growing_type = 'ratoon' THEN
+        SELECT count(*) INTO v_ratoon_count
+        FROM public.planting_cycles
+        WHERE planting_id = p_planting_id AND cycle_type = 'ratoon';
+
+        IF v_max_ratoons IS NOT NULL AND v_ratoon_count >= v_max_ratoons THEN
+            RAISE EXCEPTION 'Planting has reached its % ratoon cycle limit', v_max_ratoons;
+        END IF;
+
+        INSERT INTO public.planting_cycles (
+            planting_id, cycle_number, cycle_type, start_date, status
+        )
+        VALUES (
+            p_planting_id, v_current.cycle_number + 1, 'ratoon', v_start, 'active'
+        )
+        RETURNING * INTO v_next;
+    ELSE
+        RAISE EXCEPTION 'A % crop does not carry over into another cycle', v_growing_type;
+    END IF;
+
+    -- Close the cycle we came from, honestly: a season that produced fruit was
+    -- harvested, one that was abandoned or failed was terminated. Recording
+    -- both as 'harvested' would quietly overstate the bearing history.
+    UPDATE public.planting_cycles
+    SET status = CASE
+            WHEN EXISTS (SELECT 1 FROM public.harvests WHERE cycle_id = v_current.id)
+            THEN 'harvested'
+            ELSE 'terminated'
+        END,
+        updated_at = NOW()
+    WHERE id = v_current.id AND status = 'active';
+
+    RETURN v_next;
 END;
 $$;
 
@@ -527,5 +654,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.planting_cycles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.harvests TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_farm TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_planting_with_cycle TO authenticated;
+GRANT EXECUTE ON FUNCTION public.start_next_cycle TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_farm_member TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_farm_owner TO authenticated;

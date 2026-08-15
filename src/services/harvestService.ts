@@ -15,9 +15,22 @@ export const HarvestService = {
                 plantings (
                     id,
                     crop_types ( name )
-                )
+                ),
+                planting_cycles ( id, cycle_number, cycle_type, season_year )
             `)
             .eq('farm_id', farmId)
+            .order('harvest_date', { ascending: false });
+        throwIfError(error);
+        return (data || []) as Harvest[];
+    },
+
+    /** Harvests for one planting, used to total yield per cycle. */
+    listByPlanting: async (plantingId: string): Promise<Harvest[]> => {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('harvests')
+            .select('*')
+            .eq('planting_id', plantingId)
             .order('harvest_date', { ascending: false });
         throwIfError(error);
         return (data || []) as Harvest[];

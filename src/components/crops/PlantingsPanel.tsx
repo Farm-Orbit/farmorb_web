@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from 'react';
+import { Fragment, FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
+import PlantingCycles from './PlantingCycles';
 import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
@@ -31,6 +32,7 @@ export default function PlantingsPanel({ farmId }: Props) {
   const [plantingDate, setPlantingDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [plantCount, setPlantCount] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPlantings(farmId);
@@ -152,17 +154,33 @@ export default function PlantingsPanel({ farmId }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {plantings.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white">{p.planting_date}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                    {p.crop_types?.name || '—'}
-                    {p.crop_varieties?.name ? ` · ${p.crop_varieties.name}` : ''}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                    {p.grow_locations?.name || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.status}</td>
-                </tr>
+                <Fragment key={p.id}>
+                  <tr
+                    onClick={() => setExpandedId((id) => (id === p.id ? null : p.id))}
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                    data-testid={`planting-row-${p.id}`}
+                  >
+                    <td className="px-4 py-3 text-gray-900 dark:text-white">{p.planting_date}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {p.crop_types?.name || '—'}
+                      {p.crop_varieties?.name ? ` · ${p.crop_varieties.name}` : ''}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {p.grow_locations?.name || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.status}</td>
+                  </tr>
+                  {expandedId === p.id && (
+                    <tr>
+                      <td colSpan={4} className="bg-gray-50 px-4 py-4 dark:bg-white/[0.02]">
+                        <PlantingCycles
+                          planting={p}
+                          onCycleStarted={() => loadPlantings(farmId)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
