@@ -74,3 +74,26 @@ Crops: create a crop farm → Crops → Locations → Plantings → Harvests.
 
 Livestock: create a livestock farm → Groups → Animals → Health → Breeding → Inventory →
 Feeding, then check the Activity tab for the audit trail.
+
+## Database tests
+
+Schema-level rules — cycle progression, pre-harvest intervals, stock
+consumption, storage scoping — are tested in SQL rather than through the UI,
+because they are enforced by the database and should hold whichever client
+writes.
+
+```bash
+for f in supabase/tests/*.sql; do
+  docker exec -i supabase_db_farmorb_web psql -U postgres -d postgres \
+    -v ON_ERROR_STOP=1 -f - < "$f"
+done
+```
+
+Each file runs inside a transaction that is rolled back, so they are safe to
+run repeatedly against a stack with data in it. A failed expectation raises,
+and `ON_ERROR_STOP=1` turns that into a non-zero exit.
+
+| File | Covers |
+|---|---|
+| `perennial_cycles.sql` | Season progression to year 12, ratoon ceiling, annuals, honest cycle closure |
+| `crop_activities.sql` | Unit conversion, stock consumption, pre-harvest intervals, batches, storage keys, observations, audit |
