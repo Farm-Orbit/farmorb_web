@@ -10,6 +10,7 @@ const initialState: AuthState = {
     isLoading: false,
     error: null,
     lastActivity: null,
+    isSessionResolved: false,
 };
 
 export const loginUser = createAsyncThunk(
@@ -240,8 +241,12 @@ const authSlice = createSlice({
                 state.error = action.payload as string;
             });
 
+        // Deliberately does not touch isLoading: that flag means "a submit is in
+        // flight" and drives the auth forms' disabled state. Session bootstrap
+        // reports through isSessionResolved instead.
         builder
             .addCase(initializeAuthSession.fulfilled, (state, action) => {
+                state.isSessionResolved = true;
                 if (action.payload) {
                     state.user = action.payload.user;
                     state.accessToken = action.payload.accessToken;
@@ -256,6 +261,7 @@ const authSlice = createSlice({
                 }
             })
             .addCase(initializeAuthSession.rejected, (state) => {
+                state.isSessionResolved = true;
                 state.user = null;
                 state.accessToken = null;
                 state.refreshToken = null;

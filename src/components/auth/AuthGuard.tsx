@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSelector } from '@/store/hooks';
@@ -20,42 +20,28 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   redirectTo = '/signin',
 }) => {
   const { isAuthenticated, isLoading, user, fetchCurrentUser } = useAuth();
-  const authLoading = useAppSelector((state) => state.auth.isLoading);
+  // Set once the initial Supabase session lookup has settled. On a hard page
+  // load the store starts empty with isLoading false, so gating on isLoading
+  // alone would bounce an authenticated user to /signin before the session
+  // has been read back.
+  const isSessionResolved = useAppSelector((state) => state.auth.isSessionResolved);
   const router = useRouter();
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        if (isAuthenticated && !user) {
-          await fetchCurrentUser();
-        }
-      } catch (error) {
+    if (isAuthenticated && !user) {
+      fetchCurrentUser().catch((error) => {
         console.error('Failed to fetch user data:', error);
-      } finally {
-        // Wait until first auth load attempt finishes
-        if (!authLoading) {
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    initialize();
-  }, [isAuthenticated, user, fetchCurrentUser, authLoading]);
-
-  useEffect(() => {
-    if (!authLoading) {
-      setIsInitialized(true);
+      });
     }
-  }, [authLoading]);
+  }, [isAuthenticated, user, fetchCurrentUser]);
 
   useEffect(() => {
-    if (isInitialized && !isLoading && !isAuthenticated) {
+    if (isSessionResolved && !isLoading && !isAuthenticated) {
       router.push(redirectTo);
     }
-  }, [isInitialized, isLoading, isAuthenticated, redirectTo, router]);
+  }, [isSessionResolved, isLoading, isAuthenticated, redirectTo, router]);
 
-  if (isLoading || !isInitialized) {
+  if (isLoading || !isSessionResolved) {
     return (
       fallback || (
         <div className="min-h-screen flex items-center justify-center">

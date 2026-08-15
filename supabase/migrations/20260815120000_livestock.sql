@@ -426,7 +426,9 @@ BEGIN
     END IF;
 
     IF TG_OP = 'UPDATE' THEN
-        SELECT jsonb_object_agg(k, jsonb_build_object('from', v_old -> k, 'to', v_new -> k))
+        -- Keys are 'old'/'new' because that is the shape the activity table
+        -- reads (FarmActivity's getSummary), inherited from the Go API.
+        SELECT jsonb_object_agg(k, jsonb_build_object('old', v_old -> k, 'new', v_new -> k))
         INTO v_changes
         FROM jsonb_object_keys(v_new) AS k
         WHERE v_new -> k IS DISTINCT FROM v_old -> k
