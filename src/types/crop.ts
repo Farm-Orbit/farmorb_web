@@ -34,14 +34,25 @@ export type PlantingStatus =
     | 'harvested'
     | 'terminated';
 
-export type HarvestType =
-    | 'mother'
-    | 'ratoon_1'
-    | 'ratoon_2'
-    | 'ratoon_3'
-    | 'ratoon_4'
-    | 'partial'
-    | 'final';
+/**
+ * Describes a single pick. Which season or ratoon it belongs to comes from the
+ * cycle it references, not from here.
+ */
+export type HarvestType = 'partial' | 'final';
+
+export type CycleType = 'mother' | 'ratoon' | 'season';
+
+export type PlantingMethod =
+    | 'direct_seed'
+    | 'transplant'
+    | 'graft'
+    | 'crown'
+    | 'slip'
+    | 'sucker'
+    | 'cutting'
+    | 'bulb'
+    | 'tuber'
+    | 'other';
 
 export interface CropType {
     id: string;
@@ -123,7 +134,10 @@ export interface Planting {
     notes?: string | null;
     created_at: string;
     updated_at: string;
-    crop_types?: Pick<CropType, 'id' | 'name'> | null;
+    crop_types?: Pick<
+        CropType,
+        'id' | 'name' | 'growing_type' | 'supports_ratoon' | 'max_ratoon_cycles'
+    > | null;
     crop_varieties?: Pick<CropVariety, 'id' | 'name'> | null;
     grow_locations?: Pick<GrowLocation, 'id' | 'name'> | null;
 }
@@ -144,9 +158,14 @@ export interface PlantingCycle {
     id: string;
     planting_id: string;
     cycle_number: number;
-    cycle_type: 'mother' | 'ratoon';
+    cycle_type: CycleType;
+    /** Set for perennial seasons; null for mother and ratoon cycles. */
+    season_year?: number | null;
     start_date: string;
     status: 'active' | 'harvested' | 'terminated';
+    expected_yield?: number | null;
+    actual_yield?: number | null;
+    notes?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -165,6 +184,10 @@ export interface Harvest {
     created_at: string;
     updated_at: string;
     plantings?: Pick<Planting, 'id'> & { crop_types?: Pick<CropType, 'name'> | null } | null;
+    planting_cycles?: Pick<
+        PlantingCycle,
+        'id' | 'cycle_number' | 'cycle_type' | 'season_year'
+    > | null;
 }
 
 export interface CreateHarvestData {

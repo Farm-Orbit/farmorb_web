@@ -4,16 +4,13 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import { PlantingService } from '@/services/plantingService';
 import Button from '@/components/ui/button/Button';
-import { HarvestType, PlantingCycle } from '@/types/crop';
+import { PlantingCycle } from '@/types/crop';
+import { activeCycle, cycleLabel } from '@/utils/cropCycles';
 import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
   farmId: string;
 }
-
-const harvestTypes: HarvestType[] = [
-  'mother', 'ratoon_1', 'ratoon_2', 'ratoon_3', 'ratoon_4', 'partial', 'final',
-];
 
 export default function HarvestsPanel({ farmId }: Props) {
   const {
@@ -31,7 +28,6 @@ export default function HarvestsPanel({ farmId }: Props) {
   const [cycleId, setCycleId] = useState('');
   const [cycles, setCycles] = useState<PlantingCycle[]>([]);
   const [harvestDate, setHarvestDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [harvestType, setHarvestType] = useState<HarvestType>('mother');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('kg');
   const [submitting, setSubmitting] = useState(false);
@@ -50,11 +46,12 @@ export default function HarvestsPanel({ farmId }: Props) {
       }
       const list = await PlantingService.listCycles(plantingId);
       setCycles(list);
-      const active = list.find((c) => c.status === 'active') || list[0];
-      setCycleId(active?.id || '');
+      setCycleId(activeCycle(list)?.id || '');
     };
     loadCycles().catch(console.error);
   }, [plantingId]);
+
+  const selectedCycle = cycles.find((c) => c.id === cycleId);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -63,7 +60,7 @@ export default function HarvestsPanel({ farmId }: Props) {
       planting_id: plantingId,
       cycle_id: cycleId,
       harvest_date: harvestDate,
-      harvest_type: harvestType,
+      harvest_type: 'partial',
       quantity: Number(quantity),
       quantity_unit: unit,
     });
@@ -106,19 +103,34 @@ export default function HarvestsPanel({ farmId }: Props) {
               </option>
             ))}
           </select>
-          <select
-            required
-            value={cycleId}
-            onChange={(e) => setCycleId(e.target.value)}
-            className={fieldClass}
-          >
-            <option className={optionClass} value="">Select cycle</option>
-            {cycles.map((c) => (
-              <option className={optionClass} key={c.id} value={c.id}>
-                #{c.cycle_number} {c.cycle_type} ({c.status})
-              </option>
-            ))}
-          </select>
+          {/* The cycle follows from the planting — asking for it separately is
+              two questions for one fact, in vocabulary nobody uses. It shows as
+              a chip, and only becomes editable if there is a real choice. */}
+          <div className="flex items-center gap-2 self-center text-sm" data-testid="harvest-cycle-chip">
+            <span className="text-gray-500 dark:text-gray-400">Season</span>
+            {selectedCycle ? (
+              cycles.length > 1 ? (
+                <select
+                  value={cycleId}
+                  onChange={(e) => setCycleId(e.target.value)}
+                  className={`${fieldClass} py-1`}
+                  aria-label="Season"
+                >
+                  {cycles.map((c) => (
+                    <option className={optionClass} key={c.id} value={c.id}>
+                      {cycleLabel(c)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800 dark:bg-white/10 dark:text-white/90">
+                  {cycleLabel(selectedCycle)}
+                </span>
+              )
+            ) : (
+              <span className="text-gray-400">—</span>
+            )}
+          </div>
           <input
             required
             type="date"
@@ -126,15 +138,6 @@ export default function HarvestsPanel({ farmId }: Props) {
             onChange={(e) => setHarvestDate(e.target.value)}
             className={fieldClass}
           />
-          <select
-            value={harvestType}
-            onChange={(e) => setHarvestType(e.target.value as HarvestType)}
-            className={fieldClass}
-          >
-            {harvestTypes.map((t) => (
-              <option className={optionClass} key={t} value={t}>{t}</option>
-            ))}
-          </select>
           <input
             required
             type="number"
@@ -171,7 +174,7 @@ export default function HarvestsPanel({ farmId }: Props) {
               <tr>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Crop</th>
-                <th className="px-4 py-3 font-medium">Type</th>
+                <th className="px-4 py-3 font-medium">Season</th>
                 <th className="px-4 py-3 font-medium">Quantity</th>
               </tr>
             </thead>
@@ -182,7 +185,9 @@ export default function HarvestsPanel({ farmId }: Props) {
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                     {h.plantings?.crop_types?.name || '—'}
                   </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{h.harvest_type}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                    {h.planting_cycles ? cycleLabel(h.planting_cycles) : '—'}
+                  </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                     {h.quantity} {h.quantity_unit}
                   </td>

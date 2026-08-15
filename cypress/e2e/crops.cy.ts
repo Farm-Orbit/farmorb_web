@@ -68,7 +68,8 @@ describe('Crop farming flow (Supabase)', () => {
         cy.get('[data-testid="harvests-panel"] select').eq(0).find('option').eq(1).then(($opt) => {
             cy.get('[data-testid="harvests-panel"] select').eq(0).select($opt.val() as string);
         });
-        cy.get('[data-testid="harvests-panel"] select').eq(1).should('not.have.value', '');
+        // The cycle is resolved from the planting rather than asked for.
+        cy.get('[data-testid="harvest-cycle-chip"]').should('contain.text', 'Mother crop');
         cy.get('[data-testid="harvests-panel"] input[placeholder="Quantity"]').type('120');
         cy.contains('button', 'Save harvest').click();
         cy.get('[data-testid="harvests-panel"]').contains('120', { timeout: 10000 }).should('be.visible');

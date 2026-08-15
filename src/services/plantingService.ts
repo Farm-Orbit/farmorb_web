@@ -12,7 +12,7 @@ export const PlantingService = {
             .from('plantings')
             .select(`
                 *,
-                crop_types ( id, name ),
+                crop_types ( id, name, growing_type, supports_ratoon, max_ratoon_cycles ),
                 crop_varieties ( id, name ),
                 grow_locations ( id, name )
             `)
@@ -38,6 +38,24 @@ export const PlantingService = {
         });
         throwIfError(error);
         return data as Planting;
+    },
+
+    /**
+     * Advances the planting to its next cycle — a new season for a perennial,
+     * the next ratoon otherwise. The RPC decides which, enforces the ratoon
+     * ceiling, and closes the previous cycle so only one is ever active.
+     */
+    startNextCycle: async (
+        plantingId: string,
+        startDate?: string
+    ): Promise<PlantingCycle> => {
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc('start_next_cycle', {
+            p_planting_id: plantingId,
+            p_start_date: startDate ?? null,
+        });
+        throwIfError(error);
+        return data as PlantingCycle;
     },
 
     listCycles: async (plantingId: string): Promise<PlantingCycle[]> => {
