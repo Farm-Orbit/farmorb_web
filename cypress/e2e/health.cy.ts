@@ -41,7 +41,7 @@ describe('Health Management', () => {
 
   it('creates a health record for an animal and displays it in the records table', () => {
     createFarmAndAnimal('Health Record Farm').then(({ animalName }) => {
-      cy.get('[data-testid="tab-health"]').click();
+      cy.get('[data-testid="nav-health"]').click();
       cy.get('[data-testid="health-records-table"], [data-testid="health-records-empty"]', {
         timeout: 15000,
       }).should('exist');
@@ -71,7 +71,7 @@ describe('Health Management', () => {
 
   it('creates a health schedule for an animal and lists it in the schedules table', () => {
     createFarmAndAnimal('Health Schedule Farm').then(({ animalName }) => {
-      cy.get('[data-testid="tab-health"]').click();
+      cy.get('[data-testid="nav-health"]').click();
       cy.get('[data-testid="health-records-table"], [data-testid="health-records-empty"]', {
         timeout: 15000,
       }).should('exist');

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
 import { LocationType } from '@/types/crop';
+import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
   farmId: string;
@@ -65,15 +66,15 @@ export default function GrowLocationsPanel({ farmId }: Props) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Location name"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <select
             value={locationType}
             onChange={(e) => setLocationType(e.target.value as LocationType)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
             {locationTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option className={optionClass} key={t} value={t}>{t}</option>
             ))}
           </select>
           <input
@@ -83,7 +84,7 @@ export default function GrowLocationsPanel({ farmId }: Props) {
             value={sizeHectares}
             onChange={(e) => setSizeHectares(e.target.value)}
             placeholder="Size (ha)"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <div className="sm:col-span-3">
             <Button type="submit" size="sm" disabled={submitting}>Save location</Button>

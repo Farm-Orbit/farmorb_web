@@ -5,6 +5,7 @@ import { useCrops } from '@/hooks/useCrops';
 import { PlantingService } from '@/services/plantingService';
 import Button from '@/components/ui/button/Button';
 import { HarvestType, PlantingCycle } from '@/types/crop';
+import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
   farmId: string;
@@ -96,11 +97,11 @@ export default function HarvestsPanel({ farmId }: Props) {
             required
             value={plantingId}
             onChange={(e) => setPlantingId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Select planting</option>
+            <option className={optionClass} value="">Select planting</option>
             {plantings.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option className={optionClass} key={p.id} value={p.id}>
                 {p.planting_date} — {p.crop_types?.name || 'Crop'}
               </option>
             ))}
@@ -109,11 +110,11 @@ export default function HarvestsPanel({ farmId }: Props) {
             required
             value={cycleId}
             onChange={(e) => setCycleId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Select cycle</option>
+            <option className={optionClass} value="">Select cycle</option>
             {cycles.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option className={optionClass} key={c.id} value={c.id}>
                 #{c.cycle_number} {c.cycle_type} ({c.status})
               </option>
             ))}
@@ -123,15 +124,15 @@ export default function HarvestsPanel({ farmId }: Props) {
             type="date"
             value={harvestDate}
             onChange={(e) => setHarvestDate(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <select
             value={harvestType}
             onChange={(e) => setHarvestType(e.target.value as HarvestType)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
             {harvestTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option className={optionClass} key={t} value={t}>{t}</option>
             ))}
           </select>
           <input
@@ -142,14 +143,14 @@ export default function HarvestsPanel({ farmId }: Props) {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="Quantity"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <input
             required
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
             placeholder="Unit (kg, crates…)"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <div className="sm:col-span-2">
             <Button type="submit" size="sm" disabled={submitting || !cycleId}>

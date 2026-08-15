@@ -330,7 +330,7 @@ Cypress.Commands.add('createAnimal', (tagId: string, options: {
 
     // Ensure we're on the farm detail page first (should already be there when called)
     // Navigate to animals tab if not already there
-    cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).should('be.visible').click();
+    cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).should('be.visible').click();
     cy.wait(2000);
 
     // Click the "Add Animal" button to navigate to create animal page
@@ -396,7 +396,7 @@ Cypress.Commands.add('editAnimal', (tagId: string, options: {
 } = {}) => {
     const { name, sex, breed, trackingType } = options;
 
-    cy.get('[data-testid="tab-animals"]').click();
+    cy.get('[data-testid="nav-animals"]').click();
     cy.contains('td', tagId).should('exist');
     cy.get(`[data-testid="edit-animal-button-${tagId}"]`).click();
 
@@ -433,7 +433,7 @@ Cypress.Commands.add('editAnimal', (tagId: string, options: {
 });
 
 Cypress.Commands.add('deleteAnimal', (tagId: string) => {
-    cy.get('[data-testid="tab-animals"]').click();
+    cy.get('[data-testid="nav-animals"]').click();
     cy.contains('td', tagId).should('exist');
 
     cy.once('window:confirm', () => true);
@@ -595,7 +595,7 @@ Cypress.Commands.add('getFarmIdFromUrl', () => {
 // Custom command to create a group (simple version - just creates, doesn't return ID)
 Cypress.Commands.add('createGroup', (name: string, purpose: string, location?: string, description?: string) => {
     // Navigate to groups tab
-    cy.get('[data-testid="tab-groups"]').click();
+    cy.get('[data-testid="nav-groups"]').click();
     cy.wait(1000);
 
     // Click create group button
@@ -628,7 +628,7 @@ Cypress.Commands.add('createGroup', (name: string, purpose: string, location?: s
 
 // Custom command to invite a member to a farm
 Cypress.Commands.add('inviteMember', (email: string, role: 'member' = 'member') => {
-    cy.get('[data-testid="tab-members"]').click();
+    cy.get('[data-testid="nav-members"]').click();
     cy.wait(1000);
     cy.get('[data-testid="invite-member-button"]', { timeout: 10000 }).click();
     cy.url({ timeout: 10000 }).should('include', '/invite');
@@ -689,7 +689,7 @@ Cypress.Commands.add('addAnimalToGroup', (farmId: string, groupId: string, anima
             cy.get('[data-testid="farm-detail-page"]', { timeout: 10000 }).should('be.visible');
             
             // Navigate to groups tab on farm detail page
-            cy.get('[data-testid="tab-groups"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-groups"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             // Wait for groups table to load
@@ -810,7 +810,7 @@ Cypress.Commands.add('createHealthRecord', (options: {
                 .click({ force: true });
         } else if (isOnFarmDetailPage) {
             // We're on farm detail page - navigate to health tab and create from there
-            cy.get('[data-testid="tab-health"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-health"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             cy.get('[data-testid="create-health-record-button"]', { timeout: 10000 })
@@ -981,7 +981,7 @@ Cypress.Commands.add('createBreedingRecord', (options: {
                 .click({ force: true });
         } else if (isOnFarmDetailPage) {
             // We're on farm detail page - navigate to breeding tab and create from there
-            cy.get('[data-testid="tab-breeding"]', { timeout: 10000 }).should('be.visible').click();
+            cy.get('[data-testid="nav-breeding"]', { timeout: 10000 }).should('be.visible').click();
             cy.wait(2000);
             
             cy.get('[data-testid="create-breeding-record-button"]', { timeout: 10000 })
@@ -1121,7 +1121,7 @@ Cypress.Commands.add('createInventoryItem', (options: {
     cy.wait(1000);
     
     // Navigate to inventory tab if not already there
-    cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).should('be.visible').click();
+    cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).should('be.visible').click();
     cy.wait(2000);
     
     // Wait for the create button to be visible (indicates tab is loaded)
@@ -1166,7 +1166,7 @@ Cypress.Commands.add('createInventoryItem', (options: {
 // Custom command to navigate to inventory item detail page
 Cypress.Commands.add('navigateToInventoryItemDetail', (itemName: string) => {
     // Navigate to inventory tab if not already there
-    cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+    cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
     cy.wait(2000);
 
     // Click on item name
@@ -1195,7 +1195,7 @@ Cypress.Commands.add('createInventoryTransaction', (options: {
     // Determine which button to click based on transaction type and location
     if (options.fromTable && options.itemName) {
         // Click top-up button from items table
-        cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
         cy.wait(2000);
         cy.contains(options.itemName, { timeout: 10000 })
             .scrollIntoView()
@@ -1274,7 +1274,7 @@ Cypress.Commands.add('verifyInventoryQuantity', (itemName: string, expectedQuant
             cy.contains(expectedQuantity, { timeout: 10000 }).should('be.visible');
         } else {
             // On items table - check quantity in table
-            cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+            cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
             cy.wait(2000);
             cy.contains(itemName, { timeout: 10000 })
                 .scrollIntoView()

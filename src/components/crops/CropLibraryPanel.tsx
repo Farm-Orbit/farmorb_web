@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
 import { CreateCropTypeData, GrowingType, CropCategory } from '@/types/crop';
+import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
   farmId: string;
@@ -97,25 +98,25 @@ export default function CropLibraryPanel({ farmId }: Props) {
             onChange={(e) => setName(e.target.value)}
             placeholder="Crop name"
             data-testid="crop-type-name-input"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <select
             value={growingType}
             onChange={(e) => setGrowingType(e.target.value as GrowingType)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
             {growingTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option className={optionClass} key={t} value={t}>{t}</option>
             ))}
           </select>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as CropCategory | '')}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Category (optional)</option>
+            <option className={optionClass} value="">Category (optional)</option>
             {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option className={optionClass} key={c} value={c}>{c}</option>
             ))}
           </select>
           <div className="sm:col-span-3">
@@ -162,7 +163,7 @@ export default function CropLibraryPanel({ farmId }: Props) {
                     onChange={(e) => setVarietyName(e.target.value)}
                     placeholder="Variety name"
                     data-testid="variety-name-input"
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+                    className={`${fieldClass} flex-1`}
                   />
                   <Button
                     type="submit"

@@ -23,7 +23,11 @@ import {
   HarvestsPanel,
 } from '@/components/crops';
 import Button from '@/components/ui/button/Button';
-import SidebarNav, { SidebarNavItem } from '@/components/layout/SidebarNav';
+import {
+  defaultFarmTab,
+  isFarmTab,
+  type FarmTab,
+} from '@/layout/navigation/farmNav';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 
 const farmTypeLabels: Record<string, string> = {
@@ -40,22 +44,6 @@ const getStatusColor = (isActive: boolean) => {
     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
     : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
 };
-
-type FarmTab =
-  | 'crops'
-  | 'locations'
-  | 'plantings'
-  | 'harvests'
-  | 'animals'
-  | 'groups'
-  | 'breeding'
-  | 'health'
-  | 'feeding'
-  | 'inventory'
-  | 'suppliers'
-  | 'details'
-  | 'members'
-  | 'activity';
 
 export default function FarmDetailPage() {
   const params = useParams();
@@ -100,23 +88,8 @@ export default function FarmDetailPage() {
       router.replace(url.pathname + url.search);
     }
 
-    if (
-      tab === 'crops' ||
-      tab === 'locations' ||
-      tab === 'plantings' ||
-      tab === 'harvests' ||
-      tab === 'animals' ||
-      tab === 'details' ||
-      tab === 'groups' ||
-      tab === 'members' ||
-      tab === 'activity' ||
-      tab === 'breeding' ||
-      tab === 'health' ||
-      tab === 'feeding' ||
-      tab === 'inventory' ||
-      tab === 'suppliers'
-    ) {
-      setActiveTab(tab as FarmTab);
+    if (tab && isFarmTab(tab)) {
+      setActiveTab(tab);
       setTabInitialized(true);
     }
   }, [searchParams, router, addNotification]);
@@ -125,9 +98,7 @@ export default function FarmDetailPage() {
     if (currentFarm) {
       setFarm(currentFarm);
       if (!tabInitialized && !searchParams.get('tab')) {
-        const isCropFocused =
-          currentFarm.farm_type === 'crop' || currentFarm.farm_type === 'mixed';
-        setActiveTab(isCropFocused ? 'crops' : 'animals');
+        setActiveTab(defaultFarmTab(currentFarm.farm_type));
         setTabInitialized(true);
       }
     }
@@ -233,58 +204,15 @@ export default function FarmDetailPage() {
     );
   }
 
-  const isCropFarm = farm?.farm_type === 'crop' || farm?.farm_type === 'mixed';
-  const isLivestockFarm =
-    !farm?.farm_type ||
-    farm.farm_type === 'livestock' ||
-    farm.farm_type === 'dairy' ||
-    farm.farm_type === 'poultry' ||
-    farm.farm_type === 'mixed' ||
-    farm.farm_type === 'other';
-
-  const tabs: SidebarNavItem<FarmTab>[] = [
-    ...(isCropFarm
-      ? [
-          { id: 'crops' as const, label: 'Crops', testId: 'tab-crops' },
-          { id: 'locations' as const, label: 'Locations', testId: 'tab-locations' },
-          { id: 'plantings' as const, label: 'Plantings', testId: 'tab-plantings' },
-          { id: 'harvests' as const, label: 'Harvests', testId: 'tab-harvests' },
-        ]
-      : []),
-    ...(isLivestockFarm
-      ? [
-          { id: 'animals' as const, label: 'Animals', testId: 'tab-animals' },
-          { id: 'groups' as const, label: 'Groups', testId: 'tab-groups' },
-          { id: 'breeding' as const, label: 'Breeding', testId: 'tab-breeding' },
-          { id: 'health' as const, label: 'Health', testId: 'tab-health' },
-          { id: 'feeding' as const, label: 'Feeding', testId: 'tab-feeding' },
-          { id: 'inventory' as const, label: 'Inventory', testId: 'tab-inventory' },
-          { id: 'suppliers' as const, label: 'Suppliers', testId: 'tab-suppliers' },
-        ]
-      : []),
-    { id: 'details', label: 'Details', testId: 'tab-details' },
-    { id: 'members', label: 'Members', testId: 'tab-members' },
-    { id: 'activity', label: 'Activity', testId: 'tab-activity' },
-  ];
-
   return (
     <div className="w-full p-4 md:p-6" data-testid="farm-detail-page">
       <div className="mb-4">
         <Breadcrumbs farmId={farmId} />
       </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
-        <div className="md:w-32 lg:w-38 flex-shrink-0">
-          <SidebarNav
-            items={tabs}
-            value={activeTab}
-            onChange={(nextTab) => setActiveTab(nextTab)}
-            selectLabel="Select farm section"
-            selectId="farm-tab-select"
-            selectTestId="farm-tab-select"
-          />
-        </div>
-
+      {/* Sections are navigated from the global sidebar, which is driven by the
+          same `?tab=` param this page reads. */}
+      <div className="flex flex-col gap-4">
         <div className="flex-1 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">

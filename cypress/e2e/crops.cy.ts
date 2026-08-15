@@ -33,7 +33,7 @@ describe('Crop farming flow (Supabase)', () => {
         cy.get('h1').should('contain', farmName);
 
         // Crop library
-        cy.get('[data-testid="tab-crops"]').click();
+        cy.get('[data-testid="nav-crops"]').click();
         cy.get('[data-testid="crop-library-panel"]').should('be.visible');
         cy.get('[data-testid="add-crop-type-button"]').click();
         cy.get('[data-testid="crop-type-name-input"]').type('Pineapple');
@@ -44,7 +44,7 @@ describe('Crop farming flow (Supabase)', () => {
         cy.contains('[data-testid="crop-library-panel"] li', 'MD2', { timeout: 10000 }).should('be.visible');
 
         // Locations
-        cy.get('[data-testid="tab-locations"]').click();
+        cy.get('[data-testid="nav-locations"]').click();
         cy.get('[data-testid="grow-locations-panel"]').should('be.visible');
         cy.contains('button', 'Add location').click();
         cy.get('[data-testid="grow-locations-panel"] input[placeholder="Location name"]').type('Block A');
@@ -52,7 +52,7 @@ describe('Crop farming flow (Supabase)', () => {
         cy.contains('Block A', { timeout: 10000 }).should('be.visible');
 
         // Planting
-        cy.get('[data-testid="tab-plantings"]').click();
+        cy.get('[data-testid="nav-plantings"]').click();
         cy.get('[data-testid="plantings-panel"]').should('be.visible');
         cy.contains('button', 'New planting').click();
         cy.get('[data-testid="plantings-panel"] select').eq(0).select('Block A');
@@ -62,7 +62,7 @@ describe('Crop farming flow (Supabase)', () => {
         cy.get('[data-testid="plantings-panel"]').contains('Pineapple', { timeout: 10000 }).should('be.visible');
 
         // Harvest
-        cy.get('[data-testid="tab-harvests"]').click();
+        cy.get('[data-testid="nav-harvests"]').click();
         cy.get('[data-testid="harvests-panel"]').should('be.visible');
         cy.contains('button', 'Record harvest').click();
         cy.get('[data-testid="harvests-panel"] select').eq(0).find('option').eq(1).then(($opt) => {

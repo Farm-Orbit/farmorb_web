@@ -86,7 +86,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records)
       createFeedInventoryItem('Feeding Animal').then((inventoryItemName) => {
         // Navigate to animals tab
-        cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Navigate to animal detail page by clicking on tag_id button
@@ -123,7 +123,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records)
       createFeedInventoryItem('Feeding Group').then((inventoryItemName) => {
         // Navigate to groups tab
-        cy.get('[data-testid="tab-groups"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-groups"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Wait for groups table to load
@@ -187,7 +187,7 @@ describe('Feeding Management', () => {
       cy.wait(3000); // Wait a bit longer to ensure inventory item is saved and available
 
       // Navigate to animals tab
-      cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Navigate to animal detail page by clicking on tag_id button
@@ -218,7 +218,7 @@ describe('Feeding Management', () => {
       cy.get('[data-testid="farm-detail-page"]', { timeout: 15000 }).should('be.visible');
       
       // Navigate to feeding tab
-      cy.get('[data-testid="tab-feeding"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-feeding"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Verify record appears in farm's feeding records table
@@ -249,7 +249,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records)
       createFeedInventoryItem('Feeding Edit').then((inventoryItemName) => {
         // Navigate to animals tab
-        cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Navigate to animal detail page by clicking on tag_id button
@@ -283,7 +283,7 @@ describe('Feeding Management', () => {
         cy.get('[data-testid="farm-detail-page"]', { timeout: 15000 }).should('be.visible');
         
         // Navigate to feeding tab
-        cy.get('[data-testid="tab-feeding"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-feeding"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Find the record and click edit button
@@ -330,7 +330,7 @@ describe('Feeding Management', () => {
         cy.wait(2000);
 
         // Navigate to feeding tab if not already there
-        cy.get('[data-testid="tab-feeding"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-feeding"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Verify updated record appears
@@ -349,7 +349,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records)
       createFeedInventoryItem('Feeding Delete').then((inventoryItemName) => {
         // Navigate to animals tab
-        cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Navigate to animal detail page by clicking on tag_id button
@@ -378,7 +378,7 @@ describe('Feeding Management', () => {
         cy.get('[data-testid="farms-sidebar-button"]').click();
         cy.contains('Feeding Delete Farm').click();
         cy.wait(2000);
-        cy.get('[data-testid="tab-feeding"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-feeding"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Find the record and delete it
@@ -418,7 +418,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records)
       createFeedInventoryItem('Feeding Multiple').then((inventoryItemName) => {
         // Navigate to animals tab
-        cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Navigate to animal detail page by clicking on tag_id button
@@ -475,7 +475,7 @@ describe('Feeding Management', () => {
       // Create inventory item first (required for feeding records) - must be on farm detail page
       createFeedInventoryItem('Feeding Validation').then((inventoryItemName) => {
         // Navigate to animals tab
-        cy.get('[data-testid="tab-animals"]', { timeout: 10000 }).click();
+        cy.get('[data-testid="nav-animals"]', { timeout: 10000 }).click();
         cy.wait(2000);
 
         // Navigate to animal detail page by clicking on tag_id button

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
+import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
   farmId: string;
@@ -85,32 +86,32 @@ export default function PlantingsPanel({ farmId }: Props) {
             required
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Select location</option>
+            <option className={optionClass} value="">Select location</option>
             {locations.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
+              <option className={optionClass} key={l.id} value={l.id}>{l.name}</option>
             ))}
           </select>
           <select
             required
             value={cropTypeId}
             onChange={(e) => setCropTypeId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Select crop type</option>
+            <option className={optionClass} value="">Select crop type</option>
             {cropTypes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option className={optionClass} key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
           <select
             value={varietyId}
             onChange={(e) => setVarietyId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           >
-            <option value="">Variety (optional)</option>
+            <option className={optionClass} value="">Variety (optional)</option>
             {varieties.map((v) => (
-              <option key={v.id} value={v.id}>{v.name}</option>
+              <option className={optionClass} key={v.id} value={v.id}>{v.name}</option>
             ))}
           </select>
           <input
@@ -118,7 +119,7 @@ export default function PlantingsPanel({ farmId }: Props) {
             type="date"
             value={plantingDate}
             onChange={(e) => setPlantingDate(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <input
             type="number"
@@ -126,7 +127,7 @@ export default function PlantingsPanel({ farmId }: Props) {
             value={plantCount}
             onChange={(e) => setPlantCount(e.target.value)}
             placeholder="Plant count"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className={fieldClass}
           />
           <div className="sm:col-span-2">
             <Button type="submit" size="sm" disabled={submitting}>Save planting</Button>

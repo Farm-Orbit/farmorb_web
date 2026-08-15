@@ -40,7 +40,7 @@ describe('Inventory Management', () => {
       const supplierEmail = `supplier${Date.now()}@example.com`;
 
       // Navigate to Suppliers tab
-      cy.get('[data-testid="tab-suppliers"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-suppliers"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Check if empty state or table exists
@@ -80,7 +80,7 @@ describe('Inventory Management', () => {
       const updatedName = `Updated ${supplierName}`;
 
       // Navigate to Suppliers tab
-      cy.get('[data-testid="tab-suppliers"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-suppliers"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Create supplier
@@ -119,7 +119,7 @@ describe('Inventory Management', () => {
       const supplierName = `Delete Test Supplier ${Date.now()}`;
 
       // Navigate to Suppliers tab
-      cy.get('[data-testid="tab-suppliers"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-suppliers"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Create supplier
@@ -154,7 +154,7 @@ describe('Inventory Management', () => {
       const itemName = `Test Item ${Date.now()}`;
 
       // Navigate to Inventory tab
-      cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Check if empty state or table exists
@@ -197,7 +197,7 @@ describe('Inventory Management', () => {
       const medItem = `Medication Item ${Date.now()}`;
 
       // Navigate to Inventory tab
-      cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Create feed item
@@ -323,7 +323,7 @@ describe('Inventory Management', () => {
       const itemName = `Item with Supplier ${Date.now()}`;
 
       // Navigate to Suppliers tab and create supplier
-      cy.get('[data-testid="tab-suppliers"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-suppliers"]', { timeout: 10000 }).click();
       cy.wait(2000);
       cy.get('[data-testid="supplier-create-button"]', { timeout: 10000 }).click();
       cy.url({ timeout: 10000 }).should('include', '/suppliers/new');
@@ -334,7 +334,7 @@ describe('Inventory Management', () => {
       cy.wait(2000);
 
       // Navigate to Inventory tab
-      cy.get('[data-testid="tab-inventory"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-inventory"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       // Create item with supplier
@@ -371,7 +371,7 @@ describe('Inventory Management', () => {
       cy.visit(`/farms/${farmId}`);
       cy.wait(1000);
 
-      cy.get('[data-testid="tab-suppliers"]', { timeout: 10000 }).click();
+      cy.get('[data-testid="nav-suppliers"]', { timeout: 10000 }).click();
       cy.wait(2000);
 
       cy.get('[data-testid="supplier-create-button"]', { timeout: 10000 }).click();

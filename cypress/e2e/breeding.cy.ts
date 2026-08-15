@@ -34,7 +34,7 @@ describe('Breeding Management', () => {
         breed: 'Angus',
       });
 
-      cy.get('[data-testid="tab-breeding"]').click();
+      cy.get('[data-testid="nav-breeding"]').click();
       cy.get('[data-testid="breeding-records-table"], [data-testid="breeding-records-empty"]', {
         timeout: 15000,
       }).should('exist');
