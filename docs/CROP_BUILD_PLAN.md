@@ -95,8 +95,15 @@ of work that changes the feel of the whole product, and it is CR-2.9.
 Not optional — the first three are how the existing schema works, and breaking them produces
 failures that look like application bugs.
 
-1. **New migrations only.** `20260307140000`, `20260807150000` and `20260815120000` are merged and
-   applied. Never edit them; add a new timestamped file.
+1. **Pre-launch: amend the base migrations, don't patch them.** Nothing is live — the three
+   existing migrations have only ever been applied to local stacks. So schema corrections are
+   made *in* `20260307140000` / `20260807150000` / `20260815120000` followed by
+   `supabase db reset`, not as a stack of `ALTER TABLE` files patching a schema that never
+   shipped. Anyone with a local stack resets; that is the whole cost.
+
+   **The cutoff is the first cloud environment holding data you would be sad to lose.** From that
+   moment this rule inverts permanently: additive migrations only, never edit a shipped file.
+   Write that date down when it happens.
 2. **Every new table needs three things:** RLS policies (`is_farm_member` / `is_farm_owner`), an
    explicit `GRANT ... TO authenticated`, and an audit trigger in the `record_audit_log` loop. A
    missing grant fails every query with `permission denied`, which reads like an RLS bug and is not.
@@ -116,11 +123,17 @@ failures that look like application bugs.
 
 **Why first:** a mango tree bears annually for 20–40 years, but the model tops out at `ratoon_4`,
 so by year five there is nowhere to put a harvest. Everything later attaches to cycles, so the
-shape must be right before real data makes migration painful.
+shape has to be right before the rest is built on top of it.
 
 **What it involves:** the cycle number is currently denormalised into `harvests.harvest_type`
-(`ratoon_1`, `ratoon_2`…), which is where the ceiling comes from. The cycle row already has
-`cycle_number`, so stop encoding it twice and let the type say only what *kind* of cycle it is.
+(`ratoon_1`, `ratoon_2`…), which is where the ceiling comes from. The cycle row already carries
+`cycle_number`, so the fix is to stop encoding the same fact twice.
+
+Because nothing is live, this is a **correction to the crops migration**, not a patch on top of
+it — which means the redundancy goes away entirely rather than being frozen in place. A harvest
+type should describe *the pick* (`partial`, `final`), while *which season or ratoon* it belongs
+to comes from the cycle it references. That is the design we would have written first, and it is
+free to adopt today.
 
 #### Flow
 
@@ -133,8 +146,7 @@ field on a form, because it is a real event with a date, not an attribute.
 
 | ID | Task | Est. | Depends |
 |---|---|---|---|
-| CR-1.1 | Migration: add `'season'` to `planting_cycles.cycle_type`; add `season_year INTEGER` | 0.5 | — |
-| CR-1.2 | Migration: replace `harvests.harvest_type` CHECK with `('mother','ratoon','season','partial','final')`; backfill `ratoon_N` → `'ratoon'` | 0.5 | CR-1.1 |
+| CR-1.1 | Amend the crops migration: add `'season'` to `planting_cycles.cycle_type`, add `season_year INTEGER`, and reduce `harvests.harvest_type` to `('partial','final')` — season and ratoon identity now come from the cycle. Also folds in `'graft'` on `plantings.planting_method` (was CR-4.1) | 0.75 | — |
 | CR-1.3 | `create_planting_with_cycle` picks the first cycle from the crop's `growing_type` — perennial → `season` with year from planting date; ratoon/annual → `mother` | 0.5 | CR-1.1 |
 | CR-1.4 | RPC `start_next_cycle(planting_id)` — creates cycle N+1, enforcing `max_ratoon_cycles` for ratoon crops, unbounded for perennials; closes the prior cycle | 0.5 | CR-1.3 |
 | CR-1.5 | Season labelling helper — one place that turns a cycle row into "2027 season" / "Ratoon 2" / "Mother crop", used by every surface (UX-7) | 0.25 | CR-1.4 |
@@ -146,9 +158,8 @@ field on a form, because it is a real event with a date, not an attribute.
 **Acceptance:** a mango planting can record a harvest in its twelfth bearing year, attributable to
 a named season with its own yield — and the person recording it never sees the word "cycle".
 
-**Risk:** CR-1.2 rewrites a CHECK on a table that may hold data. Low today, rising with delay.
-
-**Estimate: ~4.5 days**
+**Estimate: ~4.25 days** — and the sooner it happens the smaller it stays, since amending the base
+migration stops being an option the moment a cloud environment holds real data.
 
 ---
 
@@ -292,18 +303,17 @@ months to first harvest and expected yield, leaving the grower to correct rather
 
 | ID | Task | Est. | Depends |
 |---|---|---|---|
-| CR-4.1 | Migration: add `'graft'` to `plantings.planting_method` — how essentially all commercial mango is established, currently unrepresentable | 0.25 | — |
 | CR-4.2 | Replace hand-rolled inputs across all four panels with `@/components/form`; retire `fieldStyles.ts` | 1 | — |
 | CR-4.3 | Crop library: full crop-type and variety forms, optional detail collapsed | 1 | CR-4.2 |
 | CR-4.4 | Locations: full form including parent location and soil | 1 | CR-4.2 |
-| CR-4.5 | Plantings: full form including method, material and expected harvest | 1 | CR-4.1, CR-4.2 |
+| CR-4.5 | Plantings: full form including method, material and expected harvest | 1 | CR-1.1, CR-4.2 |
 | CR-4.6 | Harvests: fast path plus multi-grade rows and running season total (UX-3, UX-5) | 1.25 | CR-4.2 |
 | CR-4.7 | Extend `crops.cy.ts` over the added fields and the multi-grade path | 0.75 | CR-4.6 |
 
 **Acceptance:** every column the crop schema stores is reachable, no crop panel declares its own
 input classes, and recording a two-grade harvest is one submission.
 
-**Estimate: ~6.25 days**
+**Estimate: ~6 days** (the `graft` migration moved into CR-1.1)
 
 ---
 
@@ -344,17 +354,27 @@ they can select spray targets by tapping blocks.
 
 | Epic | Focus | Est. | Gate |
 |---|---|---|---|
-| CR-1 | Perennial bearing cycles | 4.5d | Before real crop data exists |
+| CR-1 | Perennial bearing cycles | 4.25d | Cheapest while the base migrations can still be amended |
 | CR-2 | Activities & plant protection | 14.5d | Includes the file-storage spike and the quick-log flow |
 | CR-3 | Costs & revenue | 10.5d | Needs CR-2 for anything to cost |
-| CR-4 | Crop UI depth | 6.25d | Parallelisable; one small migration |
+| CR-4 | Crop UI depth | 6d | Parallelisable; no migration of its own |
 | CR-5 | Land plotting | 7d | CR-5.6 needs CR-2.11 |
 
-**~43 days sequential**, about 36 with CR-4 alongside CR-2 or CR-3.
+**~42 days sequential**, about 36 with CR-4 alongside CR-2 or CR-3.
 
 CR-2 grew from 9 to 14.5 days when the flows were designed rather than the tables. That difference
 is the actual product: the schema was always going to take a few days, and the reason farm software
 gets abandoned is the other nine.
+
+### The pre-launch window is an asset with an expiry
+
+Nothing is live, so schema mistakes currently cost a `supabase db reset`. After the first cloud
+environment holds real data they cost a migration, a backfill, and a rollback plan. Anything in
+this plan that changes an existing table — CR-1.1 above all — is dramatically cheaper now than at
+any later point, and that gap only widens.
+
+Worth spending the window deliberately: get the shapes right while they are still free to change,
+rather than deferring them because there is no visible pressure yet.
 
 ### Two decisions to take before CR-2, not during it
 
