@@ -256,6 +256,14 @@ CREATE TABLE IF NOT EXISTS public.inventory_items (
     expiry_date DATE,
     low_stock_threshold NUMERIC(10,2)
         CHECK (low_stock_threshold IS NULL OR low_stock_threshold >= 0),
+    -- Product facts, so an application form can prefill them instead of asking
+    -- someone to read them off the label every time. A pre-harvest interval
+    -- typed per spray is a pre-harvest interval that will be wrong.
+    active_ingredient TEXT,
+    default_rate NUMERIC(12,4) CHECK (default_rate IS NULL OR default_rate >= 0),
+    default_rate_unit TEXT,
+    phi_days INTEGER CHECK (phi_days IS NULL OR phi_days >= 0),
+    rei_hours INTEGER CHECK (rei_hours IS NULL OR rei_hours >= 0),
     -- PostgREST cannot compare two columns in a filter, so the low-stock test
     -- the Go API did in SQL is materialised here instead.
     is_low_stock BOOLEAN GENERATED ALWAYS AS (

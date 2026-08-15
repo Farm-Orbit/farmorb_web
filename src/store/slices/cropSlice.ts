@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, isRejected } from '@reduxjs/toolkit';
 import { CropState, CreateCropTypeData, CreateCropVarietyData, CreateGrowLocationData, CreatePlantingData, CreateHarvestData } from '@/types/crop';
 import { CropTypeService } from '@/services/cropTypeService';
 import { GrowLocationService } from '@/services/growLocationService';
@@ -198,7 +198,22 @@ const cropSlice = createSlice({
             .addCase(fetchHarvests.rejected, setRejected)
             .addCase(createHarvest.fulfilled, (state, action) => {
                 state.harvests = [action.payload, ...state.harvests];
-            });
+            })
+            // Every create rejected silently before this: the thunk passed the
+            // message through rejectWithValue and nothing read it, so a failed
+            // save looked exactly like a save that did nothing. That also hid
+            // the database refusing a harvest inside a pre-harvest interval —
+            // the one error the grower most needs to see.
+            .addMatcher(
+                isRejected(
+                    createCropType,
+                    createVariety,
+                    createGrowLocation,
+                    createPlanting,
+                    createHarvest
+                ),
+                setRejected
+            );
     },
 });
 
