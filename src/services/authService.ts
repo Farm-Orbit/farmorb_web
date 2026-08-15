@@ -1,264 +1,260 @@
-import { api } from './api';
+import { createClient } from '@/lib/supabase/client';
 import {
     LoginCredentials,
     RegisterData,
     AuthResponse,
     User,
-    RefreshTokenResponse,
     UpdateUserRequest,
     ChangePasswordRequest,
-    UpdateEmailRequest,
-    DeleteUserRequest
 } from '@/types/auth';
-import {
-    LoginRequest,
-    RegisterRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest
-} from '@/types/api';
+
+function mapProfileToUser(
+    authUser: { id: string; email?: string | null; email_confirmed_at?: string | null; created_at?: string },
+    profile?: {
+        first_name?: string | null;
+        last_name?: string | null;
+        phone?: string | null;
+        avatar_url?: string | null;
+        created_at?: string;
+        updated_at?: string;
+    } | null
+): User {
+    return {
+        id: authUser.id,
+        email: authUser.email || '',
+        first_name: profile?.first_name || undefined,
+        last_name: profile?.last_name || undefined,
+        phone: profile?.phone || undefined,
+        avatar: profile?.avatar_url || undefined,
+        isEmailVerified: !!authUser.email_confirmed_at,
+        created_at: profile?.created_at || authUser.created_at,
+        updated_at: profile?.updated_at,
+    };
+}
+
+async function fetchProfile(userId: string) {
+    const supabase = createClient();
+    const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+    return data;
+}
+
+async function buildAuthResponse(
+    authUser: { id: string; email?: string | null; email_confirmed_at?: string | null; created_at?: string },
+    accessToken: string,
+    refreshToken?: string,
+    expiresIn?: number
+): Promise<AuthResponse> {
+    const profile = await fetchProfile(authUser.id);
+    return {
+        user: mapProfileToUser(authUser, profile),
+        accessToken,
+        refreshToken,
+        expiresIn,
+    };
+}
 
 /**
- * Authentication Service - Handles all auth-related API calls
+ * Authentication Service — Supabase Auth
  */
 export class AuthService {
-    /**
-     * Login user with email and password
-     */
     static async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const loginData: LoginRequest = {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.signInWithPassword({
             email: credentials.email,
             password: credentials.password,
-        };
+        });
 
-        const response = await api.post<any>('/auth/login', loginData);
-
-        // Handle different possible response structures
-        const data = response.data;
-        let authResponse: AuthResponse;
-
-        if (data.accessToken || data.access_token || data.token) {
-            // Standard structure or alternative field names
-            authResponse = {
-                user: data.user || data.userData || data.profile || {
-                    id: data.userId || data.id,
-                    email: credentials.email,
-                    firstName: data.firstName,
-                    lastName: data.lastName
-                },
-                accessToken: data.accessToken || data.access_token || data.token,
-                refreshToken: data.refreshToken || data.refresh_token,
-                expiresIn: data.expiresIn || data.expires_in || data.expires
-            };
-        } else if (data.data && (data.data.accessToken || data.data.access_token || data.data.token)) {
-            // Nested data structure
-            authResponse = {
-                user: data.data.user || data.data.userData || data.data.profile || {
-                    id: data.data.userId || data.data.id,
-                    email: credentials.email,
-                    firstName: data.data.firstName,
-                    lastName: data.data.lastName
-                },
-                accessToken: data.data.accessToken || data.data.access_token || data.data.token,
-                refreshToken: data.data.refreshToken || data.data.refresh_token,
-                expiresIn: data.data.expiresIn || data.data.expires_in || data.data.expires
-            };
-        } else {
-            throw new Error('Invalid login response structure');
+        if (error) {
+            throw new Error(error.message);
+        }
+        if (!data.session || !data.user) {
+            throw new Error('Invalid login response');
         }
 
-        return authResponse;
+        return buildAuthResponse(
+            data.user,
+            data.session.access_token,
+            data.session.refresh_token,
+            data.session.expires_in
+        );
     }
 
-    /**
-     * Register new user
-     */
     static async register(userData: RegisterData): Promise<AuthResponse> {
-        const registerData: RegisterRequest = {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.signUp({
             email: userData.email,
             password: userData.password,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-        };
-
-        const response = await api.post<any>('/auth/register', registerData);
-
-        // Handle different possible response structures
-        const data = response.data;
-        let authResponse: AuthResponse;
-
-        if (data.accessToken || data.access_token || data.token) {
-            // Standard structure or alternative field names
-            authResponse = {
-                user: data.user || data.userData || data.profile || {
-                    id: data.userId || data.id,
-                    email: userData.email,
-                    firstName: userData.firstName,
-                    lastName: userData.lastName
+            options: {
+                data: {
+                    first_name: userData.firstName || '',
+                    last_name: userData.lastName || '',
                 },
-                accessToken: data.accessToken || data.access_token || data.token,
-                refreshToken: data.refreshToken || data.refresh_token,
-                expiresIn: data.expiresIn || data.expires_in || data.expires
-            };
-        } else if (data.data && (data.data.accessToken || data.data.access_token || data.data.token)) {
-            // Nested data structure
-            authResponse = {
-                user: data.data.user || data.data.userData || data.data.profile || {
-                    id: data.data.userId || data.data.id,
-                    email: userData.email,
-                    firstName: userData.firstName,
-                    lastName: userData.lastName
-                },
-                accessToken: data.data.accessToken || data.data.access_token || data.data.token,
-                refreshToken: data.data.refreshToken || data.data.refresh_token,
-                expiresIn: data.data.expiresIn || data.data.expires_in || data.data.expires
-            };
-        } else {
-            throw new Error('Invalid registration response structure');
+            },
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+        if (!data.user) {
+            throw new Error('Invalid registration response');
         }
 
-        return authResponse;
+        // Email confirmation may leave session null
+        if (!data.session) {
+            return {
+                user: mapProfileToUser(data.user, {
+                    first_name: userData.firstName,
+                    last_name: userData.lastName,
+                }),
+                accessToken: '',
+                refreshToken: undefined,
+                expiresIn: undefined,
+            };
+        }
+
+        return buildAuthResponse(
+            data.user,
+            data.session.access_token,
+            data.session.refresh_token,
+            data.session.expires_in
+        );
     }
 
-    /**
-     * Logout user
-     */
     static async logout(): Promise<void> {
-        try {
-            await api.post('/auth/logout');
-        } catch (error) {
-            // Even if logout fails on server, we should clear local tokens
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) {
             console.warn('Logout request failed:', error);
         }
     }
 
-    /**
-     * Refresh access token
-     */
-    static async refreshToken(): Promise<RefreshTokenResponse> {
-        const response = await api.post<RefreshTokenResponse>('/auth/refresh');
-        return response.data;
+    static async refreshToken(): Promise<{ accessToken: string; refreshToken?: string; expiresIn?: number }> {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.refreshSession();
+        if (error || !data.session) {
+            throw new Error(error?.message || 'Token refresh failed');
+        }
+        return {
+            accessToken: data.session.access_token,
+            refreshToken: data.session.refresh_token,
+            expiresIn: data.session.expires_in,
+        };
     }
 
-    /**
-     * Get current user profile
-     */
     static async getCurrentUser(): Promise<User> {
-        const response = await api.get<any>('/auth/me');
-        
-        // Handle API response structure
-        const data = response.data;
-        if (data.data) {
-            return data.data;
+        const supabase = createClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+            throw new Error(error?.message || 'Not authenticated');
         }
-        return data;
+        const profile = await fetchProfile(user.id);
+        return mapProfileToUser(user, profile);
     }
 
-    /**
-     * Update user profile
-     */
     static async updateProfile(userData: UpdateUserRequest): Promise<User> {
-        const response = await api.put<any>('/auth/profile', userData);
-        
-        // Handle API response structure
-        const data = response.data;
-        if (data.data) {
-            return data.data;
+        const supabase = createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            throw new Error(userError?.message || 'Not authenticated');
         }
-        return data;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', user.id)
+            .select('*')
+            .single();
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        return mapProfileToUser(user, data);
     }
 
-    /**
-     * Change password
-     */
     static async changePassword(passwordData: ChangePasswordRequest): Promise<void> {
-        await api.post('/auth/change-password', passwordData);
+        const supabase = createClient();
+        // Re-authenticate with current password
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
+            throw new Error('Not authenticated');
+        }
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: passwordData.current_password,
+        });
+        if (signInError) {
+            throw new Error('Current password is incorrect');
+        }
+
+        const { error } = await supabase.auth.updateUser({
+            password: passwordData.new_password,
+        });
+        if (error) {
+            throw new Error(error.message);
+        }
     }
 
-    /**
-     * Request password reset
-     */
     static async forgotPassword(email: string): Promise<void> {
-        const requestData: ForgotPasswordRequest = { email };
-        await api.post('/auth/forgot-password', requestData);
+        const supabase = createClient();
+        const redirectTo = typeof window !== 'undefined'
+            ? `${window.location.origin}/reset-password`
+            : undefined;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo,
+        });
+        if (error) {
+            throw new Error(error.message);
+        }
     }
 
-    /**
-     * Reset password with token
-     */
-    static async resetPassword(resetData: ResetPasswordRequest): Promise<void> {
-        await api.post('/auth/reset-password', resetData);
+    static async resetPassword(resetData: { password: string }): Promise<void> {
+        const supabase = createClient();
+        const { error } = await supabase.auth.updateUser({
+            password: resetData.password,
+        });
+        if (error) {
+            throw new Error(error.message);
+        }
     }
 
-    /**
-     * Verify email address
-     */
-    static async verifyEmail(token: string): Promise<void> {
-        await api.post('/auth/verify-email', { token });
+    static async updateEmail(emailData: { new_email: string }): Promise<void> {
+        const supabase = createClient();
+        const { error } = await supabase.auth.updateUser({
+            email: emailData.new_email,
+        });
+        if (error) {
+            throw new Error(error.message);
+        }
     }
 
-    /**
-     * Resend email verification
-     */
-    static async resendVerificationEmail(): Promise<void> {
-        await api.post('/auth/resend-verification');
-    }
-
-    /**
-     * Update email address
-     */
-    static async updateEmail(emailData: UpdateEmailRequest): Promise<void> {
-        await api.put('/auth/update-email', emailData);
-    }
-
-    /**
-     * Send email verification
-     */
     static async sendEmailVerification(email: string): Promise<void> {
-        await api.post('/auth/send-verification', { email });
+        const supabase = createClient();
+        const redirectTo = typeof window !== 'undefined'
+            ? `${window.location.origin}/signin`
+            : undefined;
+        const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: { emailRedirectTo: redirectTo },
+        });
+        if (error) {
+            throw new Error(error.message);
+        }
     }
 
-    /**
-     * Delete user account
-     */
-    static async deleteAccount(password: string): Promise<void> {
-        await api.delete('/auth/profile', { data: { password } });
-    }
-
-    /**
-     * Get user activity/logs
-     */
-    static async getUserActivity(): Promise<any[]> {
-        const response = await api.get<any[]>('/auth/activity');
-        return response.data;
-    }
-
-    /**
-     * Check if email is available
-     */
-    static async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
-        const response = await api.get<{ available: boolean }>(`/auth/check-email?email=${encodeURIComponent(email)}`);
-        return response.data;
-    }
-
-    /**
-     * Social login (Google, etc.)
-     */
-    static async socialLogin(provider: string, token: string): Promise<AuthResponse> {
-        const response = await api.post<AuthResponse>(`/auth/social/${provider}`, { token });
-        return response.data;
-    }
-
-    /**
-     * Link social account
-     */
-    static async linkSocialAccount(provider: string, token: string): Promise<void> {
-        await api.post(`/auth/social/${provider}/link`, { token });
-    }
-
-    /**
-     * Unlink social account
-     */
-    static async unlinkSocialAccount(provider: string): Promise<void> {
-        await api.delete(`/auth/social/${provider}/link`);
+    static async getSession() {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        return data.session;
     }
 }

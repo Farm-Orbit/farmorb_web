@@ -44,7 +44,7 @@ export default function InvitationsTable({}: InvitationsTableProps) {
     declineInvitation,
   } = useFarmMembers();
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('pending');
   const [paginationState, setPaginationState] = useState<MRT_PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sortingState, setSortingState] = useState<MRT_SortingState>([]);
   const [columnFiltersState, setColumnFiltersState] = useState<MRT_ColumnFiltersState>([]);

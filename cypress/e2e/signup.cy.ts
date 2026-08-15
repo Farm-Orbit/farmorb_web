@@ -12,11 +12,12 @@ describe('Signup Test', () => {
 
         // Wait for page to load
         cy.get('h1').should('contain', 'Sign Up');
+        cy.get('[data-testid="email-input"]').should('be.visible').and('not.be.disabled');
 
         // Fill out the form with valid data
         cy.get('[data-testid="email-input"]').type(testEmail);
-        cy.get('[data-testid="password-input"]').type('TestPassword123!');
-        cy.get('[data-testid="confirm-password-input"]').type('TestPassword123!');
+        cy.get('[data-testid="password-input"]').should('not.be.disabled').type('TestPassword123!');
+        cy.get('[data-testid="confirm-password-input"]').should('not.be.disabled').type('TestPassword123!');
 
         // Accept terms
         cy.get('input[type="checkbox"]').check();

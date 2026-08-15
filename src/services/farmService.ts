@@ -1,56 +1,110 @@
-import { apiClient } from './api';
-import { ApiResponse } from '@/types/api';
+import { createClient } from '@/lib/supabase/client';
 import { Farm, CreateFarmData, UpdateFarmData } from '@/types/farm';
 import { ListOptions, PaginatedList } from '@/types/list';
-import { createListSearchParams, normalizePaginatedResponse } from '@/utils/pagination';
+
+function throwIfError(error: { message: string } | null) {
+    if (error) {
+        throw new Error(error.message);
+    }
+}
 
 export const FarmService = {
     getFarms: async (params?: ListOptions): Promise<PaginatedList<Farm>> => {
-        const searchParams = createListSearchParams(params);
-        const queryString = searchParams.toString();
-        const url = queryString ? `/farms?${queryString}` : '/farms';
+        const supabase = createClient();
+        const page = params?.page ?? 1;
+        const pageSize = params?.pageSize ?? 50;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
 
-        const { data } = await apiClient.get<ApiResponse<PaginatedList<Farm>> | PaginatedList<Farm>>(url);
-        const payload = 'data' in data && data.data ? data.data : data;
+        let query = supabase
+            .from('farms')
+            .select('*', { count: 'exact' })
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
-        return normalizePaginatedResponse<Farm>(payload, params);
+        if (params?.filters?.search) {
+            const search = Array.isArray(params.filters.search)
+                ? params.filters.search[0]
+                : params.filters.search;
+            query = query.ilike('name', `%${search}%`);
+        }
+
+        const { data, error, count } = await query;
+        throwIfError(error);
+
+        const items = (data || []) as Farm[];
+        return {
+            items,
+            page,
+            pageSize,
+            total: count ?? items.length,
+        };
     },
 
     getFarmById: async (id: string): Promise<Farm> => {
-        const response = await apiClient.get<any>(`/farms/${id}`);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('farms')
+            .select('*')
+            .eq('id', id)
+            .single();
+        throwIfError(error);
+        return data as Farm;
     },
 
     createFarm: async (data: CreateFarmData): Promise<Farm> => {
-        console.log('📝 Creating farm with data:', data);
-        const response = await apiClient.post<any>('/farms', data);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data: farm, error } = await supabase.rpc('create_farm', {
+            p_name: data.name,
+            p_description: data.description ?? null,
+            p_farm_type: data.farm_type ?? null,
+            p_location_address: data.location_address ?? null,
+            p_location_latitude: data.location_latitude ?? null,
+            p_location_longitude: data.location_longitude ?? null,
+            p_size_acres: data.size_acres ?? null,
+            p_size_hectares: data.size_hectares ?? null,
+        });
+        throwIfError(error);
+        return farm as Farm;
     },
 
-
     updateFarm: async (id: string, data: UpdateFarmData): Promise<Farm> => {
-        const response = await apiClient.put<any>(`/farms/${id}`, data);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: farm, error } = await supabase
+            .from('farms')
+            .update({
+                name: data.name,
+                description: data.description,
+                farm_type: data.farm_type,
+                location_address: data.location_address,
+                location_latitude: data.location_latitude,
+                location_longitude: data.location_longitude,
+                size_acres: data.size_acres,
+                size_hectares: data.size_hectares,
+                updated_by: user?.id,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', id)
+            .select('*')
+            .single();
+        throwIfError(error);
+        return farm as Farm;
     },
 
     deleteFarm: async (id: string): Promise<{ success: boolean }> => {
-        const response = await apiClient.delete<any>(`/farms/${id}`);
-        // Handle different response structures
-        if (response.data.success && response.data.data) {
-            return response.data.data;
-        }
-        return response.data;
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+            .from('farms')
+            .update({
+                is_active: false,
+                updated_by: user?.id,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+        throwIfError(error);
+        return { success: true };
     },
 };

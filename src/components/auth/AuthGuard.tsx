@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppSelector } from '@/store/hooks';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,60 +13,65 @@ interface AuthGuardProps {
 
 /**
  * AuthGuard component that protects routes and handles authentication state
- * Can be easily tested and reused across different layouts
  */
-export const AuthGuard: React.FC<AuthGuardProps> = ({ 
-  children, 
+export const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
   fallback,
-  redirectTo = '/signin' 
+  redirectTo = '/signin',
 }) => {
   const { isAuthenticated, isLoading, user, fetchCurrentUser } = useAuth();
+  const authLoading = useAppSelector((state) => state.auth.isLoading);
   const router = useRouter();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initialize = async () => {
       try {
-        // If we have a token but no user data, fetch it
         if (isAuthenticated && !user) {
           await fetchCurrentUser();
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
-        // If fetching user data fails, the auth state will be cleared automatically
       } finally {
-        setIsInitialized(true);
+        // Wait until first auth load attempt finishes
+        if (!authLoading) {
+          setIsInitialized(true);
+        }
       }
     };
 
-    initializeAuth();
-  }, [isAuthenticated, user, fetchCurrentUser]);
+    initialize();
+  }, [isAuthenticated, user, fetchCurrentUser, authLoading]);
 
-  // Redirect to signin if not authenticated (useEffect to avoid render-time side effects)
+  useEffect(() => {
+    if (!authLoading) {
+      setIsInitialized(true);
+    }
+  }, [authLoading]);
+
   useEffect(() => {
     if (isInitialized && !isLoading && !isAuthenticated) {
       router.push(redirectTo);
     }
   }, [isInitialized, isLoading, isAuthenticated, redirectTo, router]);
 
-  // Show loading state while checking authentication
   if (isLoading || !isInitialized) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
+    return (
+      fallback || (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
-  // Return null if not authenticated (redirect will happen in useEffect)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Show protected content if authenticated
   return <>{children}</>;
 };
 

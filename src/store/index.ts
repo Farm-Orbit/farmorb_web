@@ -9,6 +9,7 @@ import breedingReducer from './slices/breedingSlice';
 import healthReducer from './slices/healthSlice';
 import inventoryReducer from './slices/inventorySlice';
 import feedingReducer from './slices/feedingSlice';
+import cropReducer from './slices/cropSlice';
 
 // Configure the Redux store
 export const store = configureStore({
@@ -23,6 +24,7 @@ export const store = configureStore({
         health: healthReducer,
         inventory: inventoryReducer,
         feeding: feedingReducer,
+        crops: cropReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

@@ -56,7 +56,7 @@ export default function InviteMemberPage() {
       addNotification({
         type: 'error',
         title: 'Invitation Failed',
-        message: error.error || 'Failed to send invitation. Please try again.'
+        message: error?.message || error?.error || 'Failed to send invitation. Please try again.'
       });
     } finally {
       setIsSubmitting(false);

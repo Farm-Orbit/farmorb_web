@@ -296,6 +296,12 @@ Cypress.Commands.add('clearAuth', () => {
     cy.clearLocalStorage();
     cy.window().then((win) => {
         win.sessionStorage.clear();
+        // Supabase SSR may persist tokens under sb-* keys
+        Object.keys(win.localStorage).forEach((key) => {
+            if (key.startsWith('sb-')) {
+                win.localStorage.removeItem(key);
+            }
+        });
     });
 });
 
@@ -447,27 +453,26 @@ Cypress.Commands.add('signup', (email: string, password: string) => {
     // Ensure no lingering auth state before attempting signup
     cy.clearAuth();
 
-    // Intercept the signup API call
-    cy.intercept('POST', '**/auth/register').as('signupRequest');
+    // Supabase Auth signup endpoint
+    cy.intercept('POST', '**/auth/v1/signup*').as('signupRequest');
 
     cy.visit('/signup');
     cy.get('h1').should('contain', 'Sign Up');
+    cy.get('[data-testid="email-input"]').should('be.visible').and('not.be.disabled');
 
     cy.get('[data-testid="email-input"]').type(email);
-    cy.get('[data-testid="password-input"]').type(password);
-    cy.get('[data-testid="confirm-password-input"]').type(password);
+    cy.get('[data-testid="password-input"]').should('not.be.disabled').type(password);
+    cy.get('[data-testid="confirm-password-input"]').should('not.be.disabled').type(password);
     cy.get('input[type="checkbox"]').check();
 
     cy.get('[data-testid="signup-submit-button"]').click();
 
     // Wait for the API call to complete
     cy.wait('@signupRequest', { timeout: 15000 }).then((interception) => {
-        // Check if signup was successful (status 200 or 201)
         if (interception.response && (interception.response.statusCode === 200 || interception.response.statusCode === 201)) {
             cy.log('Signup successful');
         } else {
             cy.log('Signup may have failed, checking for errors');
-            // Check for error messages on the page
             cy.get('body').then(($body) => {
                 if ($body.find('[data-testid="error-message"]').length > 0) {
                     cy.get('[data-testid="error-message"]').then(($error) => {
@@ -493,13 +498,18 @@ Cypress.Commands.add('signin', (email: string, password: string) => {
             cy.log('Already authenticated, skipping signin');
             cy.get('[data-testid="home-page"]').should('be.visible');
         } else {
+            cy.intercept('POST', '**/auth/v1/token*').as('signinRequest');
+
             // Not authenticated, proceed with signin
             cy.get('h1').should('contain', 'Sign In');
+            cy.get('[data-testid="email-input"]').should('be.visible').and('not.be.disabled');
 
             cy.get('[data-testid="email-input"]').type(email);
-            cy.get('[data-testid="password-input"]').type(password);
+            cy.get('[data-testid="password-input"]').should('not.be.disabled').type(password);
 
             cy.get('[data-testid="signin-submit-button"]').click();
+
+            cy.wait('@signinRequest', { timeout: 15000 });
 
             // Wait for signin to complete and redirect to home
             cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/');

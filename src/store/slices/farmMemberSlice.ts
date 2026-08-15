@@ -29,7 +29,7 @@ export const fetchFarmMembers = createAsyncThunk<
       const members = await FarmMemberService.getFarmMembers(farmId, params);
       return members;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to fetch farm members');
+      return rejectWithValue(error.message || error.error || 'Failed to fetch farm members');
     }
   }
 );
@@ -41,7 +41,7 @@ export const inviteFarmMember = createAsyncThunk(
       const invitation = await FarmMemberService.inviteMember(farmId, data);
       return invitation;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to invite member');
+      return rejectWithValue(error.message || error.error || 'Failed to invite member');
     }
   }
 );
@@ -53,7 +53,7 @@ export const updateFarmMemberRole = createAsyncThunk(
       const member = await FarmMemberService.updateFarmMember(farmId, userId, { role });
       return member;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to update member role');
+      return rejectWithValue(error.message || error.error || 'Failed to update member role');
     }
   }
 );
@@ -65,7 +65,7 @@ export const removeFarmMember = createAsyncThunk(
       await FarmMemberService.removeFarmMember(farmId, userId);
       return userId;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to remove member');
+      return rejectWithValue(error.message || error.error || 'Failed to remove member');
     }
   }
 );
@@ -81,7 +81,7 @@ export const fetchMyInvitations = createAsyncThunk<
       const invitations = await FarmMemberService.getUserInvitations(params);
       return invitations;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to fetch invitations');
+      return rejectWithValue(error.message || error.error || 'Failed to fetch invitations');
     }
   }
 );
@@ -97,7 +97,7 @@ export const respondToInvitation = createAsyncThunk(
       }
       return invitationId;
     } catch (error: any) {
-      return rejectWithValue(error.error || 'Failed to respond to invitation');
+      return rejectWithValue(error.message || error.error || 'Failed to respond to invitation');
     }
   }
 );

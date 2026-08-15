@@ -24,7 +24,8 @@ export default defineConfig({
     },
     env: {
         // Environment variables for testing
-        API_URL: 'http://localhost:8080/api',
+        SUPABASE_URL: 'http://127.0.0.1:54421',
+        API_URL: 'http://127.0.0.1:54421',
         TEST_USER_EMAIL: 'test@example.com',
         TEST_USER_PASSWORD: 'TestPassword123!',
     },
