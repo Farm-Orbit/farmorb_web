@@ -6,6 +6,7 @@ import { ActivityService, ObservationService } from '@/services/activityService'
 import { PlantingService } from '@/services/plantingService';
 import LogActivityForm from './LogActivityForm';
 import LogObservationForm from './LogObservationForm';
+import AttachmentThumbs from './AttachmentThumbs';
 import { CropActivity, CropObservation } from '@/types/activity';
 import { Planting } from '@/types/crop';
 import { fieldClass, optionClass } from './fieldStyles';
@@ -293,7 +294,15 @@ export default function ActivitiesPanel({ farmId }: Props) {
                     {g.observation!.severity}
                   </span>
                 )}
+
+                {g.kind === 'observation' && g.observation!.incidence_percent != null && (
+                  <span>{g.observation!.incidence_percent}% affected</span>
+                )}
               </div>
+
+              {g.kind === 'observation' && (
+                <AttachmentThumbs attachments={g.observation!.attachments} />
+              )}
             </li>
           ))}
         </ul>

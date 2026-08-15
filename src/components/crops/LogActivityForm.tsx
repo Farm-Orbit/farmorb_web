@@ -103,7 +103,10 @@ export default function LogActivityForm({
         .filter((p): p is Planting => Boolean(p))
         .map((p) => ({
           plantingId: p.id,
-          areaHectares: p.area_hectares ?? null,
+          // A planting need not state its area — until it does, the block it
+          // sits in is the best available answer, and without one a
+          // per-hectare rate cannot produce a quantity at all.
+          areaHectares: p.area_hectares ?? p.grow_locations?.size_hectares ?? null,
           label: `${p.crop_types?.name ?? 'Crop'} · ${p.grow_locations?.name ?? 'Block'}`,
         })),
     [targetIds, plantings]

@@ -14,7 +14,7 @@ export const PlantingService = {
                 *,
                 crop_types ( id, name, growing_type, supports_ratoon, max_ratoon_cycles ),
                 crop_varieties ( id, name ),
-                grow_locations ( id, name )
+                grow_locations ( id, name, size_hectares )
             `)
             .eq('farm_id', farmId)
             .order('planting_date', { ascending: false });

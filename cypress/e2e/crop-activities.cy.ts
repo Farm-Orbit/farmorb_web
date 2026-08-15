@@ -43,6 +43,7 @@ describe('Crop activities', () => {
     ['Block A', 'Block B'].forEach((name) => {
       cy.contains('button', 'Add location').click();
       cy.get('[data-testid="grow-locations-panel"] input[placeholder="Location name"]').type(name);
+      cy.get('[data-testid="grow-locations-panel"] input[placeholder="Size (ha)"]').type('4');
       cy.contains('button', 'Save location').click();
       cy.contains(name, { timeout: 10000 }).should('be.visible');
     });
@@ -69,6 +70,11 @@ describe('Crop activities', () => {
     cy.get('[data-testid="activity-targets"] button[aria-pressed="true"]').should('have.length', 2);
 
     cy.get('[data-testid="activity-rate-input"]').type('2.5');
+
+    // Rate × area, computed rather than asked for. The blocks carry no area of
+    // their own, so it falls back to the location's.
+    cy.get('[data-testid="activity-quantity-hint"]').should('contain.text', 'Uses');
+
     cy.get('[data-testid="activity-phi-input"]').clear().type('14');
     cy.get('[data-testid="save-activity-button"]').click();
 
@@ -153,5 +159,36 @@ describe('Crop activities', () => {
     cy.get('[data-testid="timeline-observation"]')
       .should('contain.text', 'Anthracnose')
       .and('contain.text', 'moderate');
+  });
+
+  it('logs from the header without navigating to the activities tab', () => {
+    cy.contains(farmName).click();
+    cy.get('[data-testid="farm-detail-page"]', { timeout: 15000 }).should('be.visible');
+
+    // Deliberately stays on the crops tab — the point is that recording does
+    // not start with navigation.
+    cy.get('[data-testid="nav-crops"]').click();
+    cy.get('[data-testid="quick-log-button"]').should('be.visible').click();
+    cy.get('[data-testid="quick-log-dialog"]').should('be.visible');
+
+    cy.get('[data-testid="activity-type-select"]').select('pruning');
+    cy.get('[data-testid="activity-targets"] button').first().click();
+    cy.get('[data-testid="save-activity-button"]').click();
+
+    // Offers another straight away — crews log several things in a row.
+    cy.get('[data-testid="quick-log-flash"]', { timeout: 15000 }).should('be.visible');
+    cy.get('[data-testid="quick-log-again"]').click();
+    cy.get('[data-testid="log-activity-form"]').should('be.visible');
+    cy.get('[data-testid="quick-log-close"]').click();
+    cy.get('[data-testid="quick-log-dialog"]').should('not.exist');
+
+    // And it landed.
+    cy.get('[data-testid="nav-activities"]').click();
+    cy.get('[data-testid="activity-timeline"]', { timeout: 15000 })
+      .should('contain.text', 'Pruning');
+  });
+
+  it('hides the quick log outside a farm', () => {
+    cy.get('[data-testid="quick-log-button"]').should('not.exist');
   });
 });
