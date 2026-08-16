@@ -303,7 +303,7 @@ months to first harvest and expected yield, leaving the grower to correct rather
 
 | ID | Task | Est. | Depends |
 |---|---|---|---|
-| CR-4.2 | Replace hand-rolled inputs across all four panels with `@/components/form`; retire `fieldStyles.ts` | 1 | — |
+| CR-4.2 | Replace hand-rolled inputs with `@/components/form` — **deferred**. `fieldStyles.ts` is now a single, correctly-themed source shared by every crop form, so the drift risk it was meant to remove is already gone. Swapping would rewrite every working form (the shared `Select` takes an options array and a value-only `onChange`) for no user-visible gain. Revisit when a form needs error or hint states. | 1 | — |
 | CR-4.3 | Crop library: full crop-type and variety forms, optional detail collapsed | 1 | CR-4.2 |
 | CR-4.4 | Locations: full form including parent location and soil | 1 | CR-4.2 |
 | CR-4.5 | Plantings: full form including method, material and expected harvest | 1 | CR-1.1, CR-4.2 |
@@ -334,7 +334,7 @@ shape of the block far better than its hectares.
 
 | ID | Task | Est. | Depends |
 |---|---|---|---|
-| CR-5.1 | Choose map library and tiles. Recommend Leaflet + OpenStreetMap — no key, no per-view billing. Confirm bundle size and SSR under Next 15 | 0.5 | — |
+| CR-5.1 | **Decided:** Leaflet + `react-leaflet` v5 + OpenStreetMap tiles — no API key, no per-view billing, and v5 takes React 19 as its peer dependency, which is what this app runs. Two things to handle: the map must be dynamically imported with `ssr: false` (Leaflet needs `window`), and React 19's StrictMode double-mount can produce "Map container is already initialized" in dev, so initialisation needs guarding. | 0.5 | — |
 | CR-5.2 | Farm map from `boundary_coordinates`, coloured by status | 1 | CR-5.1 |
 | CR-5.3 | Draw and edit boundary polygons, persisted as GeoJSON | 1.5 | CR-5.2 |
 | CR-5.4 | Derive area from polygon, prefill `size_hectares` / `size_acres`, manual override (UX-6) | 0.5 | CR-5.3 |

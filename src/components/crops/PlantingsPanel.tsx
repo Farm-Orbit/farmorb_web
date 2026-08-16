@@ -4,6 +4,7 @@ import { Fragment, FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
 import PlantingCycles from './PlantingCycles';
+import { PlantingMethod } from '@/types/crop';
 import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
@@ -31,6 +32,11 @@ export default function PlantingsPanel({ farmId }: Props) {
   const [varietyId, setVarietyId] = useState('');
   const [plantingDate, setPlantingDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [plantCount, setPlantCount] = useState('');
+  const [method, setMethod] = useState<PlantingMethod | ''>('');
+  const [areaHectares, setAreaHectares] = useState('');
+  const [expectedHarvest, setExpectedHarvest] = useState('');
+  const [notes, setNotes] = useState('');
+  const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -56,6 +62,11 @@ export default function PlantingsPanel({ farmId }: Props) {
       variety_id: varietyId || undefined,
       planting_date: plantingDate,
       plant_count: plantCount ? Number(plantCount) : undefined,
+      planting_method: method || undefined,
+      // Area drives rate x area on every future application, so it is worth
+      // capturing here rather than falling back to the whole block.
+      area_hectares: areaHectares ? Number(areaHectares) : undefined,
+      notes: notes || undefined,
       status: 'planted',
     });
     setSubmitting(false);
@@ -131,6 +142,63 @@ export default function PlantingsPanel({ farmId }: Props) {
             placeholder="Plant count"
             className={fieldClass}
           />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={areaHectares}
+            onChange={(e) => setAreaHectares(e.target.value)}
+            placeholder="Area (ha)"
+            className={fieldClass}
+            data-testid="planting-area-input"
+          />
+
+          <div className="sm:col-span-2">
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="planting-more-toggle"
+            >
+              {showMore ? 'Fewer details' : 'Method and notes'}
+            </button>
+          </div>
+
+          {showMore && (
+            <>
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value as PlantingMethod | '')}
+                className={fieldClass}
+                data-testid="planting-method-select"
+              >
+                <option className={optionClass} value="">Planting method</option>
+                {([
+                  'direct_seed', 'transplant', 'graft', 'crown', 'slip',
+                  'sucker', 'cutting', 'bulb', 'tuber', 'other',
+                ] as PlantingMethod[]).map((m) => (
+                  <option className={optionClass} key={m} value={m}>
+                    {m.replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={expectedHarvest}
+                onChange={(e) => setExpectedHarvest(e.target.value)}
+                className={fieldClass}
+                data-testid="planting-expected-harvest-input"
+              />
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notes"
+                className={`${fieldClass} sm:col-span-2`}
+                data-testid="planting-notes-input"
+              />
+            </>
+          )}
+
           <div className="sm:col-span-2">
             <Button type="submit" size="sm" disabled={submitting}>Save planting</Button>
           </div>
