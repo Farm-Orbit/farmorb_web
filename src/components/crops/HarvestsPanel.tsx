@@ -30,8 +30,15 @@ export default function HarvestsPanel({ farmId }: Props) {
   const [cycleId, setCycleId] = useState('');
   const [cycles, setCycles] = useState<PlantingCycle[]>([]);
   const [harvestDate, setHarvestDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [quantity, setQuantity] = useState('');
+  // A picking session usually splits across grades. Repeatable rows keep
+  // that one submission instead of several records and re-navigations.
+  const [lines, setLines] = useState([{ quantity: '', grade: '' }]);
   const [unit, setUnit] = useState('kg');
+  const [brix, setBrix] = useState('');
+  const [fruitWeight, setFruitWeight] = useState('');
+  const [destination, setDestination] = useState('');
+  const [labourHours, setLabourHours] = useState('');
+  const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // A sale starts from the harvest it came out of, so the quantity can be
   // checked against what was actually picked rather than typed blind.
@@ -71,18 +78,34 @@ export default function HarvestsPanel({ farmId }: Props) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const result = await addHarvest(farmId, {
-      planting_id: plantingId,
-      cycle_id: cycleId,
-      harvest_date: harvestDate,
-      harvest_type: 'partial',
-      quantity: Number(quantity),
-      quantity_unit: unit,
-    });
+    const num = (v: string) => (v === '' ? null : Number(v));
+    const filled = lines.filter((l) => l.quantity !== '');
+    let ok = true;
+
+    for (const line of filled) {
+      const result = await addHarvest(farmId, {
+        planting_id: plantingId,
+        cycle_id: cycleId,
+        harvest_date: harvestDate,
+        harvest_type: 'partial',
+        quantity: Number(line.quantity),
+        quantity_unit: unit,
+        quality_grade: line.grade || null,
+        average_brix: num(brix),
+        average_fruit_weight_kg: num(fruitWeight),
+        destination: destination || null,
+        labor_hours: num(labourHours),
+      });
+      if (result.meta.requestStatus !== 'fulfilled') ok = false;
+    }
+
     setSubmitting(false);
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (ok && filled.length > 0) {
       setShowForm(false);
-      setQuantity('');
+      setLines([{ quantity: '', grade: '' }]);
+      setBrix('');
+      setFruitWeight('');
+      setLabourHours('');
       await loadHarvests(farmId);
     }
   };
@@ -155,21 +178,126 @@ export default function HarvestsPanel({ farmId }: Props) {
           />
           <input
             required
-            type="number"
-            min="0"
-            step="0.01"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Quantity"
-            className={fieldClass}
-          />
-          <input
-            required
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
             placeholder="Unit (kg, crates…)"
             className={fieldClass}
           />
+
+          <div className="space-y-2 sm:col-span-2" data-testid="harvest-lines">
+            {lines.map((line, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <input
+                  required={i === 0}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={line.quantity}
+                  onChange={(e) =>
+                    setLines((ls) =>
+                      ls.map((l, j) => (j === i ? { ...l, quantity: e.target.value } : l))
+                    )
+                  }
+                  placeholder="Quantity"
+                  className={fieldClass}
+                  data-testid={`harvest-quantity-input-${i}`}
+                />
+                <select
+                  value={line.grade}
+                  onChange={(e) =>
+                    setLines((ls) =>
+                      ls.map((l, j) => (j === i ? { ...l, grade: e.target.value } : l))
+                    )
+                  }
+                  className={fieldClass}
+                  data-testid={`harvest-grade-select-${i}`}
+                >
+                  <option className={optionClass} value="">Grade (optional)</option>
+                  {['export_a', 'export_b', 'local_a', 'local_b', 'processing', 'reject'].map((g) => (
+                    <option className={optionClass} key={g} value={g}>
+                      {g.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}
+                    className="text-xs text-gray-500 hover:underline"
+                    aria-label="Remove this grade"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setLines((ls) => [...ls, { quantity: '', grade: '' }])}
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="add-harvest-line"
+            >
+              Add another grade
+            </button>
+          </div>
+
+          <div className="sm:col-span-2">
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="harvest-more-toggle"
+            >
+              {showMore ? 'Fewer details' : 'Quality and labour'}
+            </button>
+          </div>
+
+          {showMore && (
+            <>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={brix}
+                onChange={(e) => setBrix(e.target.value)}
+                placeholder="Average brix"
+                className={fieldClass}
+                data-testid="harvest-brix-input"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={fruitWeight}
+                onChange={(e) => setFruitWeight(e.target.value)}
+                placeholder="Average fruit weight (kg)"
+                className={fieldClass}
+                data-testid="harvest-fruit-weight-input"
+              />
+              <select
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                className={fieldClass}
+                data-testid="harvest-destination-select"
+              >
+                <option className={optionClass} value="">Destination</option>
+                {['storage', 'direct_sale', 'processing', 'waste'].map((d) => (
+                  <option className={optionClass} key={d} value={d}>{d.replace('_', ' ')}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                value={labourHours}
+                onChange={(e) => setLabourHours(e.target.value)}
+                placeholder="Labour hours"
+                className={fieldClass}
+                data-testid="harvest-labour-input"
+              />
+            </>
+          )}
+
           <div className="sm:col-span-2">
             <Button type="submit" size="sm" disabled={submitting || !cycleId}>
               Save harvest

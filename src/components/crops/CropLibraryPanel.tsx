@@ -32,6 +32,17 @@ export default function CropLibraryPanel({ farmId }: Props) {
   const [name, setName] = useState('');
   const [growingType, setGrowingType] = useState<GrowingType>('annual');
   const [category, setCategory] = useState<CropCategory | ''>('');
+  const [scientificName, setScientificName] = useState('');
+  const [monthsToHarvest, setMonthsToHarvest] = useState('');
+  const [rowSpacing, setRowSpacing] = useState('');
+  const [plantSpacing, setPlantSpacing] = useState('');
+  const [plantsPerHa, setPlantsPerHa] = useState('');
+  const [expectedYield, setExpectedYield] = useState('');
+  const [supportsRatoon, setSupportsRatoon] = useState(false);
+  const [maxRatoons, setMaxRatoons] = useState('');
+  // Setup is done once per crop, so thoroughness beats speed — but the
+  // agronomy detail still starts collapsed so the common case stays short.
+  const [showMore, setShowMore] = useState(false);
   const [varietyName, setVarietyName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,10 +59,19 @@ export default function CropLibraryPanel({ farmId }: Props) {
   const handleCreateType = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    const num = (v: string) => (v === '' ? undefined : Number(v));
     const payload: CreateCropTypeData = {
       name,
       growing_type: growingType,
       category: category || undefined,
+      scientific_name: scientificName || undefined,
+      months_to_first_harvest: num(monthsToHarvest),
+      default_spacing_row_meters: num(rowSpacing),
+      default_spacing_plant_meters: num(plantSpacing),
+      plants_per_hectare: num(plantsPerHa),
+      expected_yield_per_hectare: num(expectedYield),
+      supports_ratoon: supportsRatoon,
+      max_ratoon_cycles: supportsRatoon ? num(maxRatoons) : undefined,
     };
     const result = await addCropType(farmId, payload);
     setSubmitting(false);
@@ -59,6 +79,14 @@ export default function CropLibraryPanel({ farmId }: Props) {
       setName('');
       setCategory('');
       setGrowingType('annual');
+      setScientificName('');
+      setMonthsToHarvest('');
+      setRowSpacing('');
+      setPlantSpacing('');
+      setPlantsPerHa('');
+      setExpectedYield('');
+      setSupportsRatoon(false);
+      setMaxRatoons('');
       setShowForm(false);
     }
   };
@@ -119,6 +147,99 @@ export default function CropLibraryPanel({ farmId }: Props) {
               <option className={optionClass} key={c} value={c}>{c}</option>
             ))}
           </select>
+          <input
+            value={scientificName}
+            onChange={(e) => setScientificName(e.target.value)}
+            placeholder="Scientific name (optional)"
+            data-testid="crop-type-scientific-input"
+            className={fieldClass}
+          />
+          <input
+            type="number"
+            min="0"
+            value={monthsToHarvest}
+            onChange={(e) => setMonthsToHarvest(e.target.value)}
+            placeholder="Months to first harvest"
+            data-testid="crop-type-months-input"
+            className={fieldClass}
+          />
+          <div className="sm:col-span-3">
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="crop-type-more-toggle"
+            >
+              {showMore ? 'Fewer details' : 'Spacing, yield and ratoon'}
+            </button>
+          </div>
+
+          {showMore && (
+            <>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={rowSpacing}
+                onChange={(e) => setRowSpacing(e.target.value)}
+                placeholder="Row spacing (m)"
+                data-testid="crop-type-row-spacing-input"
+                className={fieldClass}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={plantSpacing}
+                onChange={(e) => setPlantSpacing(e.target.value)}
+                placeholder="Plant spacing (m)"
+                data-testid="crop-type-plant-spacing-input"
+                className={fieldClass}
+              />
+              <input
+                type="number"
+                min="0"
+                value={plantsPerHa}
+                onChange={(e) => setPlantsPerHa(e.target.value)}
+                placeholder="Plants per hectare"
+                data-testid="crop-type-density-input"
+                className={fieldClass}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={expectedYield}
+                onChange={(e) => setExpectedYield(e.target.value)}
+                placeholder="Expected yield (t/ha)"
+                data-testid="crop-type-yield-input"
+                className={fieldClass}
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={supportsRatoon}
+                  onChange={(e) => setSupportsRatoon(e.target.checked)}
+                  data-testid="crop-type-ratoon-checkbox"
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600"
+                />
+                Regrows after harvest
+              </label>
+              {/* Only meaningful for a ratoon crop, so it appears with one. */}
+              {supportsRatoon && (
+                <input
+                  type="number"
+                  min="1"
+                  value={maxRatoons}
+                  onChange={(e) => setMaxRatoons(e.target.value)}
+                  placeholder="Max ratoon cycles"
+                  data-testid="crop-type-max-ratoons-input"
+                  className={fieldClass}
+                />
+              )}
+            </>
+          )}
+
           <div className="sm:col-span-3">
             <Button type="submit" size="sm" disabled={submitting} data-testid="save-crop-type-button">
               Save crop type

@@ -74,6 +74,10 @@ export interface CreateCropTypeData {
     scientific_name?: string;
     category?: CropCategory;
     months_to_first_harvest?: number;
+    default_spacing_row_meters?: number;
+    default_spacing_plant_meters?: number;
+    plants_per_hectare?: number;
+    expected_yield_per_hectare?: number;
     supports_ratoon?: boolean;
     max_ratoon_cycles?: number;
 }
@@ -102,7 +106,13 @@ export interface GrowLocation {
     location_type: LocationType;
     size_hectares?: number | null;
     size_acres?: number | null;
+    gps_latitude?: number | null;
+    gps_longitude?: number | null;
+    /** GeoJSON Polygon in [lng, lat]; see utils/geo. */
+    boundary_coordinates?: unknown;
     soil_type?: string | null;
+    soil_ph?: number | null;
+    irrigation_type?: string | null;
     status: LocationStatus;
     notes?: string | null;
     created_at: string;
@@ -115,7 +125,11 @@ export interface CreateGrowLocationData {
     parent_location_id?: string;
     size_hectares?: number;
     size_acres?: number;
+    gps_latitude?: number;
+    gps_longitude?: number;
     soil_type?: string;
+    soil_ph?: number;
+    irrigation_type?: string;
     status?: LocationStatus;
     notes?: string;
 }
@@ -147,7 +161,7 @@ export interface CreatePlantingData {
     crop_type_id: string;
     planting_date: string;
     variety_id?: string;
-    planting_method?: string;
+    planting_method?: PlantingMethod;
     status?: PlantingStatus;
     area_hectares?: number;
     plant_count?: number;
@@ -179,7 +193,11 @@ export interface Harvest {
     harvest_type: HarvestType;
     quantity: number;
     quantity_unit: string;
+    average_fruit_weight_kg?: number | null;
+    average_brix?: number | null;
     quality_grade?: string | null;
+    destination?: string | null;
+    labor_hours?: number | null;
     notes?: string | null;
     created_at: string;
     updated_at: string;
@@ -197,6 +215,10 @@ export interface CreateHarvestData {
     harvest_type: HarvestType;
     quantity: number;
     quantity_unit: string;
+    average_fruit_weight_kg?: number | null;
+    average_brix?: number | null;
+    destination?: string | null;
+    labor_hours?: number | null;
     quality_grade?: string;
     notes?: string;
 }
