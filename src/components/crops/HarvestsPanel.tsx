@@ -6,6 +6,8 @@ import { PlantingService } from '@/services/plantingService';
 import Button from '@/components/ui/button/Button';
 import { PlantingCycle } from '@/types/crop';
 import { activeCycle, cycleLabel } from '@/utils/cropCycles';
+import { SaleService } from '@/services/financeService';
+import { Sale, SalesChannel } from '@/types/finance';
 import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
@@ -31,11 +33,24 @@ export default function HarvestsPanel({ farmId }: Props) {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('kg');
   const [submitting, setSubmitting] = useState(false);
+  // A sale starts from the harvest it came out of, so the quantity can be
+  // checked against what was actually picked rather than typed blind.
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [sellingId, setSellingId] = useState<string | null>(null);
+  const [saleQty, setSaleQty] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [saleChannel, setSaleChannel] = useState<SalesChannel>('wholesale');
+  const [saleCustomer, setSaleCustomer] = useState('');
+  const [saleError, setSaleError] = useState<string | null>(null);
 
   useEffect(() => {
     loadHarvests(farmId);
     loadPlantings(farmId);
+    SaleService.list(farmId).then(setSales).catch(() => setSales([]));
   }, [farmId, loadHarvests, loadPlantings]);
+
+  const soldFor = (harvestId: string) =>
+    sales.filter((s) => s.harvest_id === harvestId).reduce((sum, s) => sum + Number(s.quantity), 0);
 
   useEffect(() => {
     const loadCycles = async () => {
@@ -176,10 +191,12 @@ export default function HarvestsPanel({ farmId }: Props) {
                 <th className="px-4 py-3 font-medium">Crop</th>
                 <th className="px-4 py-3 font-medium">Season</th>
                 <th className="px-4 py-3 font-medium">Quantity</th>
+                <th className="px-4 py-3 font-medium">Sold</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {harvests.map((h) => (
+              {harvests.flatMap((h) => [
                 <tr key={h.id}>
                   <td className="px-4 py-3 text-gray-900 dark:text-white">{h.harvest_date}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
@@ -191,8 +208,115 @@ export default function HarvestsPanel({ farmId }: Props) {
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                     {h.quantity} {h.quantity_unit}
                   </td>
-                </tr>
-              ))}
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                    {soldFor(h.id) > 0 ? `${soldFor(h.id)} ${h.quantity_unit}` : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    {Number(h.quantity) - soldFor(h.id) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSellingId(sellingId === h.id ? null : h.id);
+                          setSaleError(null);
+                          setSaleQty(String(Number(h.quantity) - soldFor(h.id)));
+                        }}
+                        className="text-xs font-medium text-brand-500 hover:underline"
+                        data-testid={`sell-harvest-${h.id}`}
+                      >
+                        Sell
+                      </button>
+                    )}
+                  </td>
+                </tr>,
+                sellingId === h.id && (
+                  <tr key={`${h.id}-sale`}>
+                    <td colSpan={6} className="bg-gray-50 px-4 py-3 dark:bg-white/[0.02]">
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setSaleError(null);
+                          try {
+                            await SaleService.create(farmId, {
+                              harvest_id: h.id,
+                              sale_date: new Date().toISOString().slice(0, 10),
+                              channel: saleChannel,
+                              customer_name: saleCustomer || null,
+                              quantity: Number(saleQty),
+                              quantity_unit: h.quantity_unit,
+                              unit_price: Number(salePrice),
+                            });
+                            setSellingId(null);
+                            setSalePrice('');
+                            setSaleCustomer('');
+                            setSales(await SaleService.list(farmId));
+                          } catch (err) {
+                            setSaleError(err instanceof Error ? err.message : 'Could not record the sale');
+                          }
+                        }}
+                        className="flex flex-wrap items-end gap-2"
+                        data-testid="sale-form"
+                      >
+                        <label className="space-y-1">
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
+                            Quantity ({Number(h.quantity) - soldFor(h.id)} {h.quantity_unit} left)
+                          </span>
+                          <input
+                            required
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            value={saleQty}
+                            onChange={(e) => setSaleQty(e.target.value)}
+                            className={fieldClass}
+                            data-testid="sale-quantity-input"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">Price per {h.quantity_unit}</span>
+                          <input
+                            required
+                            type="number"
+                            min="0"
+                            step="0.0001"
+                            value={salePrice}
+                            onChange={(e) => setSalePrice(e.target.value)}
+                            className={fieldClass}
+                            data-testid="sale-price-input"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">Channel</span>
+                          <select
+                            value={saleChannel}
+                            onChange={(e) => setSaleChannel(e.target.value as SalesChannel)}
+                            className={fieldClass}
+                            data-testid="sale-channel-select"
+                          >
+                            {(['export', 'wholesale', 'farm_gate', 'processing', 'other'] as SalesChannel[]).map((c) => (
+                              <option className={optionClass} key={c} value={c}>{c.replace('_', ' ')}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="space-y-1">
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">Customer</span>
+                          <input
+                            value={saleCustomer}
+                            onChange={(e) => setSaleCustomer(e.target.value)}
+                            className={fieldClass}
+                            data-testid="sale-customer-input"
+                          />
+                        </label>
+                        <Button type="submit" size="sm" data-testid="save-sale-button">Record sale</Button>
+                        {saleError && (
+                          <p className="w-full text-sm text-red-600 dark:text-red-400" data-testid="sale-error">
+                            {saleError}
+                          </p>
+                        )}
+                      </form>
+                    </td>
+                  </tr>
+                ),
+              ]).flat().filter(Boolean)}
             </tbody>
           </table>
         </div>
