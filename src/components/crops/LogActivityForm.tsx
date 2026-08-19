@@ -1,15 +1,20 @@
 "use client";
 
+import dynamic from 'next/dynamic';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Button from '@/components/ui/button/Button';
 import { ActivityService } from '@/services/activityService';
 import { InventoryService } from '@/services/inventoryService';
 import { PlantingService } from '@/services/plantingService';
+import { GrowLocationService } from '@/services/growLocationService';
 import { ActivityTarget, ActivityType, CreateActivityData, CropActivity } from '@/types/activity';
 import { InventoryItem } from '@/types/inventory';
-import { Planting } from '@/types/crop';
+import { GrowLocation, Planting } from '@/types/crop';
+import { isBoundaryPolygon } from '@/utils/geo';
 import { activeCycle } from '@/utils/cropCycles';
 import { fieldClass, optionClass } from './fieldStyles';
+
+const FarmMap = dynamic(() => import('./FarmMap'), { ssr: false });
 
 interface Props {
   farmId: string;
@@ -70,10 +75,24 @@ export default function LogActivityForm({
   const [labourHours, setLabourHours] = useState('');
   const [notes, setNotes] = useState('');
   const [showMore, setShowMore] = useState(false);
+  // Picking blocks by tapping them beats reading a list of names for anyone
+  // who thinks about their farm spatially, which is most growers.
+  const [useMap, setUseMap] = useState(false);
+  const [locations, setLocations] = useState<GrowLocation[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const usesProduct = USES_PRODUCT.includes(activityType);
+
+  useEffect(() => {
+    if (!useMap || locations.length > 0) return;
+    GrowLocationService.list(farmId).then(setLocations).catch(() => setLocations([]));
+  }, [useMap, locations.length, farmId]);
+
+  const mappedLocationIds = useMemo(
+    () => new Set(locations.filter((l) => isBoundaryPolygon(l.boundary_coordinates)).map((l) => l.id)),
+    [locations]
+  );
 
   useEffect(() => {
     if (!usesProduct) return;
@@ -222,17 +241,51 @@ export default function LogActivityForm({
           <span className="text-xs text-gray-500 dark:text-gray-400">
             Where {totalArea > 0 && `· ${totalArea.toFixed(2)} ha`}
           </span>
-          <button
-            type="button"
-            onClick={() =>
-              setTargetIds(targetIds.length === plantings.length ? [] : plantings.map((p) => p.id))
-            }
-            className="text-xs font-medium text-brand-500 hover:underline"
-            data-testid="select-all-targets"
-          >
-            {targetIds.length === plantings.length ? 'Clear all' : 'Select all'}
-          </button>
+          <span className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setUseMap((v) => !v)}
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="toggle-target-map"
+            >
+              {useMap ? 'Pick from list' : 'Pick on map'}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setTargetIds(targetIds.length === plantings.length ? [] : plantings.map((p) => p.id))
+              }
+              className="text-xs font-medium text-brand-500 hover:underline"
+              data-testid="select-all-targets"
+            >
+              {targetIds.length === plantings.length ? 'Clear all' : 'Select all'}
+            </button>
+          </span>
         </div>
+        {useMap ? (
+          <div data-testid="activity-target-map">
+            <FarmMap
+              locations={locations}
+              plantings={plantings}
+              heightClass="h-[300px]"
+              selectedIds={plantings
+                .filter((p) => targetIds.includes(p.id))
+                .map((p) => p.location_id)
+                .filter((id): id is string => Boolean(id))}
+              onToggle={(locationId) => {
+                // The map speaks in blocks; the activity attaches to what is
+                // planted in one. A block with nothing in it has nothing to log.
+                const planting = plantings.find((p) => p.location_id === locationId);
+                if (planting) toggleTarget(planting.id);
+              }}
+            />
+            {locations.length > 0 && mappedLocationIds.size === 0 && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                No block has a boundary drawn yet — draw one under Locations to pick it here.
+              </p>
+            )}
+          </div>
+        ) : (
         <div className="flex flex-wrap gap-2" data-testid="activity-targets">
           {plantings.map((p) => {
             const on = targetIds.includes(p.id);
@@ -257,6 +310,7 @@ export default function LogActivityForm({
             <p className="text-xs text-gray-500">Add a planting first.</p>
           )}
         </div>
+        )}
       </div>
 
       {usesProduct && (

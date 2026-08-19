@@ -40,6 +40,22 @@ Cypress.on('window:before:load', (win) => {
     }
 });
 
+// Map tiles are stubbed for every spec. Fetching real tiles from
+// OpenStreetMap makes the suite slow and non-deterministic — one map test went
+// from 4 seconds to 16 minutes once their rate limiting kicked in — and their
+// usage policy discourages automated bulk downloading. The map's behaviour is
+// what is under test, not the imagery.
+const BLANK_TILE = Cypress.Blob.base64StringToBlob(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'image/png'
+);
+
+beforeEach(() => {
+    cy.intercept({ hostname: /tile\.openstreetmap\.org$/ }, (req) => {
+        req.reply({ statusCode: 200, body: BLANK_TILE, headers: { 'content-type': 'image/png' } });
+    });
+});
+
 // Global error handling
 Cypress.on('uncaught:exception', (err, runnable) => {
     // Prevent Cypress from failing the test on uncaught exceptions
