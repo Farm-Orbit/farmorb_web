@@ -21,7 +21,7 @@ describe('Crop farming flow (Supabase)', () => {
     });
 
     it('creates a crop farm and records type, location, planting, harvest', () => {
-        cy.get('[data-testid="create-farm-button"]').click();
+        cy.startCreateFarm();
 
         cy.get('[data-testid="farm-name-input"]').clear().type(farmName);
         cy.get('[data-testid="farm-description-input"]').clear().type('Supabase crop test farm');

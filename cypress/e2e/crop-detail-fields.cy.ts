@@ -22,7 +22,7 @@ describe('Crop detail fields', () => {
   });
 
   it('captures agronomy detail and a two-grade harvest', () => {
-    cy.get('[data-testid="create-farm-button"]').click();
+    cy.startCreateFarm();
     cy.get('[data-testid="farm-name-input"]').clear().type(farmName);
     cy.get('[data-testid="farm-description-input"]').clear().type('Field depth test');
     cy.get('[data-testid="farm-type-select"]').select('crop');

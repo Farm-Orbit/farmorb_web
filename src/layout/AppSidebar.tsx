@@ -15,8 +15,6 @@ import {
 } from "./navigation/farmNav";
 import {
   BoxIcon,
-  ChevronLeftIcon,
-  GridIcon,
   HorizontaLDots,
   MailIcon,
 } from "@/icons";
@@ -30,9 +28,11 @@ interface GlobalNavItem {
 // Profile deliberately lives only in the header account menu. Duplicating it
 // here gives the page two links to the same href, which is both redundant
 // navigation and an ambiguous target.
+//
+// Dashboard and Farms were two entries pointing at the same job; now that the
+// home page is the farm list, they are one.
 const globalNavItems: GlobalNavItem[] = [
-  { name: "Dashboard", path: "/", icon: <GridIcon /> },
-  { name: "Farms", path: "/farms", icon: <BoxIcon /> },
+  { name: "Farms", path: "/", icon: <BoxIcon /> },
   { name: "My Invitations", path: "/invitations", icon: <MailIcon /> },
 ];
 
@@ -195,24 +195,11 @@ const AppSidebar: React.FC = () => {
               />
             </Suspense>
 
-            {/* Always leave a way back out of the farm. */}
+            {/* Leaving a farm is the switcher's job — it already lists every
+                farm and offers a new one. A second route to the same place
+                made it feel like two pages doing one thing. */}
             <div className="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
               <ul className="flex flex-col gap-1.5">
-                <li>
-                  <Link
-                    href="/farms"
-                    className={menuItemClass(false, showLabels)}
-                    data-testid="farms-sidebar-button"
-                    title="All farms"
-                  >
-                    <span className={iconClass(false)}>
-                      <ChevronLeftIcon />
-                    </span>
-                    {showLabels && (
-                      <span className="menu-item-text">All farms</span>
-                    )}
-                  </Link>
-                </li>
                 <li>
                   <Link
                     href="/invitations"

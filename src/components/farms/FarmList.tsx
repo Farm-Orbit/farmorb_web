@@ -172,18 +172,33 @@ export default function FarmList({}: FarmListProps) {
     router.push(`/farms/${farm.id}`);
   };
 
+  // Until the farms are known, show neither the list header nor the welcome.
+  // Rendering the header first and swapping to the welcome once loading
+  // finishes makes the Add Farm button appear and then vanish under the
+  // pointer — a moving target for a person and a detached element for a test.
+  if (isLoading && farms.length === 0) {
+    return (
+      <div className="space-y-4" data-testid="farms-page">
+        <div className="h-8 w-40 animate-pulse rounded bg-gray-100 dark:bg-white/[0.05]" />
+        <div className="h-48 animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.05]" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4" data-testid="farms-page">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Farms</h1>
-        <Button
-          onClick={() => router.push('/farms/create')}
-          data-testid="create-farm-button"
-          size="sm"
-        >
-          Add Farm
-        </Button>
-      </div>
+      {farms.length > 0 && (
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Your farms</h1>
+          <Button
+            onClick={() => router.push('/farms/create')}
+            data-testid="create-farm-button"
+            size="sm"
+          >
+            Add Farm
+          </Button>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800 mb-4">
@@ -191,12 +206,29 @@ export default function FarmList({}: FarmListProps) {
         </div>
       )}
 
-      {!isLoading && farms.length === 0 ? (
-        <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No farms found</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-            Get started by creating your first farm
+      {farms.length === 0 ? (
+        // Everything in FarmOrb hangs off a farm, so someone with none has
+        // exactly one useful next step. Say so, and make it the only button on
+        // the screen rather than a sentence next to a toolbar.
+        <div
+          className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800"
+          data-testid="farms-welcome"
+        >
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Welcome to FarmOrb
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">
+            Crops, livestock, activities and costs all belong to a farm. Create one
+            and the rest opens up.
           </p>
+          <div className="mt-6">
+            <Button
+              onClick={() => router.push('/farms/create')}
+              data-testid="create-first-farm-button"
+            >
+              Create your first farm
+            </Button>
+          </div>
         </div>
       ) : (
         <CustomMaterialTable

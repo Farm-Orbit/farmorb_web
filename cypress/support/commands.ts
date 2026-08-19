@@ -20,6 +20,13 @@ declare global {
             dataCy(value: string): Chainable<JQuery<HTMLElement>>;
 
             /**
+             * Opens the create-farm form from whichever entry point the home
+             * page is showing — the welcome card when there are no farms, the
+             * list's Add Farm button once there are.
+             */
+            startCreateFarm(): Chainable<void>;
+
+            /**
              * Custom command to login with test credentials
              * @example cy.login('test@example.com', 'password123')
              */
@@ -279,9 +286,8 @@ Cypress.Commands.add('signout', () => {
 
 // Custom command to verify farms are present
 Cypress.Commands.add('verifyFarmsPresent', (farmNames: string[]) => {
-    // Should be on farms page
-    cy.url().should('include', '/farms');
-    cy.contains('Farms').should('be.visible');
+    // Farms are the home page now.
+    cy.get('[data-testid="farms-page"]', { timeout: 15000 }).should('be.visible');
 
     // Verify each farm name is present
     farmNames.forEach(farmName => {
@@ -519,8 +525,21 @@ Cypress.Commands.add('signin', (email: string, password: string) => {
 });
 
 // Custom command to create a farm with all details
+Cypress.Commands.add('startCreateFarm', () => {
+    // One selector for both entry points rather than a snapshot of the body:
+    // while the farms are loading neither button exists yet, and a snapshot
+    // taken then picks the wrong branch. Cypress retries this until whichever
+    // button the page settles on appears.
+    cy.get(
+        '[data-testid="create-first-farm-button"], [data-testid="create-farm-button"]',
+        { timeout: 15000 }
+    )
+        .first()
+        .click();
+});
+
 Cypress.Commands.add('createFarm', (name: string, description: string, type: string, address?: string, lat?: number, lng?: number, acres?: number, hectares?: number) => {
-    cy.get('[data-testid="create-farm-button"]').click();
+    cy.startCreateFarm();
     cy.get('[data-testid="farm-name-input"]').type(name);
     cy.get('[data-testid="farm-description-input"]').type(description);
     cy.get('[data-testid="farm-type-select"]').select(type);
@@ -577,9 +596,9 @@ Cypress.Commands.add('createFarm', (name: string, description: string, type: str
 
 // Custom command to navigate to farms page
 Cypress.Commands.add('navigateToFarms', () => {
-    cy.visit('/farms');
-    cy.url({ timeout: 10000 }).should('include', '/farms');
-    cy.get('[data-testid="farms-page"]').should('be.visible');
+    // Farms are the home page now; /farms redirects here.
+    cy.visit('/');
+    cy.get('[data-testid="farms-page"]', { timeout: 15000 }).should('be.visible');
 });
 
 

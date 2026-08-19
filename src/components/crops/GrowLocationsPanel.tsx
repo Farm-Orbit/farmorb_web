@@ -3,7 +3,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useCrops } from '@/hooks/useCrops';
 import Button from '@/components/ui/button/Button';
+import dynamic from 'next/dynamic';
 import { LocationStatus, LocationType } from '@/types/crop';
+import { GrowLocationService } from '@/services/growLocationService';
+import { BoundaryPolygon, isBoundaryPolygon } from '@/utils/geo';
 import { fieldClass, optionClass } from './fieldStyles';
 
 interface Props {
@@ -15,8 +18,18 @@ const locationTypes: LocationType[] = [
 ];
 const statuses: LocationStatus[] = ['active', 'preparing', 'fallow', 'retired'];
 
+// Leaflet reaches for window on import, so the map never renders on the
+// server. It is also the heaviest thing on this screen, so keeping it out of
+// the initial bundle is worth doing regardless.
+const FarmMap = dynamic(() => import('./FarmMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[420px] animate-pulse rounded-lg bg-gray-100 dark:bg-white/[0.03]" />
+  ),
+});
+
 export default function GrowLocationsPanel({ farmId }: Props) {
-  const { locations, isLoading, error, loadLocations, addLocation } = useCrops();
+  const { locations, plantings, isLoading, error, loadLocations, loadPlantings, addLocation } = useCrops();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [locationType, setLocationType] = useState<LocationType>('field');
@@ -31,10 +44,31 @@ export default function GrowLocationsPanel({ farmId }: Props) {
   const [notes, setNotes] = useState('');
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [drawingFor, setDrawingFor] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     loadLocations(farmId);
-  }, [farmId, loadLocations]);
+    loadPlantings(farmId);
+  }, [farmId, loadLocations, loadPlantings]);
+
+  const handleDrawn = async (
+    locationId: string,
+    boundary: BoundaryPolygon | null,
+    hectares: number | null
+  ) => {
+    try {
+      await GrowLocationService.saveBoundary(locationId, boundary);
+      setDrawingFor(null);
+      setMapError(
+        hectares != null ? `Boundary saved — ${hectares.toFixed(2)} ha` : null
+      );
+      await loadLocations(farmId);
+    } catch (err) {
+      setMapError(err instanceof Error ? err.message : 'Could not save the boundary');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -79,12 +113,37 @@ export default function GrowLocationsPanel({ farmId }: Props) {
             Fields, beds, and blocks where crops are planted.
           </p>
         </div>
-        <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancel' : 'Add location'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowMap((v) => !v)}
+            data-testid="toggle-map-button"
+          >
+            {showMap ? 'Hide map' : 'Map'}
+          </Button>
+          <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? 'Cancel' : 'Add location'}
+          </Button>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {mapError && (
+        <p className="text-sm text-gray-700 dark:text-gray-300" data-testid="map-message">
+          {mapError}
+        </p>
+      )}
+
+      {showMap && (
+        <FarmMap
+          locations={locations}
+          plantings={plantings}
+          drawingFor={drawingFor}
+          onDrawn={handleDrawn}
+          onCancelDraw={() => setDrawingFor(null)}
+        />
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="grid gap-3 rounded-lg border border-gray-200 p-4 dark:border-gray-700 sm:grid-cols-3">
@@ -224,6 +283,7 @@ export default function GrowLocationsPanel({ farmId }: Props) {
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Size (ha)</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -233,6 +293,20 @@ export default function GrowLocationsPanel({ farmId }: Props) {
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{loc.location_type}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{loc.size_hectares ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{loc.status}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMap(true);
+                        setDrawingFor(loc.id);
+                        setMapError(null);
+                      }}
+                      className="text-xs font-medium text-brand-500 hover:underline"
+                      data-testid={`draw-boundary-${loc.id}`}
+                    >
+                      {isBoundaryPolygon(loc.boundary_coordinates) ? 'Redraw' : 'Draw boundary'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

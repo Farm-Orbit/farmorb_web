@@ -1,41 +1,24 @@
 import type { Metadata } from "next";
-import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
-import React from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
-import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart";
-// import RecentOrders from "@/components/ecommerce/RecentOrders";
-import DemographicCard from "@/components/ecommerce/DemographicCard";
+import FarmList from "@/components/farms/FarmList";
 
 export const metadata: Metadata = {
-  title: "Dashboard | FarmOrbit - Farm Management Platform",
-  description: "Manage your farms, livestock, and operations with FarmOrbit",
+  title: "Your farms | FarmOrb",
+  description: "Manage your farms, crops, livestock and operations with FarmOrb",
 };
 
-export default function Ecommerce() {
+/**
+ * The home page is the farm list.
+ *
+ * There used to be a dashboard here showing template e-commerce figures, and a
+ * separate /farms route listing farms — two pages for one job, on top of a
+ * switcher that already lists every farm. Landing straight on your farms means
+ * the first thing you see is real, and someone with none is asked for the only
+ * thing that unblocks the rest of the product.
+ */
+export default function HomePage() {
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6" data-testid="home-page">
-      <div className="col-span-12 space-y-6 xl:col-span-7">
-        <EcommerceMetrics />
-
-        <MonthlySalesChart />
-      </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <MonthlyTarget />
-      </div>
-
-      <div className="col-span-12">
-        <StatisticsChart />
-      </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      {/* <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
-      </div> */}
+    <div className="p-4 md:p-6" data-testid="home-page">
+      <FarmList />
     </div>
   );
 }
