@@ -75,9 +75,8 @@ describe('Feeding Management', () => {
   beforeEach(() => {
     cy.clearAuth();
     cy.signin(email, password);
-    // Navigate to farms page and wait for it to load
-    cy.visit('/farms');
-    cy.url({ timeout: 10000 }).should('include', '/farms');
+    // Farms live on the home page now.
+    cy.visit('/');
     cy.get('[data-testid="farms-page"]', { timeout: 15000 }).should('be.visible');
   });
 
@@ -210,7 +209,7 @@ describe('Feeding Management', () => {
       });
 
       // Navigate to farm detail page and check feeding records tab
-      cy.get('[data-testid="farms-sidebar-button"]').click();
+      cy.visit('/');  // farms live on the home page now
       cy.contains('Feeding Inventory Farm').click();
       cy.wait(2000);
       
@@ -275,7 +274,7 @@ describe('Feeding Management', () => {
         cy.wait(2000);
 
         // Navigate to farm detail page to find edit button
-        cy.get('[data-testid="farms-sidebar-button"]').click();
+        cy.visit('/');  // farms live on the home page now
         cy.contains('Feeding Edit Farm').click();
         cy.wait(2000);
         
@@ -375,7 +374,7 @@ describe('Feeding Management', () => {
         cy.wait(2000);
 
         // Navigate to farm detail page to find delete button
-        cy.get('[data-testid="farms-sidebar-button"]').click();
+        cy.visit('/');  // farms live on the home page now
         cy.contains('Feeding Delete Farm').click();
         cy.wait(2000);
         cy.get('[data-testid="nav-feeding"]', { timeout: 10000 }).click();

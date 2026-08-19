@@ -1,16 +1,9 @@
-import FarmList from '@/components/farms/FarmList';
-import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Farms | FarmOrbit - Farm Management Dashboard',
-  description: 'Manage your farm portfolio with FarmOrbit',
-};
-
+/**
+ * Farms live on the home page now. Kept as a redirect so existing links,
+ * bookmarks and any saved URLs still land somewhere sensible.
+ */
 export default function FarmsPage() {
-  return (
-    <div className="p-6" data-testid="farms-page">
-      <FarmList />
-    </div>
-  );
+  redirect('/');
 }
-

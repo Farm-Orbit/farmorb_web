@@ -23,7 +23,7 @@ describe('Crop activities', () => {
   });
 
   it('logs one spray across two blocks and blocks an early harvest', () => {
-    cy.get('[data-testid="create-farm-button"]').click();
+    cy.startCreateFarm();
     cy.get('[data-testid="farm-name-input"]').clear().type(farmName);
     cy.get('[data-testid="farm-description-input"]').clear().type('Activity test');
     cy.get('[data-testid="farm-type-select"]').select('crop');

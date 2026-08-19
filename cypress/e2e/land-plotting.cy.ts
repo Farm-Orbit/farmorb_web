@@ -22,7 +22,7 @@ describe('Land plotting', () => {
   });
 
   it('draws a boundary and derives the block size from it', () => {
-    cy.get('[data-testid="create-farm-button"]').click();
+    cy.startCreateFarm();
     cy.get('[data-testid="farm-name-input"]').clear().type(farmName);
     cy.get('[data-testid="farm-description-input"]').clear().type('Plotting test');
     cy.get('[data-testid="farm-type-select"]').select('crop');

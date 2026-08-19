@@ -71,14 +71,14 @@ describe('Farms Feature', () => {
         }
     };
 
-    // Helper function to verify URL is farms list (not detail page)
+    // Helper function to verify we are on the farms list, not a detail page.
+    // The list is the home page now, so the check is that no farm id is in the
+    // URL rather than that /farms is.
     const verifyFarmsListUrl = () => {
         cy.url({ timeout: 10000 }).should((url) => {
-            expect(url).to.include('/farms');
-            // Should not have a UUID pattern after /farms/
             expect(url).to.not.match(/\/farms\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
         });
-        cy.get('[data-testid="farms-page"]').should('be.visible');
+        cy.get('[data-testid="farms-page"]', { timeout: 15000 }).should('be.visible');
     };
 
     // Helper function to verify farm detail page
@@ -96,7 +96,7 @@ describe('Farms Feature', () => {
         const updatedFarmName = `Updated Farm ${timestamp}`;
 
         // CREATE: Create a new farm
-        cy.get('[data-testid="create-farm-button"]').click();
+        cy.startCreateFarm();
         
         fillFarmForm({
             name: originalFarmName,
@@ -143,7 +143,7 @@ describe('Farms Feature', () => {
         cy.contains('Original farm description').should('be.visible');
 
         // READ: Verify farm appears in farms list
-        cy.get('[data-testid="farms-sidebar-button"]').click();
+        cy.visit('/');  // farms live on the home page now
         verifyFarmsListUrl();
         
         // Wait for farms to load
@@ -231,7 +231,7 @@ describe('Farms Feature', () => {
         const farmToKeep = `Farm to Keep ${timestamp}`;
 
         // Create a farm
-        cy.get('[data-testid="create-farm-button"]').click();
+        cy.startCreateFarm();
         
         fillFarmForm({
             name: farmToKeep,
@@ -262,7 +262,7 @@ describe('Farms Feature', () => {
         cy.get('[data-testid="farm-detail-page"]').should('be.visible');
 
         // Navigate back to farms list and verify the farm still exists
-        cy.get('[data-testid="farms-sidebar-button"]').click();
+        cy.visit('/');  // farms live on the home page now
         verifyFarmsListUrl();
         
         cy.wait(1000);

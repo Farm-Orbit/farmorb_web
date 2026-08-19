@@ -9,12 +9,20 @@ describe('farm-scoped sidebar', () => {
 
     cy.signup(email, 'TestPassword123!');
 
-    // Global context: sidebar shows the top-level menu.
-    cy.get('[data-testid="dashboard-sidebar-button"]').should('be.visible');
+    // Global context: sidebar shows the top-level menu. Dashboard and Farms
+    // used to be separate entries for the same job; the home page is the farm
+    // list now, so there is one.
+    cy.get('[data-testid="dashboard-sidebar-button"]').should('not.exist');
     cy.get('[data-testid="farms-sidebar-button"]').should('be.visible');
     cy.get('[data-testid="my-invitations-sidebar-button"]').should('be.visible');
     
     cy.get('[data-testid="farm-switcher-button"]').should('not.exist');
+
+    // A brand-new account lands on a welcome whose only action is the one
+    // thing that unblocks the rest of the product.
+    cy.get('[data-testid="farms-welcome"]').should('be.visible');
+    cy.get('[data-testid="create-first-farm-button"]').should('be.visible');
+    cy.get('[data-testid="create-farm-button"]').should('not.exist');
 
     cy.get('[data-testid="farms-sidebar-button"]').click();
     cy.createFarm(`Nav Livestock ${ts}`, 'livestock nav test', 'livestock').then((livestockId) => {
@@ -34,8 +42,10 @@ describe('farm-scoped sidebar', () => {
       }).should('exist');
 
 
-      // Second farm, crop type, to prove gating + switching.
-      cy.get('[data-testid="farms-sidebar-button"]').click();
+      // Second farm, crop type, to prove gating + switching. Leaving a farm
+      // goes through the switcher now — there is no separate back link.
+      cy.get('[data-testid="farm-switcher-button"]').click();
+      cy.get('[data-testid="farm-switcher-all"]').click();
       cy.get('[data-testid="farms-page"]').should('be.visible');
       cy.createFarm(`Nav Crop ${ts}`, 'crop nav test', 'crop').then((cropId) => {
         cy.get('[data-testid="nav-crops"]').should('be.visible');
@@ -51,6 +61,13 @@ describe('farm-scoped sidebar', () => {
         cy.url().should('include', `/farms/${livestockId}`);
         cy.get('[data-testid="nav-animals"]').should('be.visible');
         cy.get('[data-testid="nav-crops"]').should('not.exist');
+
+        // Leaving a farm belongs to the switcher, not a separate back link.
+        cy.get('[data-testid="farms-sidebar-button"]').should('not.exist');
+        cy.get('[data-testid="farm-switcher-button"]').click();
+        cy.get('[data-testid="farm-switcher-all"]').click();
+        cy.url().should('eq', `${Cypress.config().baseUrl}/`);
+        cy.get('[data-testid="farms-page"]').should('be.visible');
 
         cy.log(`crop farm ${cropId}`);
       });

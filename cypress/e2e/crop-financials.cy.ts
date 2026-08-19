@@ -23,7 +23,7 @@ describe('Crop financials', () => {
   });
 
   it('costs a block from logged work and sells its harvest', () => {
-    cy.get('[data-testid="create-farm-button"]').click();
+    cy.startCreateFarm();
     cy.get('[data-testid="farm-name-input"]').clear().type(farmName);
     cy.get('[data-testid="farm-description-input"]').clear().type('Margin test');
     cy.get('[data-testid="farm-type-select"]').select('crop');
